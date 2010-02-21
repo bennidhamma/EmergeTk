@@ -30,7 +30,7 @@ namespace EmergeTk.Model.Providers
         	}
         }
         
-        const string UidGenTableName = "uid_gen";
+        const string UidGenTableName = "uid";
 	    const string LongStringDataType = "text";
 		const string ShortStringDataType = "varchar(20)";
 		const string StringDataType = "varchar(500)";
@@ -305,11 +305,21 @@ namespace EmergeTk.Model.Providers
             //then get records that aren't in cache as ONE database call
             //
             RecordList<T> records = new RecordList<T>();
-            string name = GetTableNameT<T>();
-            if (name == null)
-            {
-                return records;
-            }
+			bool isDerived = AbstractRecord.IsDerived(typeof(T));
+			string name = null;
+			if( ! isDerived )
+			{
+	            name = GetTableNameT<T>();
+	            if (name == null)
+	            {
+	                return records;
+	            }
+			}
+			else
+			{
+				//name only used for caching at this point.
+				name = typeof(T).FullName;
+			}	
 
             // keep a map of who got found in cache, and who didn't.
             Dictionary<int, T> recordMap = new Dictionary<int, T>();
@@ -329,15 +339,39 @@ namespace EmergeTk.Model.Providers
 
             if (unCachedIds.Count > 0)
             {
-                String sql = String.Format("SELECT * FROM {0} WHERE ROWID IN ({1});", EscapeEntity(name), Util.JoinToString<int>(unCachedIds, ","));
-                DataTable result = MySqlProvider.Provider.ExecuteDataTable(sql);
-
-                for (int i = 0; i < result.Rows.Count; i++)
-                {
-                    T r = AbstractRecord.LoadFromDataRow<T>(result.Rows[i]);
-                    recordMap[r.Id] = r;
-                    AbstractRecord.PutRecordInCache(r);
-                }
+				if (AbstractRecord.IsDerived(typeof(T)))
+				{
+					foreach( int id in unCachedIds )
+					{
+						Type t = GetTypeForId(id);
+						if( t == null )
+						{
+							log.Warn("Did not find type for id " + id);
+							continue;
+						}
+						T r = AbstractRecord.Load(t,id) as T;
+						
+						if( r != null )
+						{
+							recordMap[r.Id] = r;
+							AbstractRecord.PutRecordInCache(r);
+						}
+						else
+							log.WarnFormat("Did not load a record for id {0} and type {1}", id, t);
+					}
+				}
+				else
+				{
+	                String sql = String.Format("SELECT * FROM {0} WHERE ROWID IN ({1});", EscapeEntity(name), Util.JoinToString<int>(unCachedIds, ","));
+	                DataTable result = MySqlProvider.Provider.ExecuteDataTable(sql);
+	
+	                for (int i = 0; i < result.Rows.Count; i++)
+	                {
+	                    T r = AbstractRecord.LoadFromDataRow<T>(result.Rows[i]);
+	                    recordMap[r.Id] = r;
+	                    AbstractRecord.PutRecordInCache(r);
+	                }
+				}
             }
 
             foreach (KeyValuePair<int, T> kvp in recordMap)
@@ -435,27 +469,26 @@ namespace EmergeTk.Model.Providers
         
         public int GetNewId(string typeName)
         {
-        	string table = UidGenTableName + typeName;
+        	string table = UidGenTableName;
         	if( string.IsNullOrEmpty(typeName ) )
         	{
         		throw new ArgumentNullException("Must specify a valid type name.");
         	}
-			if( ! TableExists( table ) )
-			{
-				ExecuteNonQuery(string.Format( "create table `{0}` ( `key` integer unsigned not null auto_increment, PRIMARY KEY(`key`)  );", table ) );
-				if( TableExists( typeName ) )
-				{
-					ExecuteNonQuery(string.Format( "insert into `{0}` select max(ROWID) from `{1}`;", table, typeName ) );
-				}
-				RegisterTable( table );
-			}
-			
-			int newId = Convert.ToInt32( ExecuteScalar( string.Format( "insert into `{0}` values (); SELECT LAST_INSERT_ID();", table ) ) );
+			int newId = Convert.ToInt32( ExecuteScalar( string.Format( "insert into `{0}` (type) values ('{1}'); SELECT LAST_INSERT_ID();", UidGenTableName, typeName ) ) );
 			
 			log.Debug("GetNewId: ", newId );
 			
 			return newId;
         }
+		
+		public Type GetTypeForId( int id )
+		{
+			string type = (string) ExecuteScalar("SELECT type FROM uid WHERE ID = " + id);
+			if( type == null )
+				return null;
+			else
+				return TypeLoader.GetType(type);
+		}
         
         public int GetLatestVersion( AbstractRecord r )
         {
@@ -792,10 +825,6 @@ namespace EmergeTk.Model.Providers
 			if (dataType != null) 
 			{
 				pairs.Add(Util.Surround(col.Name, "`") + " " + dataType);
-				if( col.IsDerived )
-				{
-					pairs.Add(Util.Surround(col.Name + "__type", "`") + " varchar(128)");
-				}
 			}	
 		}
         
@@ -874,31 +903,9 @@ namespace EmergeTk.Model.Providers
 		public void CreateChildTable(string tableName, ColumnInfo col)
         {
 		   if ( LowerCaseTableNames ) tableName = tableName.ToLower();
-           bool create = false;
-        	
-            if (TableExists(tableName) )
-            {
-            	if( col.IsDerived )
-            	{
-	            	//make sure we have the right columns
-	            	long count = (long)ExecuteScalar( string.Format( SelectColumnFormat, DatabaseName, tableName, "Child_Type" ) );
-	            	//log.Debug(" child_type column exists sql returned: " + result + " type is " + result.GetType() );
-	            	//int count = (int)result;
-	            	if( count == 0 )
-	            	{
-	            		ExecuteNonQuery( string.Format("ALTER TABLE {0} ADD COLUMN Child_Type {1}", tableName, StringDataType) );
-	            	}
-	           	}
-            }
-            else
-            	create = true;
-            
-            if( create )
-            {
-				if( col.IsDerived )
-					ExecuteNonQuery(string.Format(CreateTableNoRowIdFormat, tableName, "Parent_Id int, Child_Id int, Child_Type varchar(128)"));					
-				else
-					ExecuteNonQuery(string.Format(CreateTableNoRowIdFormat, tableName, "Parent_Id int, Child_Id int"));		
+           if (!TableExists(tableName) )
+           {
+				ExecuteNonQuery(string.Format(CreateTableNoRowIdFormat, tableName, "Parent_Id int, Child_Id int"));		
 				existingTables[tableName] = true;
 
                 CreateChildTableIndex(tableName);
@@ -1081,10 +1088,7 @@ namespace EmergeTk.Model.Providers
 		public string GenerateAddChildTableStatement( string tableName, bool isDerived )
 		{
 			if ( LowerCaseTableNames ) tableName = tableName.ToLower();
-			if( isDerived )
-	    		return string.Format(GenerateChildTableFormat, tableName, "Parent_Id int, Child_Id int, Child_Type varchar(128)");
-			else
-				return string.Format(GenerateChildTableFormat, tableName, "Parent_Id int, Child_Id int");
+			return string.Format(GenerateChildTableFormat, tableName, "Parent_Id int, Child_Id int");
 		}
 		
 		public string CheckIdColumn( string table ) 

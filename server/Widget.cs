@@ -242,7 +242,7 @@ namespace EmergeTk
 
         public void Unbind(Binding binding)
         {
-        	if( NotifyPropertyChangedHandlers != null )
+        	if( NotifyPropertyChangedHandlers != null && NotifyPropertyChangedHandlers.ContainsKey(binding.DestinationProperty) )
         	{
             	NotifyPropertyChangedHandlers[binding.DestinationProperty] -= binding.OnDestinationChanged;
             	if (this.NotifyPropertyChangedHandlers[binding.DestinationProperty] == null)
