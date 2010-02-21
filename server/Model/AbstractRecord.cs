@@ -356,7 +356,7 @@ namespace EmergeTk.Model
 				throw new ArgumentNullException();	
 			}
 			ColumnInfo ci = this.GetFieldInfoFromName(PropertyName);
-			if( ci.ListRecordType != child.GetType() )
+			if( ci.ListRecordType != child.GetType() && ! child.GetType().IsSubclassOf( ci.ListRecordType ) )
 			{
 				throw new ArgumentException(string.Format("cannot remove relation with child of type {0} into list of type {1}", child.GetType(), ci.ListRecordType));
 			}
