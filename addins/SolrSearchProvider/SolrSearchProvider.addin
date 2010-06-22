@@ -1,0 +1,19 @@
+<Addin
+	id="SolrSearchProvider"
+	version="1.0"
+	name="EmergeTk Solr Search Provider"
+	description="Uses Solr to improve scalability for search"
+	url="http://www.emergetk.com/addins/solr"
+	defaultEnabled="false">
+	<Runtime>
+		<Import assembly="SolrNet.dll"/>
+	</Runtime>
+	
+	<Dependencies>
+		<Addin id="EmergeTk" version="1.0" />
+	</Dependencies>
+	
+	<Extension path="/EmergeTk/Model/SearchServiceProvider">
+		<SearchServiceProvider type="EmergeTk.Model.Search.SolrSearchProvider" />
+	</Extension>	
+</Addin>

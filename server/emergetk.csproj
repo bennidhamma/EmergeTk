@@ -1,0 +1,340 @@
+<?xml version="1.0" encoding="utf-8"?>
+<Project DefaultTargets="Build" xmlns="http://schemas.microsoft.com/developer/msbuild/2003" ToolsVersion="3.5">
+  <PropertyGroup>
+    <Configuration Condition=" '$(Configuration)' == '' ">Debug</Configuration>
+    <Platform Condition=" '$(Platform)' == '' ">AnyCPU</Platform>
+    <ProductVersion>9.0.21022</ProductVersion>
+    <ProjectGuid>{52E41D18-8F12-430D-B5B5-43C7BBA18F61}</ProjectGuid>
+    <OutputType>Library</OutputType>
+    <AssemblyName>EmergeTk</AssemblyName>
+    <SchemaVersion>2.0</SchemaVersion>
+    <FileUpgradeFlags>
+    </FileUpgradeFlags>
+    <OldToolsVersion>2.0</OldToolsVersion>
+    <UpgradeBackupLocation>
+    </UpgradeBackupLocation>
+    <TargetFrameworkVersion>v3.5</TargetFrameworkVersion>
+    <RootNamespace>emergetk</RootNamespace>
+    <AssemblyOriginatorKeyFile>.</AssemblyOriginatorKeyFile>
+  </PropertyGroup>
+  <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug|AnyCPU' ">
+    <DebugSymbols>true</DebugSymbols>
+    <DebugType>full</DebugType>
+    <Optimize>false</Optimize>
+    <OutputPath>bin\Debug</OutputPath>
+    <DefineConstants>DEBUG;$(WINDOWS)</DefineConstants>
+    <ErrorReport>prompt</ErrorReport>
+    <WarningLevel>4</WarningLevel>
+    <CheckForOverflowUnderflow>true</CheckForOverflowUnderflow>
+    <ConsolePause>false</ConsolePause>
+    <Execution>
+      <Execution clr-version="Net_2_0" />
+    </Execution>
+    <NoWarn>1587, 1591</NoWarn>
+  </PropertyGroup>
+  <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Release|AnyCPU' ">
+    <DebugType>none</DebugType>
+    <Optimize>true</Optimize>
+    <OutputPath>bin\Release</OutputPath>
+    <ErrorReport>prompt</ErrorReport>
+    <WarningLevel>4</WarningLevel>
+    <CheckForOverflowUnderflow>true</CheckForOverflowUnderflow>
+    <Execution>
+      <Execution clr-version="Net_2_0" />
+    </Execution>
+    <ConsolePause>false</ConsolePause>
+  </PropertyGroup>
+  <ItemGroup>
+    <Reference Include="Mono.Addins, Version=0.4.0.0, Culture=neutral, PublicKeyToken=0738eb9f132ed756">
+      <SpecificVersion>False</SpecificVersion>
+      <HintPath>..\..\lib\Mono.Addins.dll</HintPath>
+    </Reference>
+    <Reference Include="System" />
+    <Reference Include="System.Web" />
+    <Reference Include="System.Data" />
+    <Reference Include="System.Drawing" />
+    <Reference Include="System.Xml" />
+    <Reference Include="System.Configuration" />
+    <Reference Include="System.Core">
+      <RequiredTargetFramework>3.5</RequiredTargetFramework>
+    </Reference>
+    <Reference Include="log4net, Version=1.2.10.0, Culture=neutral, PublicKeyToken=1b44e1d426115821">
+      <SpecificVersion>False</SpecificVersion>
+      <HintPath>..\..\lib\log4net.dll</HintPath>
+    </Reference>
+    <Reference Include="Lucene.Net, Version=2.0.0.4, Culture=neutral, PublicKeyToken=null">
+      <SpecificVersion>False</SpecificVersion>
+      <HintPath>..\..\lib\Lucene.Net.dll</HintPath>
+    </Reference>
+    <Reference Include="System.Data.SQLite, Version=1.0.39.1, Culture=neutral, PublicKeyToken=db937bc2d44ff139">
+      <SpecificVersion>False</SpecificVersion>
+      <HintPath>..\..\lib\System.Data.SQLite.dll</HintPath>
+    </Reference>
+    <Reference Include="MySql.Data, Version=6.0.3.0, Culture=neutral, PublicKeyToken=c5687fc88969c44d">
+      <SpecificVersion>False</SpecificVersion>
+      <HintPath>..\..\lib\MySql.Data.dll</HintPath>
+    </Reference>
+    <Reference Include="CookComputing.XmlRpcV2, Version=2.3.2.0, Culture=neutral, PublicKeyToken=a7d6e17aa302004d">
+      <SpecificVersion>False</SpecificVersion>
+      <HintPath>..\..\lib\CookComputing.XmlRpcV2.dll</HintPath>
+    </Reference>
+    <Reference Include="Boo.Lang.CodeDom, Version=1.0.0.0, Culture=neutral, PublicKeyToken=32c39770e9a21a67">
+      <SpecificVersion>False</SpecificVersion>
+      <HintPath>..\..\lib\Boo.Lang.CodeDom.dll</HintPath>
+    </Reference>
+    <Reference Include="Boo.Lang.Compiler, Version=1.0.0.0, Culture=neutral, PublicKeyToken=32c39770e9a21a67">
+      <SpecificVersion>False</SpecificVersion>
+      <HintPath>..\..\lib\Boo.Lang.Compiler.dll</HintPath>
+    </Reference>
+    <Reference Include="Boo.Lang, Version=1.0.0.0, Culture=neutral, PublicKeyToken=32c39770e9a21a67">
+      <SpecificVersion>False</SpecificVersion>
+      <HintPath>..\..\lib\Boo.Lang.dll</HintPath>
+    </Reference>
+    <Reference Include="Boo.Lang.Interpreter, Version=1.0.0.0, Culture=neutral, PublicKeyToken=32c39770e9a21a67">
+      <SpecificVersion>False</SpecificVersion>
+      <HintPath>..\..\lib\Boo.Lang.Interpreter.dll</HintPath>
+    </Reference>
+    <Reference Include="Boo.Lang.Parser, Version=1.0.0.0, Culture=neutral, PublicKeyToken=32c39770e9a21a67">
+      <SpecificVersion>False</SpecificVersion>
+      <HintPath>..\..\lib\Boo.Lang.Parser.dll</HintPath>
+    </Reference>
+    <Reference Include="Boo.Lang.Useful, Version=1.0.0.0, Culture=neutral, PublicKeyToken=32c39770e9a21a67">
+      <SpecificVersion>False</SpecificVersion>
+      <HintPath>..\..\lib\Boo.Lang.Useful.dll</HintPath>
+    </Reference>
+    <Reference Include="gtk-sharp, Version=2.12.0.0, Culture=neutral, PublicKeyToken=35e10195dab3c99f">
+      <SpecificVersion>False</SpecificVersion>
+      <HintPath>..\lib\gtk-sharp.dll</HintPath>
+    </Reference>
+    <Reference Include="gdk-sharp, Version=2.12.0.0, Culture=neutral, PublicKeyToken=35e10195dab3c99f">
+      <SpecificVersion>False</SpecificVersion>
+      <HintPath>..\lib\gdk-sharp.dll</HintPath>
+    </Reference>
+  </ItemGroup>
+  <ItemGroup>
+    <Compile Include="AssemblyInfo.cs" />
+    <Compile Include="Context.cs" />
+    <Compile Include="ContextHandler.cs" />
+    <Compile Include="ContextHistoryFrame.cs" />
+    <Compile Include="Debug.cs" />
+    <Compile Include="FlashContext.cs" />
+    <Compile Include="HttpSurface.cs" />
+    <Compile Include="IDataBindable.cs" />
+    <Compile Include="IDataSource.cs" />
+    <Compile Include="JSON.cs" />
+    <Compile Include="Router.cs" />
+    <Compile Include="StringSurface.cs" />
+    <Compile Include="Surface.cs" />
+    <Compile Include="TypeLoader.cs" />
+    <Compile Include="Util.cs" />
+    <Compile Include="Widget.cs" />
+    <Compile Include="WidgetCollection.cs" />
+    <Compile Include="Model\AbstractRecord.cs" />
+    <Compile Include="Model\Binding.cs" />
+    <Compile Include="Model\ColumnInfo.cs" />
+    <Compile Include="Model\ColumnInfoManager.cs" />
+    <Compile Include="Model\DataProvider.cs" />
+    <Compile Include="Model\DataType.cs" />
+    <Compile Include="Model\FilterInfo.cs" />
+    <Compile Include="Model\PropertyConverter.cs" />
+    <Compile Include="Model\RecordComparer.cs" />
+    <Compile Include="Model\RecordList.cs" />
+    <Compile Include="Model\RecordListT.cs" />
+    <Compile Include="Model\SortInfo.cs" />
+    <Compile Include="Model\XMLRecord.cs" />
+    <Compile Include="Model\XMLTypeBuilder.cs" />
+    <Compile Include="Widgets\Html\Forms\ListBuilder.cs" />
+    <Compile Include="Widgets\Html\Literal.cs" />
+    <Compile Include="Widgets\Html\PlaceHolder.cs" />
+    <Compile Include="Widgets\Svg\Circle.cs" />
+    <Compile Include="Widgets\Svg\Gradient.cs" />
+    <Compile Include="Widgets\Svg\Group.cs" />
+    <Compile Include="Widgets\Svg\Host.cs" />
+    <Compile Include="Widgets\Svg\Image.cs" />
+    <Compile Include="Widgets\Svg\Line.cs" />
+    <Compile Include="Widgets\Svg\LineConnector.cs" />
+    <Compile Include="Widgets\Svg\Path.cs" />
+    <Compile Include="Widgets\Svg\Rect.cs" />
+    <Compile Include="Widgets\Svg\Text.cs" />
+    <Compile Include="Model\IDataProvider.cs" />
+    <Compile Include="Model\IdentityAttribute.cs" />
+    <Compile Include="IWidgetDecorator.cs" />
+    <Compile Include="Widgets\Html\HtmlElement.cs" />
+    <Compile Include="HtmlSurface.cs" />
+    <Compile Include="Widgets\Html\Generic.cs" />
+    <Compile Include="Model\IQueryInfo.cs" />
+    <Compile Include="ContextHostFileAttribute.cs" />
+    <Compile Include="Model\HelpTextAttribute.cs" />
+    <Compile Include="Model\Cache.cs" />
+    <Compile Include="Model\IgnoreTypeAttribute.cs" />
+    <Compile Include="Model\FriendlyNameAttribute.cs" />
+    <Compile Include="Model\IFilterRule.cs" />
+    <Compile Include="Model\FilterSet.cs" />
+    <Compile Include="Admin\Users.cs" />
+    <Compile Include="Model\Security\Exceptions.cs" />
+    <Compile Include="Model\Security\Group.cs" />
+    <Compile Include="Model\Security\Permission.cs" />
+    <Compile Include="Model\Security\Role.cs" />
+    <Compile Include="Model\Security\User.cs" />
+    <Compile Include="Model\Security\License.cs" />
+    <Compile Include="Model\ILicensed.cs" />
+    <Compile Include="Model\Security\DefaultUserTypeAttribute.cs" />
+    <Compile Include="Model\RecordDefinition.cs" />
+    <Compile Include="Admin\Designer.cs" />
+    <Compile Include="Logging\EmergeTkLog.cs" />
+    <Compile Include="Logging\EmergeTkLogManager.cs" />
+    <Compile Include="Logging\LogAppender.cs" />
+    <Compile Include="Model\AvailableRecordInfo.cs" />
+    <Compile Include="Model\DataGridColumn.cs" />
+    <Compile Include="Model\DataTypeFieldBuilder.cs" />
+    <Compile Include="Model\Exceptions.cs" />
+    <Compile Include="Model\Records\ImageRecord.cs" />
+    <Compile Include="Model\Records\FileRecord.cs" />
+    <Compile Include="Model\Records\Setting.cs" />
+    <Compile Include="Model\Records\WikiPage.cs" />
+    <Compile Include="Model\Providers\MySqlFilterFormatter.cs" />
+    <Compile Include="Model\Providers\MySqlProvider.cs" />
+    <Compile Include="Model\Providers\SqlServerProvider.cs" />
+    <Compile Include="Model\Providers\SQLiteProvider.cs" />
+    <Compile Include="Model\ICustomLoadable.cs" />
+    <Compile Include="Widgets\Html\Special\Browser.cs" />
+    <Compile Include="Widgets\Html\Special\CodeView.cs" />
+    <Compile Include="Widgets\Html\Special\FlashPane.cs" />
+    <Compile Include="Widgets\Html\Special\Login.cs" />
+    <Compile Include="Widgets\Html\Special\RequestPermission.cs" />
+    <Compile Include="Widgets\Html\Special\SlideShow.cs" />
+    <Compile Include="Widgets\Html\Special\WikiLink.cs" />
+    <Compile Include="Widgets\Html\Special\WikiPane.cs" />
+    <Compile Include="Widgets\Html\Lists\DefinitionList.cs" />
+    <Compile Include="Widgets\Html\Lists\ImageList.cs" />
+    <Compile Include="Widgets\Html\Lists\IPageable.cs" />
+    <Compile Include="Widgets\Html\Lists\Pager.cs" />
+    <Compile Include="Widgets\Html\Lists\QueryManager.cs" />
+    <Compile Include="Widgets\Html\Lists\Repeater.cs" />
+    <Compile Include="Widgets\Html\Lists\Scaffold.cs" />
+    <Compile Include="Widgets\Html\Lists\Template.cs" />
+    <Compile Include="Widgets\Html\Layout\Grid.cs" />
+    <Compile Include="Widgets\Html\Layout\HoverBox.cs" />
+    <Compile Include="Widgets\Html\Layout\Lightbox.cs" />
+    <Compile Include="Widgets\Html\Layout\Pane.cs" />
+    <Compile Include="Widgets\Html\Layout\SplitPane.cs" />
+    <Compile Include="Widgets\Html\Layout\TabPane.cs" />
+    <Compile Include="Widgets\Html\Layout\ToggleBox.cs" />
+    <Compile Include="Widgets\Html\Layout\Window.cs" />
+    <Compile Include="Widgets\Html\Information\FadingAlert.cs" />
+    <Compile Include="Widgets\Html\Information\Image.cs" />
+    <Compile Include="Widgets\Html\Information\Label.cs" />
+    <Compile Include="Widgets\Html\Information\MessageBox.cs" />
+    <Compile Include="Widgets\Html\Information\NotificationArea.cs" />
+    <Compile Include="Widgets\Html\Forms\DatePicker.cs" />
+    <Compile Include="Widgets\Html\Forms\DropDown.cs" />
+    <Compile Include="Widgets\Html\Forms\FileController.cs" />
+    <Compile Include="Widgets\Html\Forms\EnumDropDown.cs" />
+    <Compile Include="Widgets\Html\Forms\ImageUpload.cs" />
+    <Compile Include="Widgets\Html\Forms\FileUpload.cs" />
+    <Compile Include="Widgets\Html\Forms\ISubmittable.cs" />
+    <Compile Include="Widgets\Html\Forms\LabeledWidget.cs" />
+    <Compile Include="Widgets\Html\Forms\ModelForm.cs" />
+    <Compile Include="Widgets\Html\Forms\NumberSpinner.cs" />
+    <Compile Include="Widgets\Html\Forms\RecordController.cs" />
+    <Compile Include="Widgets\Html\Forms\RecordSelect.cs" />
+    <Compile Include="Widgets\Html\Forms\SelectItem.cs" />
+    <Compile Include="Widgets\Html\Forms\SelectList.cs" />
+    <Compile Include="Widgets\Html\Forms\TextBox.cs" />
+    <Compile Include="Widgets\Html\Forms\Slider.cs" />
+    <Compile Include="Widgets\Html\Communication\Comet.cs" />
+    <Compile Include="Widgets\Html\Communication\LoadingCallback.cs" />
+    <Compile Include="Widgets\Html\Communication\Poller.cs" />
+    <Compile Include="Widgets\Html\CommandInput\ButtonHandler.cs" />
+    <Compile Include="Widgets\Html\CommandInput\Button.cs" />
+    <Compile Include="Widgets\Html\CommandInput\ConfirmButton.cs" />
+    <Compile Include="Widgets\Html\CommandInput\ContextMenu.cs" />
+    <Compile Include="Widgets\Html\CommandInput\ImageButton.cs" />
+    <Compile Include="Widgets\Html\CommandInput\Link.cs" />
+    <Compile Include="Widgets\Html\CommandInput\LinkButton.cs" />
+    <Compile Include="Widgets\Html\CommandInput\MenuItem.cs" />
+    <Compile Include="Widgets\Html\CommandInput\ProgressButton.cs" />
+    <Compile Include="Widgets\Html\CommandInput\Toolbar.cs" />
+    <Compile Include="Widgets\Html\CommandInput\Tree.cs" />
+    <Compile Include="Widgets\Html\CommandInput\TreeNode.cs" />
+    <Compile Include="Widgets\Svg\Chart.cs" />
+    <Compile Include="Widgets\Svg\ILocatable.cs" />
+    <Compile Include="Widgets\Svg\Vector.cs" />
+    <Compile Include="ThemeManager.cs" />
+    <Compile Include="Model\EventArgs.cs" />
+    <Compile Include="EventArgs.cs" />
+    <Compile Include="Comet\CometClient.cs" />
+    <Compile Include="Comet\CometServer.cs" />
+    <Compile Include="Comet\FlashCometWriter.cs" />
+    <Compile Include="Comet\HtmlCometWriter.cs" />
+    <Compile Include="Comet\ICometWriter.cs" />
+    <Compile Include="Widgets\Html\Forms\VerifyPassword.cs" />
+    <Compile Include="Widgets\Html\ShadowDecorator.cs" />
+    <Compile Include="Widgets\Html\Autocomplete.cs" />
+    <Compile Include="Widgets\Html\RepeaterGroup.cs" />
+    <Compile Include="IGroupable.cs" />
+    <Compile Include="Widgets\Html\Lists\Calc.cs" />
+    <Compile Include="Widgets\Html\Special\XmlWidget.cs" />
+    <Compile Include="Widgets\Html\Special\ObjectView.cs" />
+    <Compile Include="Model\ISingular.cs" />
+    <Compile Include="Model\FieldReference.cs" />
+    <Compile Include="Admin\Admin.cs" />
+    <Compile Include="Admin\IAdmin.cs" />
+    <Compile Include="Widgets\Html\Layout\TogglePane.cs" />
+    <Compile Include="Logging\ColoredConsoleAppender.cs" />
+    <Compile Include="Logging\ConsoleCrayon.cs" />
+    <Compile Include="Model\CacheProvider.cs" />
+    <Compile Include="Admin\Addins.cs" />
+    <Compile Include="Widgets\Html\Layout\Stack.cs" />
+    <Compile Include="Widgets\Html\CommandInput\Dialog.cs" />
+    <Compile Include="Widgets\Html\Lists\ArrowBoxPager.cs" />
+    <Compile Include="Widgets\Html\Lists\ArrowPager.cs" />
+    <Compile Include="Widgets\Html\Lists\DirectionalPager.cs" />
+    <Compile Include="Model\Records\FilterRecord.cs" />
+    <Compile Include="Model\Records\SortRecord.cs" />
+    <Compile Include="MailUtil.cs" />
+    <Compile Include="ImageUtil.cs" />
+    <Compile Include="Widgets\Html\Special\BuildInfo.cs" />
+    <Compile Include="Model\Records\ScalarT.cs" />
+    <Compile Include="Widgets\Html\Special\SubmitTicket.cs" />
+    <Compile Include="Model\ConversionKey.cs" />
+    <Compile Include="Widgets\Html\Charting\Axis.cs" />
+    <Compile Include="Widgets\Html\Charting\AxisLabel.cs" />
+    <Compile Include="Widgets\Html\Charting\Chart.cs" />
+    <Compile Include="Widgets\Html\Charting\ChartPoint.cs" />
+    <Compile Include="Widgets\Html\Charting\Plot.cs" />
+    <Compile Include="Widgets\Html\Charting\Series.cs" />
+    <Compile Include="Widgets\Html\Charting\Theme.cs" />
+    <Compile Include="Model\Search\IndexManager.cs" />
+    <Compile Include="Model\ICacheProvider.cs" />
+    <Compile Include="Model\IRecord.cs" />
+    <Compile Include="Model\IRecordList.cs" />
+    <Compile Include="Model\IRecordListT.cs" />
+    <Compile Include="Model\Search\ISearchServiceProvider.cs" />
+    <Compile Include="IJSONSerializable.cs" />
+    <Compile Include="AddinHost.cs" />
+    <Compile Include="Model\Search\DefaultSearchFilterFormatter.cs" />
+    <Compile Include="Model\ReadCacheT.cs" />
+    <Compile Include="Model\IVersioned.cs" />
+    <Compile Include="Model\PagingRecordList.cs" />
+    <Compile Include="Model\Search\ISearchFilterFormatter.cs" />
+    <Compile Include="DynamicMethod.cs" />
+    <Compile Include="StopWatch.cs" />
+    <Compile Include="Model\Records\TupleRecord.cs" />
+    <Compile Include="Exceptions.cs" />
+    <Compile Include="Model\Search\IndexerFactory.cs" />
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="ChangeLog" />
+    <None Include="build.xml" />
+    <None Include="DataGridTester.xml" />
+    <None Include="BSD_LICENSE" />
+  </ItemGroup>
+  <Import Project="$(MSBuildBinPath)\Microsoft.CSharp.targets" />
+  <ProjectExtensions>
+    <VisualStudio />
+  </ProjectExtensions>
+  <ItemGroup>
+    <EmbeddedResource Include="EmergeTkAddinHost.addin" />
+  </ItemGroup>
+</Project>

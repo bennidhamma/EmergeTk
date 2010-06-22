@@ -1,0 +1,446 @@
+2009-01-29  Damien Joldersma  <damien@skullsquad.com>
+
+	* MailUtil.cs:
+	* Widgets/Html/Special/SubmitTicket.cs: Adjusted MailUtil and
+	SubmitTicket for chaos #102
+
+2009-01-29  Full Name  <Email Address>
+
+	* Admin/Admin.cs: refactor - extract anon delegate
+
+	* Widgets/Html/Forms/ModelForm.cs: pass bindings in modelform through
+	IWidgetDecorators.
+
+	* Widgets/Html/Lists/Scaffold.cs: eliminate uneccessary GetEditForm
+	call.
+
+	* Model/AbstractRecord.cs: add prelim support for Inserted bool on
+	AbstractRecord
+
+2009-01-22  Full Name  <Email Address>
+
+	* Widgets/Html/Forms/ModelForm.cs: prepend form id onto field widget ids
+	to prevent incorrect bindings.
+
+
+	* Model/DataTypeFieldBuilder.cs: add BindsTo in ModelForm earlier than
+	Init (in case a databind operation occurs first.)
+
+2009-01-15  Full Name  <Email Address>
+
+	* Widget.cs: delayedmouseargs
+
+	* Context.cs: support slashed sendurl
+
+	* Widgets/Html/CommandInput/Dialog.cs: paragraph formatting
+
+	* Widgets/Html/Lists/ArrowBoxPager.cs: arrow box fixes
+
+2009-01-13  Full Name  <Email Address>
+
+	* Context.cs: clearnotifications should hide the notification area.
+
+2009-01-13  Full Name  <Email Address>
+
+	* Widgets/Html/Layout/Lightbox.cs: better close behavior.
+
+2009-01-13  Full Name  <Email Address>
+
+	* Widgets/Html/Lists/Repeater.cs: testing support for pre-binding
+	viewtemplates for repeaters.
+
+2009-01-12  Damien Joldersma <damien@skullsquad.com> 
+
+	* Logging/EmergeTkLog.cs: Added convience method for Info
+
+2009-01-09  Full Name  <Email Address>
+
+	* Model/AbstractRecord.cs: removing type chaching,
+fix PutInCache bug -
+	missing ! caused RecordDefinition cache lists to not be correctly
+	created.
+
+2009-01-09  Full Name  <Email Address>
+
+	
+
+
+
+2009-01-07  Full Name  <Email Address>
+
+	* Widgets/Html/Lists/Repeater.cs: support emptyTemplates
+
+	* Model/AbstractRecord.cs: support clean lazy loading of children (will
+	set null no records exist.)
+
+2009-01-06  Damien Joldersma <damien@skullsquad.com> 
+
+	* Widgets/Html/Special/Login.cs, emergetk.csproj: Fix for ss-chaos #71,
+	  added test for login button to see if already logging in
+
+2009-01-06  Full Name  <Email Address>
+
+	* Widgets/Html/Lists/Repeater.cs: added support for Separator template.
+
+2009-01-05  Full Name  <Email Address>
+
+	
+
+
+
+2008-12-31  Full Name  <Email Address>
+
+	
+
+
+
+2008-12-19  Full Name  <Email Address>
+
+	* Widgets/Html/CommandInput/Dialog.cs: added titles to methods
+we can
+	add overrides later
+
+2008-12-19  Full Name  <Email Address>
+
+	
+
+
+
+2008-12-19  Full Name  <Email Address>
+
+	
+
+
+
+2008-12-19  Full Name  <Email Address>
+
+	* Widgets/Html/Lists/Scaffold.cs: much better support for scaffold
+	stacks.
+
+	* Util.cs: added shorten method.
+
+	* Model/RecordList.cs: added randomize method.
+
+2008-12-18  Full Name  <Email Address>
+
+	
+
+
+
+2008-12-18  Full Name  <Email Address>
+
+	* Widgets/Html/Layout/Stack.cs: remove widget on pop.
+
+2008-12-18  Full Name  <Email Address>
+
+	
+
+
+
+2008-12-18  Full Name  <Email Address>
+
+	* Widgets/Html/CommandInput/Dialog.cs: added Message static helper
+
+	* Logging/EmergeTkLog.cs: added log.DebugFormat
+
+	* Widgets/Html/Special/ObjectView.cs: databind child widgets of
+	objectview - this is a bit tricky.
+
+	* Model/PropertyConverter.cs: return null if input is empty string (and
+	outut is not string)
+
+2008-12-17  Full Name  <Email Address>
+
+	
+
+
+
+2008-12-16  Full Name  <Email Address>
+
+	
+
+
+
+2008-12-16  Full Name  <Email Address>
+
+	
+
+
+
+2008-12-16  Damien Joldersma <damien@skullsquad.com> 
+
+	* Model/AbstractRecord.cs, Model/IndexManager.cs: Some indexing bug
+	  fixes
+
+2008-12-15  Full Name  <Email Address>
+
+	
+
+
+
+2008-12-15  Full Name  <Email Address>
+
+	
+
+
+
+2008-12-13  Full Name  <Email Address>
+
+	* TypeLoader.cs: load all assemblies in bin folder.
+
+2008-12-12  Full Name  <Email Address>
+
+	
+
+
+
+2008-12-11  Full Name  <Email Address>
+
+	
+
+
+
+2008-12-05  Full Name  <Email Address>
+
+	
+
+
+
+2008-12-05  Full Name  <Email Address>
+
+	
+
+
+
+2008-12-05  Full Name  <Email Address>
+
+	* Widget.cs: set disabled property when enabled is true/false
+
+	* TypeLoader.cs: added FindGenericMethod helper
+
+2008-12-02  Full Name  <Email Address>
+
+	
+
+
+
+2008-11-25  Benjamin Joldersma  <ben@skullsquad.com>
+
+	
+
+
+
+2008-11-24  Benjamin Joldersma  <ben@skullsquad.com>
+
+	
+
+
+
+2008-11-21  Benjamin Joldersma  <ben@skullsquad.com>
+
+	* Model/RecordList.cs: added TestAny (tests for any containtment in
+	param irecordlist)
+
+	* Model/Records/FilterRecord.cs: performance enhancement to
+	filterrecord. no reason to encode/decode until we save/load -> db.
+
+	* Comet/CometServer.cs: don't brute force socket init.
+
+2008-11-21  Benjamin Joldersma  <ben@skullsquad.com>
+
+	
+
+
+
+2008-11-19  Benjamin Joldersma  <ben@skullsquad.com>
+
+	* Widget.cs: added onkeypress event.
+
+	* Context.cs: added simple sendclientnotification message.
+
+	* Model/AbstractRecord.cs: support base object equality if both objects
+	are unsaved.
+
+2008-11-13  Damien Joldersma <damien@skullsquad.com> 
+
+	* Admin/Admin.cs: Adjusted some style info 
+
+2008-11-12  Damien Joldersma <damien@skullsquad.com> 
+
+	* ImageUtil.cs: Added resize png :)
+
+2008-11-11  Benjamin Joldersma  <ben@skullsquad.com>
+
+	
+
+
+
+2008-11-11  Benjamin Joldersma  <ben@skullsquad.com>
+
+	
+
+
+
+2008-11-11  Benjamin Joldersma  <ben@skullsquad.com>
+
+	* Model/IndexManager.cs: debug cleanup
+
+2008-11-10  Benjamin Joldersma  <ben@skullsquad.com>
+
+	
+
+
+
+2008-11-09  Benjamin Joldersma  <ben@skullsquad.com>
+
+	
+
+
+
+2008-11-07  Benjamin Joldersma  <ben@skullsquad.com>
+
+	
+
+
+
+2008-11-07  Damien Joldersma <damien@skullsquad.com> 
+
+	
+
+2008-11-07  Benjamin Joldersma  <ben@skullsquad.com>
+
+	* Widgets/Html/Forms/DatePicker.cs: support expanded calendar mode. 
+	note: we are not supporting server initiated push events to the
+	client widget at this time for the inline calendar mode.
+
+	* Model/Records/FilterRecord.cs: simplistic equality heuristic.
+
+2008-11-07  Benjamin Joldersma  <ben@skullsquad.com>
+
+	* Widgets/Html/Forms/SelectList.cs: cleaned up selectlist  selectAll and
+	SelectNone methods.
+
+2008-11-06  Benjamin Joldersma  <ben@skullsquad.com>
+
+	
+
+
+
+2008-11-05  Benjamin Joldersma  <ben@skullsquad.com>
+
+	* Widgets/Html/Layout/TabPane.cs: cleaned up close logic a bit.
+
+	* Context.cs: added a doctype.
+
+2008-11-03  Benjamin Joldersma  <ben@skullsquad.com>
+
+	
+
+
+
+2008-10-31  Damien Joldersma <damien@skullsquad.com> 
+
+	* Context.cs, ThemeManager.cs: Added RequestScriptsBlock, automatically
+	  adds scripts 
+
+2008-10-31  Damien Joldersma <damien@skullsquad.com> 
+
+	* ThemeManager.cs: Made style block request check for browser type and
+	  name, if it finds a file ending that matches, it will append to
+	  style block
+
+2008-10-30  Benjamin Joldersma  <ben@skullsquad.com>
+
+	
+
+
+
+2008-10-29  Benjamin Joldersma  <ben@skullsquad.com>
+
+	
+
+
+
+2008-10-28  Benjamin Joldersma  <ben@skullsquad.com>
+
+	
+
+
+
+2008-10-27  Benjamin Joldersma  <ben@skullsquad.com>
+
+	* ThemeManager.cs: default flat inclusion any style sheets in root
+	styles directory.  additionally include sheets in namespace folder
+	path.
+
+	* Widgets/Html/Layout/TabPane.cs: add closeable property to tab pane.
+
+2008-10-27  Damien Joldersma <damien@skullsquad.com> 
+
+	* Admin/Admin.cs: Added some styling 
+
+2008-10-25  Benjamin Joldersma  <ben@skullsquad.com>
+
+	
+
+
+
+2008-10-24  Benjamin Joldersma  <ben@skullsquad.com>
+
+	
+
+
+
+2008-10-21  Benjamin Joldersma  <ben@skullsquad.com>
+
+	* Widgets/Html/Forms/SelectList.cs: add SelectAll, SelectNone,
+	ToggleItemSelection, and SetItemSelected methods.
+
+	* Widgets/Html/Forms/ModelForm.cs: added Template property, support
+	loading aribitrary edit templates.
+
+2008-10-20  Benjamin Joldersma  <ben@skullsquad.com>
+
+	* Logging/ColoredConsoleAppender.cs: dont treat strings as IEnumerables.
+
+	* Widgets/Html/Lists/Repeater.cs: support tables, cleaner objectview
+	integration.
+
+	* Model/AbstractRecord.cs: null ref check
+
+2008-10-19  Benjamin Joldersma  <ben@skullsquad.com>
+
+	* Model/Binding.cs: added stack behavior support to scaffolds.
+
+	* Widgets/Html/Forms/SelectList.cs: support viewTemplates in SelectList.
+
+2008-10-18  Benjamin Joldersma  <ben@skullsquad.com>
+
+	
+
+
+
+2008-10-17  Damien Joldersma <damien@skullsquad.com> 
+
+	* Widgets/Html/Special/BuildInfo.cs: Bug Fix
+
+2008-10-17  Damien Joldersma <damien@skullsquad.com> 
+
+	* Widgets/Html/Special/BuildInfo.cs: Bug Fix
+
+2008-10-17  Damien Joldersma <damien@skullsquad.com> 
+
+	* emergetk.mdp: BugFix
+
+2008-10-17  Damien Joldersma <damien@skullsquad.com> 
+
+	* Widgets/Html/Special/BuildInfo.cs: BugFix
+
+2008-10-17  Damien Joldersma <damien@skullsquad.com> 
+
+	* Widgets/Html/Special/BuildInfo.cs: Bug Fix
+
+2008-10-17  Damien Joldersma <damien@skullsquad.com> 
+
+	* Widgets/Html/Special/BuildInfo.cs: Added new BuildInfo widget
+

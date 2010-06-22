@@ -1,0 +1,9 @@
+<Addin id="EmergeTk" version="1.0" isroot="true">
+	<ExtensionPoint path = "/EmergeTk/Model/SearchServiceProvider">
+		<ExtensionNode name="SearchServiceProvider" type="Mono.Addins.TypeExtensionNode"/>
+	</ExtensionPoint>
+	
+	<ExtensionPoint path = "/EmergeTk/Model/CacheProvider">
+		<ExtensionNode name="CacheProvider" type="Mono.Addins.TypeExtensionNode"/>
+	</ExtensionPoint>
+</Addin>

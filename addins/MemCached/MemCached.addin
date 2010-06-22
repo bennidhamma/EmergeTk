@@ -1,0 +1,20 @@
+<Addin
+	id="MemCached"
+	version="1.0"
+	name="EmergeTk MemCached Cache Provider"
+	description="Uses memcached to improve scalability for caching"
+	url="http://www.emergetk.com/addins/memcached"
+	defaultEnabled="false"
+>
+	<Runtime>
+		<Import assembly="BeITMemcached.dll"/>
+	</Runtime>
+	
+	<Dependencies>
+		<Addin id="EmergeTk" version="1.0" />
+	</Dependencies>
+	
+	<Extension path="/EmergeTk/Model/CacheProvider">
+		<CacheProvider type="EmergeTk.Model.MemCacheClient" />
+	</Extension>	
+</Addin>

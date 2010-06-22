@@ -1,0 +1,46 @@
+ * write tests 25%.
+ * LOW: I'd like to get the serializers promoted into emergetk and used for the caching.  it should gain us some performance time.
+ 	(that or investigate google's protocol buffers.:)
+  * LOW: add a JSON strem writer mode.
+  * LOW: add a XML deserializer stream mode.
+  * LOW: general performance (currently ~100ms.  should be around 10ms!)
+  * Settings dont translate correctly to XML.
+  • make sure we're honoring RestIgnoreAttribute
+  • rethink paging / enumerables in record serialize lists.
+  * LOW - ETag support for GETs - investigate for PUTs as well.
+
+DONE
+
+ * XmlHttp friendly error output - DONE
+ * help / documentation view - DONE
+ * Login - DONE
+ * wire up authorization callbacks - DONE
+ * field security - DONE
+ * do we need to support field level accessors?  maybe we can wire that up in the record de/serializer, IoC. - DONE
+ * put counts into search results. - DONE
+ * Wildcard / field searching is not working right - * gets expanded to the initial request type, which is incorrect for 
+   property types (i.e. smartilst/12/filterDef * returns incorrect wildcard fields. - DONE
+ * implement more object types (banner,campaign,publisher,etc.) - DONE (simple)
+ * HIGH - BUG: if an xml list only has one item, it will not be converted to a MessageList - DONE
+ * HIGH: investiage lower casing of javasript property names. - DONE
+ * HIGH - Make sure that we can create a complex smartlist as one request. - DONE
+ * how do we add to and delete from property lists? DONE.
+ * create a RunBanners RPC Method, or decide to do this RESTfully.  - DONE
+ * LOW: Need to optimize User.Current - in the API world we don't have a context to store the reference on. DONE
+ *  * deal with dot accessors for field level permissions. (.Except(RestrictedFields()) won't catch these.) DONE
+ * Flesh out security logic, documentation for each type: DONE
+  * Advertiser DONE (v1)
+  * Publisher DONE (v1)
+  * Campaign DONE (v1)
+  * Banner DONE (v1)
+  * Zone DONE (v1)
+  * Playlist DONE (v1)
+  * Smartlist DONE (v1)
+  * FilterDefinition -- NOT DOING - TOO EXPENSIVE TO COMPUTE OWNER.
+  	-- FilterDefinition needs to be able to tell if a given user is it's owner or not.
+  * Keywords DONE (v1)
+  * Stats DONE (v1)
+  * UserSettings - HIGH: permissions.  MAKE SURE WE CANNOT MODIFY CHILD PROPS IF THEY DO NOT HAVE A SERVICE MGR -- DONE
+  * HIGH: need ability to change password & possibly username.
+
+

@@ -1,0 +1,9 @@
+<Addin id="EmergeTk" version="1.0" isroot="true">
+	<Runtime>
+		<Import assembly="bin/EmergeTk.dll"/>
+	</Runtime>
+
+	<ExtensionPoint path="/EmergeTk/Model/ICacheProvider">
+		<ExtensionNode name="CacheProvider" type="Mono.Addins.TypeExtensionNode"/>
+	</ExtensionPoint>
+</Addin>

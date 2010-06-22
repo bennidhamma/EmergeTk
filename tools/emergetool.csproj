@@ -1,0 +1,65 @@
+<?xml version="1.0" encoding="utf-8"?>
+<Project DefaultTargets="Build" xmlns="http://schemas.microsoft.com/developer/msbuild/2003" ToolsVersion="3.5">
+  <PropertyGroup>
+    <Configuration Condition=" '$(Configuration)' == '' ">Debug</Configuration>
+    <Platform Condition=" '$(Platform)' == '' ">AnyCPU</Platform>
+    <ProductVersion>9.0.21022</ProductVersion>
+    <SchemaVersion>2.0</SchemaVersion>
+    <ProjectGuid>{59AC2343-77BC-4E5D-9610-E27C3A2E8DFF}</ProjectGuid>
+    <OutputType>Exe</OutputType>
+    <TargetFrameworkVersion>v3.5</TargetFrameworkVersion>
+    <RootNamespace>emergetool</RootNamespace>
+  </PropertyGroup>
+  <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug|AnyCPU' ">
+    <DebugSymbols>true</DebugSymbols>
+    <DebugType>full</DebugType>
+    <Optimize>false</Optimize>
+    <OutputPath>bin\</OutputPath>
+    <DefineConstants>DEBUG</DefineConstants>
+    <ErrorReport>prompt</ErrorReport>
+    <WarningLevel>4</WarningLevel>
+    <Commandlineparameters>synchronizer -iv</Commandlineparameters>
+    <AssemblyName>emergetool</AssemblyName>
+  </PropertyGroup>
+  <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Release|AnyCPU' ">
+    <DebugType>none</DebugType>
+    <Optimize>false</Optimize>
+    <OutputPath>bin\Release</OutputPath>
+    <ErrorReport>prompt</ErrorReport>
+    <WarningLevel>4</WarningLevel>
+    <AssemblyName>tools</AssemblyName>
+  </PropertyGroup>
+  <Import Project="$(MSBuildBinPath)\Microsoft.CSharp.targets" />
+  <ItemGroup>
+    <Compile Include="src\DatabaseSynchronizer.cs" />
+    <Compile Include="src\IEmergeTool.cs" />
+    <Compile Include="src\SynchronizerEmergeTool.cs" />
+    <Compile Include="src\EmergeTools.cs" />
+  </ItemGroup>
+  <ItemGroup>
+    <Reference Include="System.Data" />
+    <Reference Include="System" />
+    <Reference Include="System.Core">
+      <RequiredTargetFramework>3.5</RequiredTargetFramework>
+    </Reference>
+    <Reference Include="log4net, Version=1.2.10.0, Culture=neutral, PublicKeyToken=1b44e1d426115821">
+      <SpecificVersion>False</SpecificVersion>
+      <HintPath>lib\log4net.dll</HintPath>
+    </Reference>
+    <Reference Include="MySql.Data, Version=5.2.1.0, Culture=neutral, PublicKeyToken=088261ef05df5583">
+      <SpecificVersion>False</SpecificVersion>
+      <HintPath>lib\MySql.Data.dll</HintPath>
+    </Reference>
+    <Reference Include="NDesk.Options, Version=0.2.1.0, Culture=neutral, PublicKeyToken=null">
+      <SpecificVersion>False</SpecificVersion>
+      <HintPath>lib\ndesk-options-0.2.1.bin\lib\ndesk-options\NDesk.Options.dll</HintPath>
+    </Reference>
+    <Reference Include="System.Web.Extensions">
+      <RequiredTargetFramework>3.5</RequiredTargetFramework>
+    </Reference>
+    <Reference Include="System.Xml" />
+  </ItemGroup>
+  <ItemGroup>
+    <Folder Include="lib\ndesk-options-0.2.1.bin\lib\ndesk-options\" />
+  </ItemGroup>
+</Project>
