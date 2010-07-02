@@ -1512,6 +1512,8 @@ namespace EmergeTk.Model
         		loadedProperties = new HashSet<string>();
         	if( ! loadedProperties.Contains( prop ) )
         	{
+				var originalLoading = this.loading;
+				this.loading = true;
         		IRecordList<T> list = this.LoadChildren<T>(this.GetFieldInfoFromName(prop));
 				list.Clean = true;
 				if( list.Count > 0 || createIfEmpty )
@@ -1519,6 +1521,7 @@ namespace EmergeTk.Model
         			this[prop] = list;
 				}
         		loadedProperties.Add(prop);
+				this.loading = originalLoading;
         	}
 		}
 

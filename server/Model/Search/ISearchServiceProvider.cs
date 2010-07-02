@@ -33,6 +33,7 @@ namespace EmergeTk.Model.Search
         bool RandomSort { get; set; }  // add an additional random sort on the end? 
         IFacets Facets { get; set;  }
         IMoreLikeThis MoreLikeThis { get; set; }
+        IDictionary<String, String> ExtraParams {get; set;}
     }
 
     public interface ISearchProviderQueryResults<T>
@@ -41,6 +42,7 @@ namespace EmergeTk.Model.Search
         IEnumerable<T> Results { get; }
         IDictionary<T, int> MoreLikeThisOrder { get; }
         IDictionary<String, ICollection<KeyValuePair<String, int>>> Facets { get; }
+        IDictionary<String, int> FacetQueries { get; }
     }    
 
 	public interface ISearchServiceProvider
@@ -73,8 +75,8 @@ namespace EmergeTk.Model.Search
         IRecordList<T> Search<T>(string query, SortInfo sort, int start, int count, out int numFound) where T : AbstractRecord, new();
         List<RecordKey> SearchInt(string field, string query, string type, SortInfo[] sorts, int start, int count, out int numFound);
         List<RecordKey> SearchInt(string field, FilterSet mainQuery, FilterSet cachedQueries, string type, SortInfo[] sorts, int start, int count, out int numFound);
-        ISearchProviderQueryResults<T> Search<T>(FilterSet mainQuery, FilterSet cachedQueries, ISearchOptions options) where T : AbstractRecord, new();
-        ISearchProviderQueryResults<RecordKey> SearchInt(FilterSet mainQuery, FilterSet cachedQueries, ISearchOptions options);
+        ISearchProviderQueryResults<T> Search<T>(String mainQuery, FilterSet cachedQueries, ISearchOptions options) where T : AbstractRecord, new();
+        ISearchProviderQueryResults<RecordKey> SearchInt(String mainQuery, FilterSet cachedQueries, ISearchOptions options);
         ISearchOptions GenerateOptionsObject();
         IFacets GenerateFacetsObject();
         IMoreLikeThis GenerateMoreLikeThisObject();

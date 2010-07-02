@@ -269,7 +269,7 @@ namespace EmergeTk.Model.Search
 			foreach( T t in results )
 			{
 				list.Add( t );
-				//log.Debug("adding result", t );
+				log.Debug("adding result", t );
 			}
 			log.DebugFormat("SOLR numFound: {0} # Records: {1} ", results.NumFound, list.Count );
 			numFound = results.NumFound;
@@ -448,16 +448,14 @@ namespace EmergeTk.Model.Search
 			return new SolrFilterFormatter();
 		}
 
-		public ISearchProviderQueryResults<T> Search<T>(FilterSet mainQuery, FilterSet cachedQuery, ISearchOptions options) where T : AbstractRecord, new()           
+		public ISearchProviderQueryResults<T> Search<T>(String query, FilterSet cachedQuery, ISearchOptions options) where T : AbstractRecord, new()           
 		{
             SolrSearchProvider.ProviderWatch.Start();
             StopWatch watch = new StopWatch("SolrSearchProvider.Search<T>", queryLog);
             watch.Start();
-            String query = GetFilterFormatter().BuildQuery(mainQuery);
-            QueryOptions queryOptions = PrepareQueryOptions(options, cachedQuery);
+            QueryOptions queryOptions = PrepareQueryOptions(ref query, options, cachedQuery);
             SolrQLogString(query, queryOptions);
-            query += " RecordType:" + options.Type;
-			SolrConnection conn = GetConnection();
+            SolrConnection conn = GetConnection();
 			SolrQuery q = new SolrQuery(query);
 			SolrQueryExecuter<T> queryExec = new SolrQueryExecuter<T>(conn, new EmergeTkParser<T>(options));
 
@@ -470,6 +468,7 @@ namespace EmergeTk.Model.Search
 			SolrSearchProviderQueryResults<T> results = new SolrSearchProviderQueryResults<T>();
 			results.Results = resultsSolrNet;
 			results.Facets = resultsSolrNet.FacetFields;
+            results.FacetQueries = resultsSolrNet.FacetQueries;
 			results.NumFound = resultsSolrNet.NumFound;
 
             if (options.MoreLikeThis != null)
@@ -502,17 +501,17 @@ namespace EmergeTk.Model.Search
                 yield return selector(kvp.Key);
         }
 
-		public ISearchProviderQueryResults<RecordKey> SearchInt(FilterSet mainQuery, FilterSet cachedQuery, ISearchOptions options)
+        
+		public ISearchProviderQueryResults<RecordKey> SearchInt(String query, FilterSet cachedQuery, ISearchOptions options)
 		{
             SolrSearchProvider.ProviderWatch.Start();
             StopWatch watch = new StopWatch("SolrSearchProvider.SearchInt<RecordKey>", queryLog);
             watch.Start();
 
-            String query = GetFilterFormatter().BuildQuery(mainQuery);
-			QueryOptions queryOptions = PrepareQueryOptions(options, cachedQuery);
+        	QueryOptions queryOptions = PrepareQueryOptions(ref query, options, cachedQuery);
             SolrQLogString(query, queryOptions);
-            query += " RecordType:" + options.Type;
-			SolrConnection conn = GetConnection();
+            SolrConnection conn = GetConnection();
+
 			SolrQuery q = new SolrQuery(query);
 			SolrQueryExecuter<RecordKey> queryExec = new SolrQueryExecuter<RecordKey>(conn, new EmergeTkFastParser(options));
 
@@ -525,6 +524,7 @@ namespace EmergeTk.Model.Search
 			SolrSearchProviderQueryResults<RecordKey> results = new SolrSearchProviderQueryResults<RecordKey>();
 			results.Results = resultsSolrNet;
 			results.Facets = resultsSolrNet.FacetFields;
+            results.FacetQueries = resultsSolrNet.FacetQueries;
 			results.NumFound = resultsSolrNet.NumFound;
 
             if (options.MoreLikeThis != null)
@@ -586,7 +586,7 @@ namespace EmergeTk.Model.Search
             }
         }
 
-		private QueryOptions PrepareQueryOptions(ISearchOptions options, FilterSet cachedQueries)
+		private QueryOptions PrepareQueryOptions(ref String query, ISearchOptions options, FilterSet cachedQueries)
 		{
 			QueryOptions queryOptions = new QueryOptions();
 			queryOptions.Rows = options.Rows;
@@ -619,6 +619,22 @@ namespace EmergeTk.Model.Search
 				queryOptions.MoreLikeThis = moreLikeThisParms;
 			}
             AddCachedQueries(queryOptions, cachedQueries);
+
+            if (String.IsNullOrEmpty(query))
+            {
+                // if the query string is empty, then we need to force it to the standard handler.
+                if (options.ExtraParams == null)
+                    options.ExtraParams = new Dictionary<string, string> { { "qt", "standard" } };
+                else
+                    options.ExtraParams["qt"] = "standard";
+
+                // use standard handler syntax for all documents returned. 
+                query = "*:*";
+            }
+
+            if (options.ExtraParams != null)
+                queryOptions.ExtraParams = options.ExtraParams;
+
 			return queryOptions;
 		}
 
@@ -629,7 +645,8 @@ namespace EmergeTk.Model.Search
                 ISearchFilterFormatter formatter = GetFilterFormatter();
                 foreach (IFilterRule rule in cachedQueries.Rules)
                 {
-                    queryOptions.FilterQueries.Add(new SolrQuery(formatter.BuildQuery(rule)));
+                    String queryPlusTag = String.Format("{{!tag={0}}}{1}", ((FilterInfo)rule).ColumnName, formatter.BuildQuery(rule));
+                    queryOptions.FilterQueries.Add(new SolrQuery(queryPlusTag));
                 }
             }
         }
@@ -801,41 +818,53 @@ namespace EmergeTk.Model.Search
 		}
 	}
 
+
     public class FacetAndMoreLikeThisLoader
     {
         private static readonly EmergeTkLog log = EmergeTkLogManager.GetLogger(typeof(FacetAndMoreLikeThisLoader));
 
-        static public void LoadFacets<T>(SolrQueryResults<T> results, XmlDocument xml)
+        static private void AddFacetFieldItems(XmlDocument xml, String xPath, Dictionary<String, ICollection<KeyValuePair<String, int>>> facetFields)
         {
-            // get the facet fields
-            XmlNodeList lsts = xml.SelectNodes("/response/lst[@name=\"facet_counts\"]/lst[@name=\"facet_fields\"]/lst");
-            Dictionary<String, ICollection<KeyValuePair<String, int>>> facetFields = new Dictionary<string, ICollection<KeyValuePair<string, int>>>(StringComparer.CurrentCultureIgnoreCase);
-
+            XmlNodeList lsts = xml.SelectNodes(xPath);
             foreach (XmlNode lst in lsts)
             {
-                String name = lst.Attributes.GetNamedItem("name").Value;
+                String facetName = lst.Attributes.GetNamedItem("name").Value;
                 Dictionary<String, int> facetField = new Dictionary<string, int>();
 
                 XmlNodeList values = lst.SelectNodes("int");
-                foreach (XmlNode item in values)
+                foreach (XmlNode facetItemXmlNode in values)
                 {
-                    String itemName = item.Attributes.GetNamedItem("name").Value;
-                    facetField.Add(itemName, Convert.ToInt32(item.InnerText));
+                    XmlNode nameItemAttr = facetItemXmlNode.Attributes.GetNamedItem("name");
+                    String itemName = (nameItemAttr == null) ? "Missing" : nameItemAttr.Value;
+                    facetField.Add(itemName, Convert.ToInt32(facetItemXmlNode.InnerText));
                 }
-                facetFields.Add(name, facetField);
+                facetFields.Add(facetName, facetField);
             }
+        }
+
+        static public void LoadFacets<T>(SolrQueryResults<T> results, XmlDocument xml)
+        {
+            Dictionary<String, ICollection<KeyValuePair<String, int>>> facetFields = new Dictionary<string, ICollection<KeyValuePair<string, int>>>(StringComparer.CurrentCultureIgnoreCase);
+
+            // get the facet fields
+            AddFacetFieldItems(xml, "/response/lst[@name=\"facet_counts\"]/lst[@name=\"facet_fields\"]/lst", facetFields);
+            // now get the facet dates
+            AddFacetFieldItems(xml, "/response/lst[@name=\"facet_counts\"]/lst[@name=\"facet_dates\"]/lst", facetFields);
+
             results.FacetFields = facetFields;
 
             // get the facet queries
-            lsts = xml.SelectNodes("/response/lst[@name=\"facet_counts\"]/lst[@name=\"facet_queries\"]");
+            XmlNodeList intList = xml.SelectNodes("/response/lst[@name=\"facet_counts\"]/lst[@name=\"facet_queries\"]/int");
             Dictionary<String, int> facetQueries = new Dictionary<string, int>(StringComparer.CurrentCultureIgnoreCase);
-            foreach (XmlNode lst in lsts)
+            foreach (XmlNode intItem in intList)
             {
-                String name = lst.Attributes.GetNamedItem("name").Value;
-                if (!String.IsNullOrEmpty(name) && !String.IsNullOrEmpty(lst.InnerText))
-                    facetQueries.Add(name, Convert.ToInt32(lst.InnerText));
+                XmlNode nameItem = intItem.Attributes.GetNamedItem("name");
+                String name = nameItem.Value;
+                if (!String.IsNullOrEmpty(name) && !String.IsNullOrEmpty(intItem.InnerText))
+                    facetQueries.Add(name, Convert.ToInt32(intItem.InnerText));
             }
-            results.FacetQueries = facetQueries;
+            if (facetQueries.Count > 0)
+                results.FacetQueries = facetQueries;
         }
 
         private static int GetRecordId(XmlNode result, out string type)
@@ -974,6 +1003,7 @@ namespace EmergeTk.Model.Search
         }
 		public IFacets Facets { get; set; }
 		public IMoreLikeThis MoreLikeThis { get; set; }
+        public IDictionary<String, String> ExtraParams { get; set; }
         
 
 		public SolrSearchOptions()
@@ -1052,6 +1082,7 @@ namespace EmergeTk.Model.Search
 	public class SolrSearchProviderQueryResults<T> : ISearchProviderQueryResults<T>
 	{
 		private Dictionary<String, ICollection<KeyValuePair<String, int>>> facets;
+        private IDictionary<String, int> facetQueries;
 		private IEnumerable<T> results;
         private IDictionary<T, int> moreLikeThisOrder;
 		private int numFound = 0;
@@ -1079,6 +1110,9 @@ namespace EmergeTk.Model.Search
 				facets = (Dictionary<String, ICollection<KeyValuePair<String, int>>>)value;
 			}
 		}
+
+
+        public IDictionary<string, int> FacetQueries { get; set; }
 
 		public int NumFound
 		{

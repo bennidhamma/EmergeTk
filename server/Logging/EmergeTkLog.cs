@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using System.Diagnostics;
 using System.Web;
 using log4net;
@@ -10,13 +11,14 @@ namespace EmergeTk
 	
 	public class EmergeTkLog  : LogImpl
 	{
+		public List<string> Errors { get; set; }
 		
 		protected virtual string GetPrefix(){ return ""; } 
 		
         public EmergeTkLog(ILogger logger)
             : base(logger)
 		{
-			// empty
+			Errors = new List<string>();
 		}
 		
         [Conditional ("DEBUG")]

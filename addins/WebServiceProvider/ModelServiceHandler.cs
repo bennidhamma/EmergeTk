@@ -153,15 +153,7 @@ QueryString args:
 
             writer.OpenRoot("response");
             writer.WriteProperty("total", numFound);
-
-            if (start != -1 && requestCount != -1)
-            {
-                RecordSerializer.Serialize(GetPageSet(records, start, requestCount), args["fields"], records.RecordType, writer);
-            }
-            else
-            {
-                RecordSerializer.Serialize(records, args["fields"], writer);
-            }
+            RecordSerializer.Serialize(records, args["fields"], writer);
             writer.WriteProperty("start", start);
             writer.CloseRoot();
        	}
@@ -258,6 +250,12 @@ QueryString args:
 			writer.CloseProperty();
             writer.CloseObject();
             writer.Flush();  // seems to be necessary to get the XML version to just write out a single <total>\d+</total> element.
+		}
+		
+		[MessageServiceEndPoint("saveAll", Verb=RestOperation.Post)]
+		public void SaveAll(MessageEndPointArguments arguments)
+		{
+			DataProvider.LoadList<T>().Save();
 		}
 		
 		[MessageServiceEndPoint("",Verb=RestOperation.Post)]

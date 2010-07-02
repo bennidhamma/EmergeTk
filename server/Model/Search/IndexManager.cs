@@ -373,12 +373,12 @@ namespace EmergeTk.Model.Search
 			return new LuceneFilterFormatter();
 		}
 
-        public ISearchProviderQueryResults<T> Search<T>(FilterSet mainQuery, FilterSet cachedQueries, ISearchOptions options) where T : AbstractRecord, new()
+        public ISearchProviderQueryResults<T> Search<T>(String mainQuery, FilterSet cachedQueries, ISearchOptions options) where T : AbstractRecord, new()
         {
             throw new NotImplementedException();
         }
 
-        public ISearchProviderQueryResults<RecordKey> SearchInt(FilterSet mainQuery, FilterSet cachedQueries, ISearchOptions options)
+        public ISearchProviderQueryResults<RecordKey> SearchInt(String mainQuery, FilterSet cachedQueries, ISearchOptions options)
         {
             throw new NotImplementedException();
         }
