@@ -138,25 +138,138 @@ QueryString args:
 		public void GetSearch(MessageEndPointArguments arguments)
 		{
 			NameValueCollection args = arguments.QueryString;
+			
+			var writer = arguments.Response.Writer;
 			string query = args["q"];
-			int requestCount = args["count"] != null ? int.Parse(args["count"]) : 10;
-			int start = args["start"] != null ? int.Parse(args["start"]) : 0;	
-			SortInfo sortInfo = GetSortInfo(args["sortBy"]);
-			int numFound = 0;
-            // let's limit the page size to something reasonable for now.  
-            int pageSizeCap = Setting.GetValueT<int>("SearchPageSizeCap", 100);
-            requestCount = requestCount < pageSizeCap ? requestCount : pageSizeCap;
+            int requestCount = args["count"] != null ? int.Parse(args["count"]) : 10;
+            int start = args["start"] != null ? int.Parse(args["start"]) : 0;
 
-			IRecordList<T> records = IndexManager.Instance.Search<T>(query,sortInfo, start, requestCount, out numFound);
-			//TODO: since solr handles paging for us, we want to always build a return list frmo the records starting at index 0.
-            IMessageWriter writer = arguments.Response.Writer;
+            SortInfo sortInfo = this.GetSortInfo(args["sortBy"]);
 
+            // build response object
             writer.OpenRoot("response");
-            writer.WriteProperty("total", numFound);
-            RecordSerializer.Serialize(records, args["fields"], writer);
+
+            Type type = typeof(T);
+            RestTypeDescription att = WebServiceManager.Manager.GetRestTypeDescription(type);
+
+            ISearchOptions options = IndexManager.Instance.GenerateOptionsObject();
+            options.Type = type.ToString();
+            options.Facets = GetFacets(args);
+            options.Rows = requestCount;
+            options.Sort = sortInfo;
+            options.Start = start;
+
+            // set up the query handler to use.
+            if (!string.IsNullOrEmpty(args["qt"]) )
+                options.ExtraParams = new Dictionary<string, string> { { "qt", args["qt"] } };
+
+			ISearchProviderQueryResults<RecordKey> results = IndexManager.Instance.SearchInt(query, null, options);
+			List<int> ids = results.Results.Select(rk => rk.Id).ToList();
+			IRecordList<T> recordsFound = DataProvider.LoadList<T>(new FilterInfo("ROWID", ids, FilterOperation.In));			
+
+            try
+            {
+                RecordSerializer.Serialize(recordsFound, args["fields"], type, writer);
+            }
+            catch (Exception ex)
+            {
+                log.Error("Error serializing primary results", ex);
+                throw ex;
+            }
+
+            writer.WriteProperty("total", results.NumFound);
+            writer.WriteProperty("count", recordsFound.Count);
             writer.WriteProperty("start", start);
+
+            if (results.Facets != null && results.Facets.Count > 0)
+            {
+                writer.OpenProperty("facets");
+                writer.OpenObject();
+                foreach (KeyValuePair<String, ICollection<KeyValuePair<String, int>>> kvp in results.Facets)
+                {
+                    String facetValueName = kvp.Key;
+                    ICollection<KeyValuePair<String, int>> facetFieldValues = kvp.Value;
+
+                    writer.OpenProperty(facetValueName);
+                    writer.OpenList(facetValueName + "Value");
+
+                    foreach (KeyValuePair<String, int> facetFieldValue in facetFieldValues)
+                    {
+                        writer.OpenProperty("facet");
+                        writer.OpenObject();
+                        writer.WriteProperty("value", facetFieldValue.Key);
+                        writer.WriteProperty("count", facetFieldValue.Value);
+                        writer.CloseObject();
+                        writer.CloseProperty();
+                    }
+
+                    writer.CloseList();
+                    writer.CloseProperty();
+                }
+                writer.CloseObject();
+                writer.CloseProperty();
+            }
+            if (results.FacetQueries != null && results.FacetQueries.Count > 0)
+            {
+                writer.OpenProperty("facetQueries");
+                writer.OpenObject();
+
+                foreach (KeyValuePair<string, int> kvp in results.FacetQueries)
+                {
+                    writer.WriteProperty(kvp.Key, kvp.Value);
+                }
+
+                writer.CloseObject();
+                writer.CloseProperty();
+            }
+
             writer.CloseRoot();
        	}
+		
+		private IFacets GetFacets(NameValueCollection args)
+        {
+            String facetsbool = args["facet"];
+            bool facets = false;
+            if (!bool.TryParse(facetsbool, out facets) || facets == false)
+                return null;
+
+            IFacets facetsItf = IndexManager.Instance.GenerateFacetsObject();
+            String facetFields = args["facetFields"];
+            if (!String.IsNullOrEmpty(facetFields))
+            {
+                String[] tokens = facetFields.Split(',');
+                int count = tokens.GetLength(0);
+                for (int i = 0; i < count; i++)
+                {
+                    facetsItf.Fields.Add(tokens[i]);
+                }
+            }
+            facetsItf.Limit = GetIntArg(args, "facetLimit", "DefaultFacetLimit", 10);
+            facetsItf.MinCount = GetIntArg(args, "facetMinCount", "DefaultFacetMinCount", 1);
+            return facetsItf;
+        }
+		
+		private int GetIntArg(NameValueCollection args, String argName, String settingName, int settingDefault)
+        {
+            int valueInt;
+            String valueString = args[argName];
+            if (!Int32.TryParse(valueString, out valueInt))
+            {
+                valueInt = Setting.GetValueT<int>(settingName, settingDefault);
+            }
+            return valueInt;
+        }
+
+        private bool GetBoolArg(NameValueCollection args, String argName, String settingName, bool settingDefault)
+        {
+            bool valueBool;
+            String valueString = args[argName];
+            if (!bool.TryParse(valueString, out valueBool))
+            {
+                valueBool = Setting.GetValueT<bool>(settingName, settingDefault);
+            }
+            return valueBool;
+        }
 		
 		[MessageServiceEndPoint("",Verb=RestOperation.Get)]
 		public void Get(MessageEndPointArguments arguments)
