@@ -50,4 +50,13 @@ namespace EmergeTk.Model
         new IRecordList<T> Filter(Predicate<AbstractRecord> record);
         T[] ToArrayT();
     }
+	
+	public static class IRecordListExtensions 
+	{
+		public static void Refresh<T>( this IRecordList<T> list ) where T : AbstractRecord, new()
+		{
+			for(int i = 0; i < list.Count; i++ )
+				list[i] = AbstractRecord.Load<T>(list[i].Id);
+		}
+	}
 }

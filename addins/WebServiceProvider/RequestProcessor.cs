@@ -43,6 +43,15 @@ namespace EmergeTk.WebServices
 		{
 			log.Debug("routing request", verb, subPath, args, message );
 			Response response = new Response();
+			if( HttpContext.Current.Request.Headers["x-5to1-expires"] != null )
+			{
+				//string expire = request.QueryString["expire"];
+				//context.Response.AddHeader("Cache-Control",string.Format("max-age={0}, public", expire ) );
+				//context.Response.Expires = int.Parse( request.QueryString["expire"] );
+				response.Expires = int.Parse( HttpContext.Current.Request.Headers["x-5to1-expires"] );
+				response.Cacheability = HttpCacheability.Public;				
+			}
+			log.Debug("caching:", response.Expires, response.Cacheability);
 			response.StatusCode = 404;
 			response.StatusDescription = "Service not found.";
             response.Writer = writer;
@@ -70,6 +79,7 @@ namespace EmergeTk.WebServices
 					response.StatusCode = 200;
 					response.StatusDescription = "OK";
 					MessageEndPointArguments arguments = new MessageEndPointArguments();
+					arguments.Cacheability = response.Cacheability;
 					arguments.InMessage = message;
 					arguments.Matches = m;
 					arguments.QueryString = args;
@@ -88,7 +98,7 @@ namespace EmergeTk.WebServices
 
         private void BuildResponse(Response resp, MessageEndPointArguments arguments)
         {
-            resp.CacheControl = arguments.CacheControl;
+            resp.Cacheability = arguments.Cacheability;;
             resp.Expires = arguments.Expires;
         }
 	}

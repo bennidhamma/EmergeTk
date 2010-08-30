@@ -114,6 +114,8 @@ namespace EmergeTk
 				//first trim any gunk
 				s = s.Trim();
 				//then kill the quotes
+				if (s.Contains("\\"))
+					s = s.Replace("\\", "");
 				if( s[0] == '\"' ) 
 					s = s.Substring(1,s.Length-2);
         		return s;
@@ -155,7 +157,6 @@ namespace EmergeTk
         	StringBuilder sb = new StringBuilder();
         	int nestLevel = 0;
         	bool inQuotes = false;
-        	char lastChar = '\0';
 			
 			//handle escaped characters
 			//see http://www.ietf.org/rfc/rfc4627.txt?number=4627 section 2.5
@@ -164,6 +165,7 @@ namespace EmergeTk
         		char c = s[i];
 				if( c == '\\' )
 				{
+					sb.Append('\\');
 					switch(s[i+1])
 					{
 					case 'u':
@@ -225,7 +227,6 @@ namespace EmergeTk
         				break;	        				 
         		}
 				sb.Append(c);
-        		lastChar = c;
         	}
         	if( sb.Length > 0 )
         	{

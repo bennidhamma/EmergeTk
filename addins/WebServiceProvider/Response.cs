@@ -1,5 +1,6 @@
 
 using System;
+using System.Web;
 
 namespace EmergeTk.WebServices
 {
@@ -10,7 +11,7 @@ namespace EmergeTk.WebServices
 		public int StatusCode { get; set; }
 		public string StatusDescription { get; set; }
 		public IMessageWriter Writer { get; set; }
-        public String CacheControl { get; set; }
+        public HttpCacheability Cacheability { get; set; }
         public int Expires
         {
             get

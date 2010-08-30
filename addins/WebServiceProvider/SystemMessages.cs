@@ -26,16 +26,20 @@ namespace EmergeTk.WebServices
 			string password = (string)arguments.InMessage["password"];
 			
 			User u = User.AuthenticateUser(username,password);
-            
-			if( u != null )
+
+			if (u != null)
 			{
 				u.SetLoginCookie();
-                arguments.Response.Writer.OpenRoot("response");
-                arguments.Response.Writer.WriteProperty("token", u.SessionToken);
-                arguments.Response.Writer.CloseRoot();
+				arguments.Response.Writer.OpenRoot("response");
+				arguments.Response.Writer.WriteProperty("token", u.SessionToken);
+				arguments.Response.Writer.CloseRoot();
+				log.InfoFormat("{0}, {1}, logged in", u.Id, u.Name);
 			}
 			else
+			{
+				log.WarnFormat("{0} ATTEMPTED unsuccessfully to log in", username);
 				throw new UnauthorizedAccessException("Invalid credentials");
+			}
 		}
 		
 		[MessageServiceEndPoint("logout",Verb=RestOperation.Post)]
@@ -45,6 +49,7 @@ namespace EmergeTk.WebServices
 			User u = User.FindBySessionToken();
 			if( u != null )
 			{
+				log.InfoFormat("{0}, {1}, logged out", u.Id, u.Name);
 				u.SessionToken = string.Empty;
 				u.Save();
 				HttpContext.Current.Response.Cookies["LoginToken"].Value = String.Empty;

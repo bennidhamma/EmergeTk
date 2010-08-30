@@ -63,6 +63,7 @@ namespace EmergeTk
 		
 		public static void resizePng(string sourcePath, string destinationPath, Size size)
 		{
+			log.Debug("resizing png to", size);
 			System.Drawing.Image fullSizeImg
                 = System.Drawing.Image.FromFile(sourcePath);
 			System.Drawing.Image.GetThumbnailImageAbort dummyCallBack 

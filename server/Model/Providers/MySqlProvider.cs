@@ -38,7 +38,7 @@ namespace EmergeTk.Model.Providers
 
 		//IVersioned stmts
 		const string IdentityColumnSignature = "`ROWID` INTEGER UNSIGNED NOT NULL AUTO_INCREMENT PRIMARY KEY";
-        const string CreateTableFormat = "CREATE TABLE `{0}` ( " + IdentityColumnSignature + ", {1} )";
+        const string CreateTableFormat = "CREATE TABLE `{0}` ( " + IdentityColumnSignature + " {1} )";
 		
         const string InsertTableFormat = "REPLACE `{0}`({2}) VALUES( {1} );";
 		const string DeleteFormat = "DELETE FROM `{0}` WHERE ROWID = {1}";
@@ -47,15 +47,14 @@ namespace EmergeTk.Model.Providers
 		const string UpdateTableFormat = "UPDATE `{0}` SET {1} WHERE ROWID = {2}";
         
         //Non-IVersioned stmts
-		const string VersionedCreateTableFormat = "CREATE TABLE `{0}` ( `ROWID` INTEGER UNSIGNED NOT NULL, Version INTEGER UNSIGNED NOT NULL, {1},PRIMARY KEY(`ROWID`) )";
+		const string VersionedCreateTableFormat = "CREATE TABLE `{0}` ( `ROWID` INTEGER UNSIGNED NOT NULL, Version INTEGER UNSIGNED NOT NULL {1},PRIMARY KEY(`ROWID`) )";
 		const string VersionedUpdateTableFormat = "UPDATE `{0}` SET {1} WHERE ROWID = {2} AND Version = {3}";
         
         const string DropFormat = "DROP TABLE `{0}`";
         const string RenameFormat = "ALTER TABLE `{0}` RENAME TO {1}";
         const string SelectColumnFormat = "SELECT COUNT(*) FROM INFORMATION_SCHEMA.COLUMNS WHERE TABLE_SCHEMA = '{0}' AND TABLE_NAME = '{1}' AND COLUMN_NAME = '{2}'";
-    
-        
-    	// private static new readonly EmergeTkLog log = EmergeTkLogManager.GetLogger(typeof(MySqlProvider));
+
+        // private static new readonly EmergeTkLog log = EmergeTkLogManager.GetLogger(typeof(MySqlProvider));
 		
         private static readonly MySqlProvider provider = new MySqlProvider();
 
@@ -777,7 +776,7 @@ namespace EmergeTk.Model.Providers
                 }
             }
 				
-            string propString = Util.Join(pairs, ", ");
+            string propString = pairs.Count == 0 ? String.Empty : "," + Util.Join(pairs, ", ");
             if( modelType.GetInterface("IVersioned") != null )
 				ExecuteNonQuery(string.Format(VersionedCreateTableFormat, tableName, propString));            
             else
@@ -901,8 +900,58 @@ namespace EmergeTk.Model.Providers
 				else
 					ExecuteNonQuery(string.Format(CreateTableNoRowIdFormat, tableName, "Parent_Id int, Child_Id int"));		
 				existingTables[tableName] = true;
-            }            
+
+                CreateChildTableIndex(tableName);
+            }
         }
+
+        #region publicly_exposed_jointable_index_helpers
+        // N.B. these are exposed publicly even though they are NOT part of the DataProvider interface, because it makes
+        // it easy to write tests to verify the SQL Unique Index generating code for the
+        // ORM.
+        public String GenerateChildTableIndexName(String tableName)
+        {
+            return String.Format("IX_{0}_PARENTID_CHILDID", tableName.ToUpper());
+        }
+
+        public bool ChildTableIndexExists(String tableName, String indexName)
+        {
+            long indexExists = 1;
+            try
+            {
+
+                String sql = String.Format("SELECT COUNT(1) FROM information_schema.statistics WHERE table_name = '{0}' AND index_name = '{1}';", tableName, indexName);
+                indexExists = (long)this.ExecuteScalar(sql);
+            }
+            catch (Exception ex)
+            {
+                log.ErrorFormat("Error trying to determine if index {0} exists on table {1}, err = {2}, stack = {3}, will refrain from creating it since we don't know",
+                                indexName, tableName, ex.Message, ex.StackTrace);
+
+                indexExists = 1;  // just pretend the index exists; the main thing is not to hold things up.
+            }
+
+            return indexExists == 0 ? false : true;
+        }
+        #endregion
+
+        private void CreateChildTableIndex(String tableName)
+        {
+            String indexName = GenerateChildTableIndexName(tableName);
+            if (!ChildTableIndexExists(tableName, indexName))
+            {
+                try
+                {
+                    this.ExecuteNonQuery(String.Format("ALTER IGNORE TABLE `{0}` ADD UNIQUE INDEX `{1}` (Parent_Id, Child_Id);", tableName, indexName));
+                }
+                catch (Exception ex)
+                {
+                    log.ErrorFormat("Error creating index {0} on table {1}, error = {2}, stack = {3}, continuing on",
+                                     indexName, tableName, ex.Message, ex.StackTrace);
+                }
+            }
+        }
+
         
         Dictionary<string, bool> existingTables;
 		public bool TableExists( string name )

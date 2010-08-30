@@ -2,6 +2,7 @@
 using System;
 using System.Collections.Specialized;
 using System.Text.RegularExpressions;
+using System.Web;
 
 namespace EmergeTk.WebServices
 {
@@ -12,7 +13,7 @@ namespace EmergeTk.WebServices
 		public MessageNode InMessage;
 		public Response Response;
 		public System.Web.HttpFileCollection Files;
-        public String CacheControl = String.Empty;
+        public HttpCacheability Cacheability;
         public int Expires = -1;
 	}
 }

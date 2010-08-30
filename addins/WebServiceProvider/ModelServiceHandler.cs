@@ -159,9 +159,13 @@ QueryString args:
             options.Sort = sortInfo;
             options.Start = start;
 
+			options.ExtraParams = new Dictionary<string,string> {
+				{"fq", "RecordType:" + typeof(T).FullName}
+			};
+			
             // set up the query handler to use.
             if (!string.IsNullOrEmpty(args["qt"]) )
-                options.ExtraParams = new Dictionary<string, string> { { "qt", args["qt"] } };
+				options.ExtraParams["qt"] = args["qt"];			
 
 			ISearchProviderQueryResults<RecordKey> results = IndexManager.Instance.SearchInt(query, null, options);
 			List<int> ids = results.Results.Select(rk => rk.Id).ToList();

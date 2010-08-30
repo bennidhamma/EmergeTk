@@ -54,7 +54,6 @@ namespace EmergeTk.WebServices
 
             WebServiceFormat format = WebServiceFormat.Xml;
 
-
             if (request.QueryString["format"] != null)
                 format = formats[request.QueryString["format"]];
             else if (request.Headers["Accept"] != null)
@@ -137,9 +136,12 @@ namespace EmergeTk.WebServices
                              files);
 
                         HttpContext.Current.Response.StatusCode = response.StatusCode;
-                        HttpContext.Current.Response.StatusDescription = response.StatusDescription;
-                        if (!String.IsNullOrEmpty(response.CacheControl))
-                            HttpContext.Current.Response.CacheControl = response.CacheControl;
+                        HttpContext.Current.Response.StatusDescription = response.StatusDescription;		
+						log.Debug( "response.Cacheability:", response.Cacheability );
+						if( (int)response.Cacheability > 0 )
+						{							
+							HttpContext.Current.Response.Cache.SetCacheability(response.Cacheability );
+						}
                         if (response.Expires != -1)
                             HttpContext.Current.Response.Expires = response.Expires;
                     }
