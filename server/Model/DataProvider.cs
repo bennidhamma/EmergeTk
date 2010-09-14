@@ -6,6 +6,15 @@ using System.Text;
 
 namespace EmergeTk.Model
 {
+	public enum SqlExecutionType
+	{
+		Scalar,
+		NonQuery,
+		Reader,
+		DataTable,
+		DataSet
+	}
+	
     public abstract class DataProvider
     {
     	protected static readonly EmergeTkLog log = EmergeTkLogManager.GetLogger(typeof(DataProvider));
@@ -39,8 +48,7 @@ namespace EmergeTk.Model
         			try {
 	        			if( ConfigurationManager.AppSettings["DefaultDataProvider"] == null )
 	        			{
-	        				log.Warn("You do not have a default data provider specified.  defaulting to SQLite.");
-	        				defaultProvider = EmergeTk.Model.Providers.SQLiteProvider.Provider;
+							throw new Exception("You must specify a data provider.");
 	        			}
 	        			else
 	        				defaultProvider = Activator.CreateInstance( TypeLoader.GetType( ConfigurationManager.AppSettings["DefaultDataProvider"] ) ) as IDataProvider;

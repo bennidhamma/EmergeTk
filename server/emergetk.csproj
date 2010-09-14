@@ -198,8 +198,6 @@
     <Compile Include="Model\Records\WikiPage.cs" />
     <Compile Include="Model\Providers\MySqlFilterFormatter.cs" />
     <Compile Include="Model\Providers\MySqlProvider.cs" />
-    <Compile Include="Model\Providers\SqlServerProvider.cs" />
-    <Compile Include="Model\Providers\SQLiteProvider.cs" />
     <Compile Include="Model\ICustomLoadable.cs" />
     <Compile Include="Widgets\Html\Special\Browser.cs" />
     <Compile Include="Widgets\Html\Special\CodeView.cs" />
@@ -327,6 +325,7 @@
     <Compile Include="Model\Records\TupleRecord.cs" />
     <Compile Include="Exceptions.cs" />
     <Compile Include="Model\Search\IndexerFactory.cs" />
+    <Compile Include="Model\IDerived.cs" />
   </ItemGroup>
   <ItemGroup>
     <None Include="ChangeLog" />

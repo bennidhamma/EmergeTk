@@ -24,7 +24,8 @@ namespace EmergeTk.Model
         IRecordList<T> Load<T>(FilterInfo[] filterInfos, SortInfo[] sortInfos) where T : AbstractRecord, new();
         IRecordList<T> Load<T>(string whereClause, string orderByClause) where T : AbstractRecord, new();
         IRecordList<T> Load<T>(string whereClause, string orderByClause, String selectColumns) where T : AbstractRecord, new();
-
+		
+		Type GetTypeForId( int id );
         int RowCount<T>() where T : AbstractRecord, new();
         int GetNewId(string typeName);
         int GetLatestVersion( AbstractRecord r );

@@ -35,6 +35,7 @@ namespace EmergeTk.Model
     	public virtual void EnsureId()
     	{
     		if( id == 0 )
+				SetId(provider.GetNewId( this.GetType().FullName ));
     			SetId(provider.GetNewId( this.DbSafeModelName ));			
     	}
 
@@ -1461,6 +1462,11 @@ namespace EmergeTk.Model
             foreach (String prop in props)
                 this.RemoveFromLoadedProperties(prop);
         }
+		
+		public static bool IsDerived( Type t )
+		{
+			return typeof(IDerived).IsAssignableFrom(t);
+		}
 
         private void AddToLoadedProperties(String prop)
         {
@@ -1482,16 +1488,22 @@ namespace EmergeTk.Model
 				int id = (int)originalValues[fi.Name];
 				if( id == 0 )
 					return;
-    			AbstractRecord r = GetRecordFromLoadingContext( type, id );
-				//TODO: yikes - should we be creating empty values here??
-    			if( r == null )
-    			{
-    				r = Activator.CreateInstance(type) as AbstractRecord;
-    				r.parent = this;
-    				r.loadingContext = loadingContext;
-    				r = (AbstractRecord)PropertyConverter.Convert(originalValues[fi.Name], type, r);
-    			}
-    			this[fi.Name] = r;
+				
+				if( fi.IsDerived )
+				{
+					type = DataProvider.DefaultProvider.GetTypeForId(id);	
+				}
+				if( type != null )
+				{
+					AbstractRecord r = AbstractRecord.Load(type, id);
+					if( r != null )
+					{
+						r.parent = this;
+					}
+	    			this[fi.Name] = r;
+				}
+				else
+					this[fi.Name] = null;
                 AddToLoadedProperties(fi.Name);
     		}
     		catch(Exception e)
