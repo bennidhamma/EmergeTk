@@ -36,7 +36,6 @@ namespace EmergeTk.Model
     	{
     		if( id == 0 )
 				SetId(provider.GetNewId( this.GetType().FullName ));
-    			SetId(provider.GetNewId( this.DbSafeModelName ));			
     	}
 
        //if the record has an datarow reference it has been inserted.
