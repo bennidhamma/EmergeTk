@@ -10,6 +10,8 @@
     <RootNamespace>ProtobufSerializer</RootNamespace>
     <AssemblyName>ProtobufSerializer</AssemblyName>
     <TargetFrameworkVersion>v3.5</TargetFrameworkVersion>
+    <ReleaseVersion>0.9</ReleaseVersion>
+    <SynchReleaseVersion>false</SynchReleaseVersion>
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug|AnyCPU' ">
     <DebugSymbols>true</DebugSymbols>
@@ -33,7 +35,7 @@
     <Reference Include="System" />
     <Reference Include="ProtoSharp.Core, Version=1.0.0.0, Culture=neutral, PublicKeyToken=null">
       <SpecificVersion>False</SpecificVersion>
-      <HintPath>..\..\..\lib\ProtoSharp.Core.dll</HintPath>
+      <HintPath>..\..\lib\ProtoSharp.Core.dll</HintPath>
     </Reference>
   </ItemGroup>
   <ItemGroup>

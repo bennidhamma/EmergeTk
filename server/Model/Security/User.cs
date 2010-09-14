@@ -291,9 +291,16 @@ namespace EmergeTk.Model.Security
 		
 		public void SetLoginCookie()
 		{
+			//log.Debug("setting login cookie");
 			HttpCookie sessionCookie = new HttpCookie("LoginToken", SessionToken);
             sessionCookie.Expires = DateTime.Now.AddDays(1);
             HttpContext.Current.Response.Cookies.Add(sessionCookie);
+			
+			HttpCookie userIdCookie = new HttpCookie("UserId", Id.ToString());
+            userIdCookie.Expires = DateTime.Now.AddYears(1);
+            HttpContext.Current.Response.Cookies.Add(userIdCookie);
+			
+			//throw new Exception("setting login cookie");
 		}
 		
 		public static User GetUserFromCookie()

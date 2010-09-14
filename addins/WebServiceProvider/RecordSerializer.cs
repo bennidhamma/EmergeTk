@@ -138,7 +138,7 @@ namespace EmergeTk.WebServices
 					List<int> ids = record.LoadChildrenIds(fi);
                     if (ids != null && ids.Count > 0)
                     {
-                        SerializeIntsList(ids, null, null, fi.ListRecordType, writer);
+                        SerializeIntsList(ids, lField, null, null, fi.ListRecordType, writer);
                     }
                     else
                     {
@@ -316,9 +316,9 @@ namespace EmergeTk.WebServices
             Serialize<T>(items, String.Empty, fields, recordType, writer);
 		}
 		
-		public static void SerializeIntsList (IEnumerable<int> items, string fields, string sortBy, Type recordType, IMessageWriter writer)
+		public static void SerializeIntsList (IEnumerable<int> items, string name, string fields, string sortBy, Type recordType, IMessageWriter writer)
 		{
-			TypeLoader.InvokeGenericMethod(typeof(RecordSerializer),"SerializeIntsListT",new Type[]{recordType},null,new object[]{items,fields,sortBy,recordType, writer});
+			TypeLoader.InvokeGenericMethod(typeof(RecordSerializer),"SerializeIntsListT",new Type[]{recordType},null,new object[]{items,name,fields,sortBy,recordType, writer});
 		}
 
         public static Dictionary<int, String> fieldHashes = new Dictionary<int, String>();
@@ -359,6 +359,7 @@ namespace EmergeTk.WebServices
 		public static void
         SerializeIntsListT<T> (
             IEnumerable<int> items, 
+			string name,
             string fields, 
             string sortBy, 
             Type recordType, 
@@ -374,7 +375,7 @@ namespace EmergeTk.WebServices
 
 			if( fields == null )
 			{
-                writer.OpenProperty(att.ModelPluralName);
+                writer.OpenProperty(name ?? att.ModelPluralName);
                 writer.OpenList(att.ModelName);
 
 				foreach(int id in items )
@@ -409,7 +410,7 @@ namespace EmergeTk.WebServices
                         records.Sort(new SortInfo(uField, sortDir));
                     }
                 }
-                Serialize(records, fields, recordType, writer);
+                Serialize(records, name, fields, recordType, writer);
             }
 		}
 
