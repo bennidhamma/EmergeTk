@@ -57,7 +57,6 @@ namespace EmergeTk.Model.Providers
         // private static new readonly EmergeTkLog log = EmergeTkLogManager.GetLogger(typeof(MySqlProvider));
 		
         private static readonly MySqlProvider provider = new MySqlProvider();
-
        
         static public MySqlProvider Provider { 
 			get 
@@ -72,11 +71,15 @@ namespace EmergeTk.Model.Providers
         	DataProvider.RegisterProvider(typeof(MySqlProvider), this);
         }
 
-		static string connectionString = ConfigurationManager.AppSettings["mysqlConnectionString"];
+		string connectionString = ConfigurationManager.AppSettings["mysqlConnectionString"];
 		public string ConnectionString {
 			get {
 				//log.Debug("got connection string: ", connectionString, ConfigurationManager.AppSettings["mysqlConnectionString"] );
 				return connectionString;
+			}
+			set
+			{
+				connectionString = value;
 			}
 		}
 
@@ -84,26 +87,27 @@ namespace EmergeTk.Model.Providers
 			connectionString = cString;
 		}
 		
-		static string dbName = null;
-		static public string DatabaseName {
+		string dbName = null;
+		public string DatabaseName {
 			get {
 				if( dbName == null )
 				{
 					MySqlConnection c = CreateConnection();
 					dbName = c.Database;
+					log.DebugFormat("Connection: {0}, dbname: {1}", c, dbName);
 				}
 				return dbName;
 			}
 		}
 
-        static public MySqlConnection CreateConnection()
+        public MySqlConnection CreateConnection()
         {
             return new MySqlConnection(connectionString);
         }
 
         public DbConnection CreateNewConnection()
         {
-            return MySqlProvider.CreateConnection();
+            return CreateConnection();
         }
 
         public IDataParameter CreateParameter()
@@ -125,7 +129,8 @@ namespace EmergeTk.Model.Providers
             StopWatch watch = new StopWatch("Execute<T>", this.GetType().Name);
             watch.Start();
 
-            conn.Open();
+			if( conn.State != ConnectionState.Open )
+				conn.Open();
             MySqlCommand cmd = new MySqlCommand(sql, conn);
             cmd.CommandText = sql;
 
@@ -249,6 +254,20 @@ namespace EmergeTk.Model.Providers
 						}
 					}
 					conn.Close();
+				}
+			}
+		}
+		
+		public void ExecuteReader(string sql, MySqlConnection conn, ReaderDelegate del)
+		{
+			using( MySqlCommand comm = new MySqlCommand(sql, conn) )
+			{
+				using(IDataReader r = comm.ExecuteReader())
+				{
+					while(r.Read())
+					{
+						del(r);
+					}
 				}
 			}
 		}
@@ -418,7 +437,7 @@ namespace EmergeTk.Model.Providers
 			else
 				sql = "SELECT * FROM " + EscapeEntity(name) + whereClause + orderByClause;
 			
-			DataTable result = MySqlProvider.Provider.ExecuteDataTable(sql);
+			DataTable result = ExecuteDataTable(sql);
 
             for (int i = 0; i < result.Rows.Count; i++)
             {
@@ -587,7 +606,7 @@ namespace EmergeTk.Model.Providers
                 }
 			}
 
-			if( ! persisted || synchronizing )			
+			if( ! persisted || synchronizing )
             	sql = string.Format(InsertTableFormat, record.DbSafeModelName, Util.Join(parameterKeys, ","), Util.Join(keys) );
             else
             {            	
@@ -873,18 +892,16 @@ namespace EmergeTk.Model.Providers
         	}
 			else if (col.Type == typeof(TimeSpan) || col.Type == typeof(TimeSpan?))
             {
-        		dataType = "bigint(20)";
-        	}
-			else if (col.Type.IsEnum || (col.Type.IsGenericType && 
-				col.Type.GetGenericTypeDefinition().Name == "Nullable`1" &&
-				col.Type.GetGenericArguments()[0].IsEnum ) ) //FUCK NASTY
+            	dataType = "bigint(20)";
+            }
+			else if (col.Type.IsSubclassOf(typeof(Enum)))
             {
-        		dataType = "varchar(128)";
-        	}
-            else if (col.Type.IsSubclassOf (typeof(AbstractRecord)))
+                dataType = "varchar(128)";
+            }
+            else if (col.Type.IsSubclassOf(typeof(AbstractRecord)))
             {
-        		dataType = "int(11)";
-        	}
+                dataType = "int(11)";
+            }
 			else if (col.Type == typeof(bool) || col.Type == typeof(bool?))
             {
         		dataType = "tinyint(1)";
@@ -970,12 +987,12 @@ namespace EmergeTk.Model.Providers
             	existingTables = new Dictionary<string, bool>();
             else if (existingTables.ContainsKey(name) ) 
             	return existingTables[name];
-            return existingTables[name] = Convert.ToBoolean(ExecuteScalar("SELECT COUNT(*) FROM information_schema.TABLES WHERE Table_Schema = '" + MySqlProvider.DatabaseName + "' and Table_Name = '" + name + "'"));
+            return existingTables[name] = Convert.ToBoolean(ExecuteScalar("SELECT COUNT(*) FROM information_schema.TABLES WHERE Table_Schema = '" + DatabaseName + "' and Table_Name = '" + name + "'"));
 		}
 		
 		public bool TableExistsNoCache( string name ) {
 			if ( LowerCaseTableNames ) name = name.ToLower();
-			return Convert.ToBoolean(ExecuteScalar("SELECT COUNT(*) FROM information_schema.TABLES WHERE Table_Schema = '" + MySqlProvider.DatabaseName + "' and Table_Name = '" + name + "'"));
+			return Convert.ToBoolean(ExecuteScalar("SELECT COUNT(*) FROM information_schema.TABLES WHERE Table_Schema = '" + DatabaseName + "' and Table_Name = '" + name + "'"));
 		}
 		
 		public List<string> ColumnList( string tableName )

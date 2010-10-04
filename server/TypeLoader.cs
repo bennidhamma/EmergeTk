@@ -18,13 +18,29 @@ namespace EmergeTk
 
 		static TypeLoader()
 		{
+            Assembly assembly = null;
+            String assemblyPath = String.Empty;
+
 			if( HttpContext.Current != null )
 			{
 				loadAssemblyPath(  HttpContext.Current.Server.MapPath("/bin") );
 			}
 			else
 			{
-				loadAssemblyPath( System.Environment.CurrentDirectory );
+                log.Info("TypeLoader ctor - HttpContext is null, so going to attempt getting path from Assembly.GetEntryAssembly");
+                assembly = Assembly.GetEntryAssembly();
+                if (assembly != null)
+                {
+                    assemblyPath = new FileInfo(assembly.Location).Directory.FullName;
+                    log.InfoFormat("TypeLoader ctor - GetEntryAssembly returned assemblyPath {0}, using that to load assemblies", assemblyPath);
+                }
+
+                if (String.IsNullOrEmpty(assemblyPath))
+                {
+                    assemblyPath = System.Environment.CurrentDirectory;
+                    log.InfoFormat("TypeLoader ctor - GetEntryAssembly returned null - using System.Environment.CurrentDirectory = {0} to load assemblies", assemblyPath);
+                }
+                loadAssemblyPath(assemblyPath);
 			}
 		}
 

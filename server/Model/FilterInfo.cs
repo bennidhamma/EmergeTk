@@ -183,10 +183,14 @@ namespace EmergeTk.Model
             	DateTime d = (DateTime)oVal;
             	v = "'" + d.ToString("s") + "'";
             }
-			else if (oVal is string || oVal is Enum || oVal is bool)
+			else if (oVal is string || oVal is bool)
             {
                 v = "'" + v.ToString().Replace("'", "''") + "'";
             }
+			else if (oVal is Enum)
+			{
+				v = Convert.ToInt32(oVal).ToString();
+			}
             return string.Format("{0} {1} {2}", ColumnName, FilterOperationToString(Operation), v);
         }
         

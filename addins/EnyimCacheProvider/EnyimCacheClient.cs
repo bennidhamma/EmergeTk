@@ -359,7 +359,10 @@ namespace EmergeTk.Model
 					//log.Debug("lastmodobj type:" + lastModObj.GetType());
 					lastModPos = Convert.ToInt64(lastModObj);
 				}
-				Timer cacheTimer = new Timer( delegate {CheckForExpirationEvents();},null,0, 10000);
+
+			   	ThreadStart job = new ThreadStart(CheckForExpirationEvents);
+			    Thread thread = new Thread(job);
+			    thread.Start();		
 			}
 			catch(Exception e )
 			{
@@ -376,31 +379,37 @@ namespace EmergeTk.Model
 		/// 
 		/// Runs in a timer every 10 seconds, only making method public for unit tests.
 		/// </summary>
-		public void CheckForExpirationEvents ()
+		//public void CheckForExpirationEvents ()
+		void CheckForExpirationEvents()
 		{
-			try
+			while (true)
 			{
-				//get the next log position:
-			    //log.Debug("looking for new cache entries");
-				long nextLogPos = Convert.ToInt64(mc.Get(ModificationPositionKey));
-				//log.DebugFormat("found {0} modified entries", nextLogPos - lastModPos);
-				for(long i = lastModPos + 1; i <= nextLogPos; i++ )
+				try
 				{
-					if( ownedExpirationEvents.BinarySearch(i) < 0 )
+					//get the next log position:
+				    //log.Debug("looking for new cache entries");
+					long nextLogPos = Convert.ToInt64(mc.Get(ModificationPositionKey));
+					//log.DebugFormat("found {0} modified entries", nextLogPos - lastModPos);
+					for(long i = lastModPos + 1; i <= nextLogPos; i++ )
 					{
-						string key = (string)mc.Get(BuildModificationEntryKey(i));
-						if( key == null )
+						if( ownedExpirationEvents.BinarySearch(i) < 0 )
 						{
-							log.WarnFormat("Expiration event at position {0} is null. ", i);
+							string key = (string)mc.Get(BuildModificationEntryKey(i));
+							if( key == null )
+							{
+								log.WarnFormat("Expiration event at position {0} is null. ", i);
+							}
+							ClearFromLocalCache(key);
 						}
-						ClearFromLocalCache(key);
 					}
+					lastModPos = nextLogPos;					
 				}
-				lastModPos = nextLogPos;
-			}
-			catch(Exception e)
-			{
-				log.Error(e);	
+				catch(Exception e)
+				{
+					log.Error(e);	
+				}
+				
+				Thread.Sleep(10000);
 			}
 		}
 	}

@@ -49,7 +49,7 @@
   <ItemGroup>
     <Reference Include="Mono.Addins, Version=0.4.0.0, Culture=neutral, PublicKeyToken=0738eb9f132ed756">
       <SpecificVersion>False</SpecificVersion>
-      <HintPath>..\lib\Mono.Addins.dll</HintPath>
+      <HintPath>..\..\lib\Mono.Addins.dll</HintPath>
     </Reference>
     <Reference Include="System" />
     <Reference Include="System.Web" />
@@ -62,47 +62,47 @@
     </Reference>
     <Reference Include="log4net, Version=1.2.10.0, Culture=neutral, PublicKeyToken=1b44e1d426115821">
       <SpecificVersion>False</SpecificVersion>
-      <HintPath>..\lib\log4net.dll</HintPath>
+      <HintPath>..\..\lib\log4net.dll</HintPath>
     </Reference>
     <Reference Include="Lucene.Net, Version=2.0.0.4, Culture=neutral, PublicKeyToken=null">
       <SpecificVersion>False</SpecificVersion>
-      <HintPath>..\lib\Lucene.Net.dll</HintPath>
+      <HintPath>..\..\lib\Lucene.Net.dll</HintPath>
     </Reference>
     <Reference Include="System.Data.SQLite, Version=1.0.39.1, Culture=neutral, PublicKeyToken=db937bc2d44ff139">
       <SpecificVersion>False</SpecificVersion>
-      <HintPath>..\lib\System.Data.SQLite.dll</HintPath>
+      <HintPath>..\..\lib\System.Data.SQLite.dll</HintPath>
     </Reference>
     <Reference Include="MySql.Data, Version=6.0.3.0, Culture=neutral, PublicKeyToken=c5687fc88969c44d">
       <SpecificVersion>False</SpecificVersion>
-      <HintPath>..\lib\MySql.Data.dll</HintPath>
+      <HintPath>..\..\lib\MySql.Data.dll</HintPath>
     </Reference>
     <Reference Include="CookComputing.XmlRpcV2, Version=2.3.2.0, Culture=neutral, PublicKeyToken=a7d6e17aa302004d">
       <SpecificVersion>False</SpecificVersion>
-      <HintPath>..\lib\CookComputing.XmlRpcV2.dll</HintPath>
+      <HintPath>..\..\lib\CookComputing.XmlRpcV2.dll</HintPath>
     </Reference>
     <Reference Include="Boo.Lang.CodeDom, Version=1.0.0.0, Culture=neutral, PublicKeyToken=32c39770e9a21a67">
       <SpecificVersion>False</SpecificVersion>
-      <HintPath>..\lib\Boo.Lang.CodeDom.dll</HintPath>
+      <HintPath>..\..\lib\Boo.Lang.CodeDom.dll</HintPath>
     </Reference>
     <Reference Include="Boo.Lang.Compiler, Version=1.0.0.0, Culture=neutral, PublicKeyToken=32c39770e9a21a67">
       <SpecificVersion>False</SpecificVersion>
-      <HintPath>..\lib\Boo.Lang.Compiler.dll</HintPath>
+      <HintPath>..\..\lib\Boo.Lang.Compiler.dll</HintPath>
     </Reference>
     <Reference Include="Boo.Lang, Version=1.0.0.0, Culture=neutral, PublicKeyToken=32c39770e9a21a67">
       <SpecificVersion>False</SpecificVersion>
-      <HintPath>..\lib\Boo.Lang.dll</HintPath>
+      <HintPath>..\..\lib\Boo.Lang.dll</HintPath>
     </Reference>
     <Reference Include="Boo.Lang.Interpreter, Version=1.0.0.0, Culture=neutral, PublicKeyToken=32c39770e9a21a67">
       <SpecificVersion>False</SpecificVersion>
-      <HintPath>..\lib\Boo.Lang.Interpreter.dll</HintPath>
+      <HintPath>..\..\lib\Boo.Lang.Interpreter.dll</HintPath>
     </Reference>
     <Reference Include="Boo.Lang.Parser, Version=1.0.0.0, Culture=neutral, PublicKeyToken=32c39770e9a21a67">
       <SpecificVersion>False</SpecificVersion>
-      <HintPath>..\lib\Boo.Lang.Parser.dll</HintPath>
+      <HintPath>..\..\lib\Boo.Lang.Parser.dll</HintPath>
     </Reference>
     <Reference Include="Boo.Lang.Useful, Version=1.0.0.0, Culture=neutral, PublicKeyToken=32c39770e9a21a67">
       <SpecificVersion>False</SpecificVersion>
-      <HintPath>..\lib\Boo.Lang.Useful.dll</HintPath>
+      <HintPath>..\..\lib\Boo.Lang.Useful.dll</HintPath>
     </Reference>
     <Reference Include="gtk-sharp, Version=2.12.0.0, Culture=neutral, PublicKeyToken=35e10195dab3c99f">
       <SpecificVersion>False</SpecificVersion>
@@ -325,6 +325,8 @@
     <Compile Include="Model\Records\TupleRecord.cs" />
     <Compile Include="Exceptions.cs" />
     <Compile Include="Model\Search\IndexerFactory.cs" />
+    <Compile Include="Model\DataSourceAttribute.cs" />
+    <Compile Include="Model\Providers\IDataProviderFactory.cs" />
     <Compile Include="Model\IDerived.cs" />
   </ItemGroup>
   <ItemGroup>

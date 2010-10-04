@@ -39,7 +39,7 @@ namespace EmergeTk.Model
 
 		public override int GetHashCode() 
 		{
-			return (dataValue.ToString() + id.ToString()).GetHashCode();
+			return (dataValue.ToString() + Id.ToString()).GetHashCode();
 		}
 		
 		public Scalar()

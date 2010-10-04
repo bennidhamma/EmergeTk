@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Configuration;
 using System.Data;
 using System.Text;
+using EmergeTk.Model.Providers;
 
 namespace EmergeTk.Model
 {
@@ -18,27 +19,22 @@ namespace EmergeTk.Model
     public abstract class DataProvider
     {
     	protected static readonly EmergeTkLog log = EmergeTkLogManager.GetLogger(typeof(DataProvider));
-    	
-        static Dictionary<Type, IDataProvider> Providers = new Dictionary<Type, IDataProvider>();
-
-        public static void RegisterProvider(Type t, IDataProvider provider )
-        {
-            Providers[t] = provider;
-        }
-
-        public static IDataProvider RequestProvider<T>() where T : AbstractRecord, new()
-        {
-        	/*
-            Type t = typeof(T);
-            if (!Providers.ContainsKey(t))
-            {
-            	T r = new T();//dummy instantiation to register provider.            	
-            }
-            return Providers[t];
-            */
-            return DefaultProvider;
-        }
         
+		private static IDataProviderFactory providerFactory;
+		public static IDataProviderFactory Factory 
+		{
+			get
+			{
+				if( providerFactory == null )
+					providerFactory = new DefaultProviderFactory();
+				return providerFactory;
+			}
+			set
+			{
+				providerFactory = value;
+			}
+		}
+		
         static IDataProvider defaultProvider;
         public static IDataProvider DefaultProvider
         {
@@ -80,14 +76,17 @@ namespace EmergeTk.Model
         
         public static int GetRowCount<T>() where T : AbstractRecord, new()
         {
-        	return RequestProvider<T>().RowCount<T>();
+        	return Factory.GetProvider(typeof(T)).RowCount<T>();
         }
 
         public static IRecordList<T> LoadList<T>() where T : AbstractRecord, new()
-            { return RequestProvider<T>().Load<T>(); }
+        {
+			return  Factory.GetProvider(typeof(T)).Load<T>(); 
+		}
+		
         public static IRecordList<T> LoadList<T>(params SortInfo[] sortInfos) where T : AbstractRecord, new()
         {
-            IRecordList<T> list = RequestProvider<T>().Load<T>(sortInfos);
+            IRecordList<T> list = Factory.GetProvider(typeof(T)).Load<T>(sortInfos);
             list.Sorts = new List<SortInfo>(sortInfos);
 			list.Clean = true;
 			return list;
@@ -95,7 +94,7 @@ namespace EmergeTk.Model
         }
         public static IRecordList<T> LoadList<T>(params FilterInfo[] filterInfos) where T : AbstractRecord, new()
         {
-            IRecordList<T> list = RequestProvider<T>().Load<T>(filterInfos);
+            IRecordList<T> list = Factory.GetProvider(typeof(T)).Load<T>(filterInfos);
             list.Filters = new List<FilterInfo>(filterInfos);
 			list.Clean = true;
 			return list;
@@ -120,7 +119,7 @@ namespace EmergeTk.Model
 
         public static IRecordList<T> LoadList<T>(FilterInfo[] filterInfos, SortInfo[] sortInfos) where T : AbstractRecord, new()
         { 
-            IRecordList<T> list = RequestProvider<T>().Load<T>(filterInfos, sortInfos);
+            IRecordList<T> list = Factory.GetProvider(typeof(T)).Load<T>(filterInfos, sortInfos);
             list.Filters = new List<FilterInfo>(filterInfos);
             list.Sorts = new List<SortInfo>(sortInfos);
 			list.Clean = true;

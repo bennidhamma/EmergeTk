@@ -68,9 +68,7 @@ namespace EmergeTk.Model
         string GetIdentityColumn();
         string EscapeEntity(string entity);
         
-		void SetConnectionString(String cString);
-		
-        //IoC props
+		//IoC props
         bool Synchronizing { get; }
         bool OutOfSync { get; }
 	}
