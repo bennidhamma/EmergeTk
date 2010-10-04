@@ -516,7 +516,6 @@ namespace EmergeTk.Model.Providers
         public void Save(AbstractRecord record, bool SaveChildren, bool IncrementVersion, DbConnection conn)
 		{
 			log.Debug("saving record", this );
-
             if( record.Id == 0 && record.TableIdentityColumn != "ROWID" )
 			{
 				 AbstractRecord r = AbstractRecord.Load(record.GetType(),new FilterInfo(
@@ -556,7 +555,6 @@ namespace EmergeTk.Model.Providers
             bool persisted = record.Persisted;   
         	foreach( ColumnInfo col in record.Fields )
 			{
-				
 				if (col.ReadOnly || col.DataType == DataType.Volatile || col.DataType == DataType.RecordList || GetSqlTypeFromType(col, record.DbSafeModelName) == null )
                     continue;
                 
@@ -838,63 +836,67 @@ namespace EmergeTk.Model.Providers
             return Util.Surround(entity, "`");
         }
         
-        public string GetSqlTypeFromType(ColumnInfo col, string tableName)
+        public string GetSqlTypeFromType (ColumnInfo col, string tableName)
         {
-			if ( LowerCaseTableNames ) tableName = tableName.ToLower();
-        	string dataType = null; //"int";
-            if (col.Type == typeof(string))
+        	if (LowerCaseTableNames)
+        		tableName = tableName.ToLower ();
+        	string dataType = null;
+        	//"int";
+        	if (col.Type == typeof(string))
             {
-                if (col.DataType == DataType.LargeText || col.DataType == DataType.Xml)
-                    dataType = LongStringDataType;
+        		if (col.DataType == DataType.LargeText || col.DataType == DataType.Xml)
+        			dataType = LongStringDataType;
                 else if (col.DataType == DataType.SmallText)
-                    dataType = ShortStringDataType;
-                else
-                    dataType = StringDataType;
-            }
+        			dataType = ShortStringDataType;
+        		else
+        			dataType = StringDataType;
+        	}
             else if (col.Type == typeof(int) || col.Type == typeof(int?))
             {
-                dataType = "int(11)";
-            }
+        		dataType = "int(11)";
+        	}
 			else if (col.Type == typeof(decimal) || col.Type == typeof(decimal?))
             {
-                dataType = "decimal(20,2)";
-            }
+        		dataType = "decimal(20,2)";
+        	}
 			else if (col.Type == typeof(float) || col.Type == typeof(float?))
             {
-                dataType = "float";
-            }
+        		dataType = "float";
+        	}
 			else if (col.Type == typeof(double) || col.Type == typeof(double?))
             {
-                dataType = "double";
-            }
+        		dataType = "double";
+        	}
 			else if (col.Type == typeof(DateTime) || col.Type == typeof(DateTime?))
             {
-                dataType = "datetime";
-            }
+        		dataType = "datetime";
+        	}
 			else if (col.Type == typeof(TimeSpan) || col.Type == typeof(TimeSpan?))
             {
-            	dataType = "bigint(20)";
-            }
-			else if (col.Type.IsSubclassOf(typeof(Enum)))
+        		dataType = "bigint(20)";
+        	}
+			else if (col.Type.IsEnum || (col.Type.IsGenericType && 
+				col.Type.GetGenericTypeDefinition().Name == "Nullable`1" &&
+				col.Type.GetGenericArguments()[0].IsEnum ) ) //FUCK NASTY
             {
-                dataType = "varchar(128)";
-            }
-            else if (col.Type.IsSubclassOf(typeof(AbstractRecord)))
+        		dataType = "varchar(128)";
+        	}
+            else if (col.Type.IsSubclassOf (typeof(AbstractRecord)))
             {
-                dataType = "int(11)";
-            }
+        		dataType = "int(11)";
+        	}
 			else if (col.Type == typeof(bool) || col.Type == typeof(bool?))
             {
-                dataType = "tinyint(1)";
-            }
+        		dataType = "tinyint(1)";
+        	}
 			else if (col.Type == typeof(long) || col.Type == typeof(long?))
 			{
-				dataType = "bigint";	
-			}
-            else if (AbstractRecord.TypeIsRecordList(col.Type))
+        		dataType = "bigint";
+        	}
+            else if (AbstractRecord.TypeIsRecordList (col.Type))
             {
-				// TODO: this may be bad to create a child table here
-                CreateChildTable(tableName + "_" + col.Name, col);
+        		// TODO: this may be bad to create a child table here
+        		CreateChildTable (tableName + "_" + col.Name, col);
             }
 
             return dataType;

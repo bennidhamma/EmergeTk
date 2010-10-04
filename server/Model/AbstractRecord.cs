@@ -1332,34 +1332,24 @@ namespace EmergeTk.Model
 			SyncToSource(this.originalValues);
 		}
 		
-        public void SyncToSource(Dictionary<string,object> originals)
+        public void SyncToSource (Dictionary<string, object> originals)
         {
         	foreach (ColumnInfo fi in this.Fields)
 	        {
-	            if (fi.DataType != DataType.RecordList)
+        		if (fi.DataType != DataType.RecordList)
 	            {
-	                if (originals.ContainsKey(fi.Name) && originals[fi.Name] != DBNull.Value )
-	                {
-	                    if (fi.DataType == DataType.RecordSelect && (originals[fi.Name] is int && (int)originals[fi.Name] == this.id && this.GetType() == fi.Type))
-	                    {
-	                        this[fi.Name] = this;
-	                    }
-	                    else if( this.parent != null && fi.Type.IsInstanceOfType( this.parent ) &&
-	                    	(int)originals[fi.Name] == this.parent.id  )
-	                    {
-	                    	this[fi.Name] = this.parent;
-                    	}
-	                    else
-	                    {
-	                    	Type type = fi.Type;                    	
-	                    	
-	                    	if( fi.IsRecord )
-	                    	{
-	                    		if( originals[fi.Name] != DBNull.Value && !lazyLoadProperties )
-	                    			LoadProperty(fi);
-	                    	}
-	                    	else
-	                        	this[fi.Name] = PropertyConverter.Convert(originals[fi.Name], type);
+        			if (originals.ContainsKey (fi.Name) && originals[fi.Name] != DBNull.Value)
+					{
+        				Type type = fi.Type;
+        				
+                    	if (fi.IsRecord)
+                    	{
+        					if (originals[fi.Name] != DBNull.Value && !lazyLoadProperties)
+        						LoadProperty (fi);
+        				}
+                    	else
+						{
+							this[fi.Name] = PropertyConverter.Convert(originals[fi.Name], type);
 	                    }
 	                }
 	            }
