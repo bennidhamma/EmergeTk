@@ -176,7 +176,7 @@ namespace EmergeTk.Model
 			RecordController rc = Context.Current.CreateWidget<RecordController>();
 			rc.BindsTo = typeof(T);
 			if( records == null )
-            	records = DataProvider.RequestProvider<T>().Load<T>();
+            	records = DataProvider.Factory.GetProvider(typeof(T)).Load<T>();
             #if DEBUG
             	log.Debug( "setting records to RecordController ", records, records.Count ); 
             #endif
@@ -190,7 +190,7 @@ namespace EmergeTk.Model
         	
             //Autocomplete dd = Context.Current.CreateWidget<Autocomplete>();
             if( records == null )
-            	records = DataProvider.RequestProvider<T>().Load<T>();
+            	records =  DataProvider.Factory.GetProvider(typeof(T)).Load<T>();
 			
            	dd = RecordSelect<T>.CreateSelector( records.Count );
             dd.DataSource = records as IRecordList<T>;

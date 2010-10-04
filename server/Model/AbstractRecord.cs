@@ -21,10 +21,6 @@ namespace EmergeTk.Model
     public class AbstractRecord : IDataBindable, IRecord, ICloneable, IJSONSerializable, IComparable
     {
        	protected static readonly EmergeTkLog log = EmergeTkLogManager.GetLogger(typeof(AbstractRecord));
-
-		public AbstractRecord(){
-    		provider = DataProvider.DefaultProvider;
-    	}
 		
 		public void SetId(int id){
 			this.id = id;
@@ -35,8 +31,19 @@ namespace EmergeTk.Model
     	public virtual void EnsureId()
     	{
     		if( id == 0 )
-    			SetId(provider.GetNewId( this.DbSafeModelName ));			
+			{
+				int newId = DataProvider.Factory.RequestId(this.GetType());
+    			SetId( newId );
+			}
     	}
+		
+		private IDataProvider _provider;
+		public IDataProvider GetProvider()
+		{
+			if( _provider == null )
+				_provider = DataProvider.Factory.GetProvider(this.GetType(), this.id );
+			return _provider;
+		}
 
        //if the record has an datarow reference it has been inserted.
 		bool persisted = false;
@@ -80,7 +87,7 @@ namespace EmergeTk.Model
        	{
 			if( loading )
 				return;
-			if( ! provider.Synchronizing && ! disableValidation) 
+			if( ! GetProvider().Synchronizing && ! disableValidation) 
 			{
 				ValidateAndThrow();
 			}
@@ -92,9 +99,9 @@ namespace EmergeTk.Model
             // need to wrap multiple saves in a transaction object).  The other permutations
             // are not needed as yet.  
             if (conn == null)
-                provider.Save(this, SaveChildren);
+                GetProvider().Save(this, SaveChildren);
             else
-                provider.Save(this, SaveChildren, IncrementVersion, conn);
+                GetProvider().Save(this, SaveChildren, IncrementVersion, conn);
 
 			if( ! inserted )
 				FireCreateEvents();
@@ -241,8 +248,8 @@ namespace EmergeTk.Model
 			
 			ColumnInfo col = GetFieldInfoFromName(PropertyName);
 			//log.Debug("saving relations for ", this, PropertyName, col.IsDerived);
-            if (!provider.TableExists(childTableName) || col.IsDerived)
-                provider.CreateChildTable(childTableName, col);
+            if (!GetProvider().TableExists(childTableName) || col.IsDerived)
+                GetProvider().CreateChildTable(childTableName, col);
 			
             if( list == null )
             {
@@ -279,7 +286,7 @@ namespace EmergeTk.Model
 			//log.Debug("items adding to database", childTableName, PropertyName, changeList);
 			foreach ( int id in changeList )
 			{
-				provider.SaveSingleRelation( childTableName, this.ObjectId.ToString(), id.ToString() );
+				GetProvider().SaveSingleRelation( childTableName, this.ObjectId.ToString(), id.ToString() );
 			}
 			
 			// remove relations:
@@ -287,7 +294,7 @@ namespace EmergeTk.Model
 		//	log.Debug("items removing from database", childTableName, PropertyName, changeList);
 			foreach ( int id in changeList) 
 			{
-				provider.RemoveSingleRelation( childTableName, this.ObjectId.ToString(), id.ToString());
+				GetProvider().RemoveSingleRelation( childTableName, this.ObjectId.ToString(), id.ToString());
 			}
 				
 			// copy list to its snapshot
@@ -344,7 +351,7 @@ namespace EmergeTk.Model
 			if( saveChildren ) 
 				child.Save(false);
 			
-			provider.SaveSingleRelation(childTableName, this.ObjectId.ToString(), child.ObjectId.ToString() );
+			GetProvider().SaveSingleRelation(childTableName, this.ObjectId.ToString(), child.ObjectId.ToString() );
 			
 			ExpireRelations(PropertyName);
 		}
@@ -377,7 +384,7 @@ namespace EmergeTk.Model
 				relationsList.RecordSnapshot.Remove( child.id );
 			}
 			
-			provider.RemoveSingleRelation(childTableName, this.ObjectId.ToString(), child.ObjectId.ToString()); 
+			GetProvider().RemoveSingleRelation(childTableName, this.ObjectId.ToString(), child.ObjectId.ToString()); 
 			
 			ExpireRelations(PropertyName);
 		}
@@ -407,7 +414,7 @@ namespace EmergeTk.Model
         public virtual void Delete()
         {
 			this.recordState = RecordState.Deleted;
-			provider.Delete(this);
+			GetProvider().Delete(this);
             if( CacheProvider.Instance != null )
 				CacheProvider.Instance.Remove(this);
             if (deletedRecordListeners.ContainsKey(this.GetType() ) )
@@ -420,9 +427,9 @@ namespace EmergeTk.Model
 		{
 			string tableName = this.DbSafeModelName;	
 			if ( DataProvider.LowerCaseTableNames ) tableName = tableName.ToLower();
-            if (provider.TableExists(tableName))
+            if (GetProvider().TableExists(tableName))
                 return;
-            provider.CreateTable(this.GetType(), tableName);
+            GetProvider().CreateTable(this.GetType(), tableName);
 		}
 
 		/*private static Dictionary<string,AbstractRecord> recordCache = new Dictionary<string,AbstractRecord>();
@@ -486,9 +493,9 @@ namespace EmergeTk.Model
             
             //TODO: support ORs, parentheticals.			
 			int id = -1;
-            string WhereClause = DataProvider.RequestProvider<T>().BuildWhereClause( filters );
+            string WhereClause = DataProvider.Factory.GetProvider(typeof(T)).BuildWhereClause( filters );
 			if( filters != null && filters.Length > 0 && filters[0].ColumnName == "ROWID" )
-				id = (int)filters[0].Value;
+				id = Convert.ToInt32 (filters[0].Value);
             if( id == 0 ) //will never load a valid record with id 0.
 				return null;
 			return Load<T>( record, id, allowCustomLoad, WhereClause );		
@@ -511,12 +518,17 @@ namespace EmergeTk.Model
             //if (recordCache.ContainsKey(key))
             //    return recordCache[key] as T;
 
+			IDataProvider provider = DataProvider.Factory.GetProvider(typeof(T),id);
+			
+			if( provider == null )
+				throw new NullReferenceException("Provider is null.");
+			
+			
 			string name = GetDbSafeModelName(typeof(T));
 			if ( DataProvider.LowerCaseTableNames ) name = name.ToLower();
 			
             // string key = name + "_" + WhereClause;
-			IDataProvider provider = DataProvider.RequestProvider<T>();	
-
+			
 			if (!provider.TableExists(name))
             {
 				if( record == null )
@@ -637,7 +649,7 @@ namespace EmergeTk.Model
 		
 		public List<int> LoadParentIds(ColumnInfo parentColumn)
 		{
-			return LoadParentIds(this.provider, parentColumn, ObjectId);
+			return LoadParentIds(GetProvider(), parentColumn, ObjectId);
 		}
 		
 		public static List<int> LoadParentIds(IDataProvider provider, ColumnInfo parentColumn, object value)
@@ -685,7 +697,7 @@ namespace EmergeTk.Model
         	}
             string childTableName = DbSafeModelName + "_" + fi.Name;
 			if ( DataProvider.LowerCaseTableNames ) childTableName = childTableName.ToLower();
-            if (!provider.TableExists(childTableName))
+            if (!GetProvider().TableExists(childTableName))
                 return null;
 			
             string cacheKey = GetFieldReference( fi.Name ).ToString();
@@ -697,7 +709,7 @@ namespace EmergeTk.Model
 	        	
         	if( childrenIds == null )
         	{
-        		childrenIds = provider.ExecuteVectorInt(string.Format("SELECT Child_Id FROM {0} WHERE Parent_Id = '{1}'", childTableName, ObjectId));
+        		childrenIds = GetProvider().ExecuteVectorInt(string.Format("SELECT Child_Id FROM {0} WHERE Parent_Id = '{1}'", childTableName, ObjectId));
         		PutObjectInCache( cacheKey, childrenIds);
         	}
 			return childrenIds;
@@ -725,12 +737,12 @@ namespace EmergeTk.Model
         {
             string childTableName = DbSafeModelName + "_" + fi.Name;
 			if ( DataProvider.LowerCaseTableNames ) childTableName = childTableName.ToLower();
-            if (!provider.TableExists(childTableName))
+            if (!GetProvider().TableExists(childTableName))
           		return null;
 
 			C child = null;
             //again, this sql is so simple I don't think we need IoC
-            DataTable childTable = provider.ExecuteDataTable(string.Format("SELECT * FROM {0} WHERE Parent_Id = '{1}'AND Child_Id = '{2}' ORDER BY ROWID", childTableName, ObjectId, childId));
+            DataTable childTable = GetProvider().ExecuteDataTable(string.Format("SELECT * FROM {0} WHERE Parent_Id = '{1}'AND Child_Id = '{2}' ORDER BY ROWID", childTableName, ObjectId, childId));
             foreach (DataRow row in childTable.Rows)
             {       
         		child= (C)GetRecordFromLoadingContext( typeof(C), (int)row["Child_Id"] );
@@ -788,9 +800,18 @@ namespace EmergeTk.Model
 		public void Reload()
 		{
 			log.Debug("reloading...");
-			TypeLoader.InvokeGenericMethod
-				(typeof(AbstractRecord),"Reload",new Type[]{this.GetType()},this,
-				Type.EmptyTypes,new object[]{});
+            bool oldLoadState = this.loading;
+            this.SetLoadState(true);
+            try
+            {
+                TypeLoader.InvokeGenericMethod
+                    (typeof(AbstractRecord), "Reload", new Type[] { this.GetType() }, this,
+                    Type.EmptyTypes, new object[] { });
+            }
+            finally
+            {
+                this.SetLoadState(oldLoadState);
+            }
 			log.Debug("done reloading");
 		}
 		
@@ -830,9 +851,7 @@ namespace EmergeTk.Model
 			return Load<T>(record, new FilterInfo(columnName,id,FilterOperation.Equals));
 		}
 
-    	protected IDataProvider provider; 
-    	
-        protected int id = 0;
+    	private int id = 0;
         
         AbstractRecord parent;
       

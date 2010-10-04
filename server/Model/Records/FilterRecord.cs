@@ -69,7 +69,7 @@ namespace EmergeTk.Model
 		
 		public override int GetHashCode() 
 		{
-			return (operation.ToString() + id.ToString()).GetHashCode();
+			return (operation.ToString() + Id.ToString()).GetHashCode();
 		}
 
 		public void SetValue(object v)

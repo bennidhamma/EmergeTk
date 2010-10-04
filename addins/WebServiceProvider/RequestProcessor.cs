@@ -43,13 +43,18 @@ namespace EmergeTk.WebServices
 		{
 			log.Debug("routing request", verb, subPath, args, message );
 			Response response = new Response();
-			if( HttpContext.Current.Request.Headers["x-5to1-expires"] != null )
+			if( HttpContext.Current != null && HttpContext.Current.Request.Headers["x-5to1-expires"] != null )
 			{
 				//string expire = request.QueryString["expire"];
 				//context.Response.AddHeader("Cache-Control",string.Format("max-age={0}, public", expire ) );
 				//context.Response.Expires = int.Parse( request.QueryString["expire"] );
 				response.Expires = int.Parse( HttpContext.Current.Request.Headers["x-5to1-expires"] );
 				response.Cacheability = HttpCacheability.Public;				
+			}
+			else
+			{
+				response.Expires = 0;
+				HttpContext.Current.Response.Cache.SetMaxAge(new TimeSpan(0));
 			}
 			log.Debug("caching:", response.Expires, response.Cacheability);
 			response.StatusCode = 404;

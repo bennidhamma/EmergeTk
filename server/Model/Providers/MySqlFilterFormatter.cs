@@ -99,11 +99,15 @@ namespace EmergeTk.Model.Providers
             {
             	v = (bool)oVal ? "1" : "0";
             }
-			else if ( ( oVal is string || oVal is Enum ) && ! stringProcessed )
+			else if ( ( oVal is string ) && ! stringProcessed )
             {
                 v = "'" + v.ToString().Replace("'", "''") + "'";
             }
-            return string.Format("{0} {1} {2}", fi.ColumnName, FilterInfo.FilterOperationToString(fi.Operation), v);
+			else if (oVal is Enum)
+			{
+				v = Convert.ToInt32(oVal).ToString();
+			}
+			return string.Format("{0} {1} {2}", fi.ColumnName, FilterInfo.FilterOperationToString(fi.Operation), v);
 		}
 	}
 }

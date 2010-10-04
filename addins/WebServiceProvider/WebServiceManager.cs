@@ -98,7 +98,7 @@ namespace EmergeTk.WebServices
 
 			//next scan for all restful types and register an instance of our ModelServiceHandler for them.
 			Attribute[] restAttributes;
-			Type[] restTypes = TypeLoader.GetTypesWithAttribute (typeof(RestServiceAttribute), true, out restAttributes);
+			Type[] restTypes = TypeLoader.GetTypesWithAttribute (typeof(RestServiceAttribute), false, out restAttributes);
 
 			for (int i = 0; i < restTypes.Length; i++) 
 			{
@@ -247,6 +247,8 @@ namespace EmergeTk.WebServices
 			
 	public class AdministrativeServiceManager : IRestServiceManager
 	{
+		private static readonly EmergeTkLog log = EmergeTkLogManager.GetLogger(typeof(AdministrativeServiceManager));
+		
 		#region IRestServiceManager implementation
 		public string GetHelpText ()
 		{
@@ -256,15 +258,36 @@ namespace EmergeTk.WebServices
 		
 		public void Authorize (RestOperation operation, MessageNode recordNode, AbstractRecord record)
 		{
-			if( User.Current == null || !User.Current.Permissions.Contains( Permission.Root ) )
+			if ( operation != RestOperation.Get )
 			{
-				throw new UnauthorizedAccessException();
+				if (User.Current != null && record != null && record.GetType() == typeof(User) && record == User.Current)
+					return;
+				
+				log.Debug("Going to throw UnauthorizedAccessException: Record is only allowed operation of type 'Get'");
+				throw new UnauthorizedAccessException("Record is only allowed operation of type 'Get' for non-Root user.");
 			}
+			else {
+				log.Debug("Authorize ok for non-Get");
+			}
+			
+			if ( User.Current == null )
+			{
+				log.Debug("Going to throw UnauthorizedAccessException: No current user");
+				throw new UnauthorizedAccessException("No current user.");
+			} 
+			else if ( record != null && record.GetType() == typeof(User) && record != User.Current )				
+			{
+				log.Debug("Going to throw UnauthorizedAccessException: Record does not match current user");
+				throw new UnauthorizedAccessException("Record does not match current user.");
+			}		
+			else
+				log.Debug("Authorize successful",operation,record);
 		}
 		
 		
 		public bool AuthorizeField (RestOperation op, AbstractRecord record, string property)
 		{
+			// TODO: if operation is put, and it's not the password field, then throw exception
 			return true;
 		}
 		

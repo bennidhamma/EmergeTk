@@ -19,6 +19,13 @@ namespace EmergeTk.Model
 		public string Path;		
 		public string Problem;
 		public string Suggestion;
+		
+		public ValidationError (string path, string problem, string suggestion)
+		{
+			this.Path = path;
+			this.Problem = problem;
+			this.Suggestion = suggestion;
+		}
 	}
     
     public class VersionOutOfDateException : Exception

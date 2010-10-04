@@ -98,7 +98,7 @@ namespace EmergeTk.Model
 			iu.ImageUid = Version.ToString();
 			iu.SaveToLocalStorage = SaveToLocalStorage;
 			System.IO.Directory.CreateDirectory( System.Web.HttpContext.Current.Server.MapPath( "/Storage" ) );
-			iu.SaveFormat = string.Format("/Storage/{0}.$Extension", this.id );
+			iu.SaveFormat = string.Format("/Storage/{0}.$Extension", this.Id );
 			if (SaveToLocalStorage)
 			{
 				iu.OnImageUploaded += new EventHandler(delegate(object o, EventArgs ea)

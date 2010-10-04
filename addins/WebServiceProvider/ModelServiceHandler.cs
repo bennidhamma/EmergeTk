@@ -18,7 +18,8 @@ namespace EmergeTk.WebServices
 		Delete = 8,
 		Copy = 16
 	}
-	
+
+
 	/*
 	 * If this were generic, could we create an instance for each RESTful type?
 	 * Then we could store in the map the endpoints, i.e. /api/model/vote directs to
@@ -86,7 +87,24 @@ namespace EmergeTk.WebServices
             arguments.Response.Writer.Flush();
 		}
 		
-		[MessageServiceEndPoint(@"(\w+)/(.+)",Verb=RestOperation.Get)]
+		[MessageServiceEndPoint(@"list/(\w+)/([^/]+)",Verb=RestOperation.Get)]
+		[MessageDescription("Get a list of of {ModelPluralName} where (\\w+) is equal to (.+) .")]
+		public void GetRecordListByProperty(MessageEndPointArguments arguments)
+		{
+            IMessageWriter writer = arguments.Response.Writer;
+			string property = arguments.Matches[0].Groups[1].Value;
+			string val = arguments.Matches[0].Groups[2].Value;
+			IRecordList<T> records = DataProvider.LoadList<T>(new FilterInfo(property,val));
+			BuildReturnList
+				("response",
+				 this.RestDescription.ModelPluralName,
+				 arguments.QueryString,
+				 records,
+				 arguments.Response.Writer);
+			writer.Flush();
+		}
+		
+		[MessageServiceEndPoint(@"(\w+)/([^/]+)",Verb=RestOperation.Get)]
 		[MessageDescription("Get a {ModelName} or list of of {ModelPluralName} where (\\w+) is equal to (.+) .")]
 		public void GetRecordByProperty(MessageEndPointArguments arguments)
 		{
@@ -125,6 +143,26 @@ namespace EmergeTk.WebServices
 			}
             writer.Flush();
 		}
+
+        [MessageServiceEndPoint("search", Verb = RestOperation.Post)]
+        [MessageDescription(
+@"Search for a list of {ModelPluralName}, using POST to specify the search criteria.  
+PostData:
+* '''predicates''' JSON array of GalleryPredicates
+QueryString args:
+* '''sortBy''' a field to sort against - append desc or asc to control sort order
+")]
+        public void PostSearch(MessageEndPointArguments arguments)
+        {
+            IRecordList<ModelPredicate> preds = RecordSerializer.DeserializeList<ModelPredicate>((MessageList)arguments.InMessage["predicates"], new DeserializationContext());
+            IRecordList<T> records = DataProvider.LoadList<T>(preds.Select(pred => (FilterInfo) pred).ToArray());
+            SortInfo sortInfo = GetSortInfo(arguments.QueryString["sortBy"]);
+            if (sortInfo != null)
+                records.Sort(sortInfo);
+
+            BuildReturnList("response", this.RestDescription.ModelPluralName, arguments.QueryString, records, arguments.Response.Writer);
+            arguments.Response.Writer.Flush();
+        }
 		
 		[MessageServiceEndPoint("search",Verb=RestOperation.Get)]
 		[MessageDescription(
@@ -412,7 +450,7 @@ QueryString args:
 		[MessageDescription("deletes records from an existing {ModelName}'s property list.")]
 		public void DeleteFromPropertyList(MessageEndPointArguments arguments)
 		{
-			//we are authorizing a modification (PUT) on record, that POSTs new associations.
+			//we are authorizing a modification (PUT) on record, that DELETEs existing associations.
 			T record = AbstractRecord.Load<T>(arguments.Matches[0].Groups[1].Value);
 			string lProperty = arguments.Matches[0].Groups[2].Value;
 			string uProperty = Util.CamelToPascal(lProperty);
@@ -425,7 +463,7 @@ QueryString args:
 			{
 				log.DebugFormat("removing {0} from {1}", r, record);
 				recordPropertyList.Remove( r );
-			}			
+			}
 			record.SaveRelations(uProperty);
             IMessageWriter writer = arguments.Response.Writer;
 			writer.OpenObject();

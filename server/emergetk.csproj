@@ -325,6 +325,8 @@
     <Compile Include="Model\Records\TupleRecord.cs" />
     <Compile Include="Exceptions.cs" />
     <Compile Include="Model\Search\IndexerFactory.cs" />
+    <Compile Include="Model\DataSourceAttribute.cs" />
+    <Compile Include="Model\Providers\IDataProviderFactory.cs" />
   </ItemGroup>
   <ItemGroup>
     <None Include="ChangeLog" />

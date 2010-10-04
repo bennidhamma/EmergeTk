@@ -14,7 +14,6 @@ namespace EmergeTk.Model.Providers
     {
         private SqlServerProvider()
         {
-            DataProvider.RegisterProvider(typeof(SqlServerProvider), this);
         }
 
         private static readonly SqlServerProvider provider = new SqlServerProvider();
