@@ -48,6 +48,7 @@ namespace EmergeTk.Model
 			if( value == null )
 				throw new ArgumentException("Unable to index AbstractRecord: " + value );
 			//log.Debug("Setting key", key, value.OriginalSource.Table );
+			//log.DebugFormat ("Setting record : {0}, {1}", key, value); 
 			MemoryStream s = new MemoryStream(100);
 			ProtoSerializer.Serialize(value, s);
 			bool ret = mc.Store(StoreMode.Set,key,s.ToArray(),0,(int)s.Length,new TimeSpan(24,0,0));
@@ -154,9 +155,13 @@ namespace EmergeTk.Model
 
         private AbstractRecord GetLocalRecordFromPreparedKey(string keyPrepared)
         {
+//			log.DebugFormat ("Getting local key: {0}, localRecordKeyMap.ContainsKey(keyPrepared): {1}",
+//				keyPrepared, localRecordKeyMap.ContainsKey(keyPrepared));
             if (localRecordKeyMap.ContainsKey(keyPrepared))
             {
                 RecordDefinition rd = localRecordKeyMap[keyPrepared];
+//				log.DebugFormat ("RecordDefinition is: {0}.  localRecords.ContainsKey(rd)? {1}", 
+//					rd, localRecords.ContainsKey(rd));
                 if (localRecords.ContainsKey(rd))
                     return localRecords[rd];
             }

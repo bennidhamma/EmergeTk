@@ -402,6 +402,12 @@ namespace EmergeTk.Model
 		{
 			get
 			{
+				if (definition.Type == null || definition.Id == 0)
+				{
+					if ( this.id == 0 )
+						throw new InvalidOperationException ("Cannot request defintion on a type with 0 id.");
+					definition = new RecordDefinition(this.GetType (), this.id);
+				}
 				return definition;
 			}
 		}
@@ -552,14 +558,14 @@ namespace EmergeTk.Model
             {
             	loads++;
             	hits++;
-            	//log.Debug("CACHE HIT ", cacheKey, loads, hits, misses, hits/loads );
+            	log.Debug("CACHE HIT ", cacheKey, loads, hits, misses, hits/loads );
             	return cacheRecord;            		
             }
 			else
 			{
 				loads++;
 				misses++;
-				//log.Debug("CACHE MISS ", cacheKey, loads, hits, misses, hits/loads );
+				log.Debug("CACHE MISS ", cacheKey, loads, hits, misses, hits/loads );
 				//I don't think we need to do IoC here - all dbs support this simple of a select stmt!
 				result = provider.ExecuteDataTable(string.Format("SELECT * FROM {0} WHERE {1} ", provider.EscapeEntity(name), WhereClause));
             }
@@ -587,10 +593,12 @@ namespace EmergeTk.Model
         	}
             if( record == null )
 				record = new T();
-			record.id = id;
-			LoadFromDataRow<T>(record, result.Rows[0]);
-            PutItemInCache<T>( cacheKey, id, record );
+			record.SetId (id);
+			if (CacheProvider.EnableCaching)
+				CacheProvider.Instance.PutLocal(cacheKey, record);
+           	LoadFromDataRow<T>(record, result.Rows[0]);
             record.recordState = RecordState.Persisted;
+			PutItemInCache<T>(cacheKey, record.id, record);
             return record;
         }
         

@@ -66,10 +66,6 @@ namespace EmergeTk.Model.Providers
         		return provider; 
         	}
         }
-        
-        public MySqlProvider(){
-        	DataProvider.RegisterProvider(typeof(MySqlProvider), this);
-        }
 
 		string connectionString = ConfigurationManager.AppSettings["mysqlConnectionString"];
 		public string ConnectionString {
