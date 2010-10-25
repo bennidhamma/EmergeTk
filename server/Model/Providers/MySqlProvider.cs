@@ -579,6 +579,7 @@ namespace EmergeTk.Model.Providers
                 if (col.Type.IsSubclassOf(typeof(AbstractRecord)))
                 {
                     AbstractRecord r = record[col.Name] as AbstractRecord;
+					record.AddToLoadedProperties (col.Name);
                     //TODO: there should be an option to decide if they want to allow adding nulls or not here.
                     if (r != null)
                     {

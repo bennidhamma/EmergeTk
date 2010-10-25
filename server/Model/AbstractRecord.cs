@@ -1484,7 +1484,7 @@ namespace EmergeTk.Model
 			return typeof(IDerived).IsAssignableFrom(t);
 		}
 
-        private void AddToLoadedProperties(String prop)
+        internal void AddToLoadedProperties(String prop)
         {
             if (this.loadedProperties == null)
                 loadedProperties = new HashSet<string>();

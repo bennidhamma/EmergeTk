@@ -60,6 +60,12 @@ namespace EmergeTk.WebServices
 			if( record != null )
 				Serialize(record,SetupFields(fields, record.GetType()), writer);
 		}
+		
+		public static void Serialize(AbstractRecord record, string explicitName, string fields, IMessageWriter writer)
+		{		
+			if( record != null )
+				Serialize(record, explicitName, SetupFields(fields, record.GetType()), writer);
+		}
 
         public static void Serialize(AbstractRecord record, object[] fields, IMessageWriter writer)
         {
@@ -301,7 +307,7 @@ namespace EmergeTk.WebServices
                 {
                     if (r != null)
                     {
-						log.Debug("Serializing " + r);
+						//log.Debug("Serializing " + r);
                         Serialize(r, fields, writer);
                     }
                 }
