@@ -331,6 +331,9 @@ namespace EmergeTk.Model
 			}
 			string childTableName = DbSafeModelName + "_" + PropertyName;
 			if ( DataProvider.LowerCaseTableNames ) childTableName = childTableName.ToLower();
+
+			if (!GetProvider().TableExists(childTableName) || ci.IsDerived)
+                GetProvider().CreateChildTable(childTableName, ci);
 			
 			// update snapshot
 			if ( addToLocalList ) 
@@ -371,6 +374,7 @@ namespace EmergeTk.Model
 
 			string childTableName = DbSafeModelName + "_" + PropertyName;
 			if ( DataProvider.LowerCaseTableNames ) childTableName = childTableName.ToLower();	
+
 			IRecordList relationsList = this[PropertyName] as IRecordList;
 			
 			log.Debug("removing single relation", PropertyName, childTableName, child, relationsList);
@@ -1383,7 +1387,12 @@ namespace EmergeTk.Model
 							}
 							else
 							{
-								this[fi.Name] = JSON.DeserializeObject (fi.Type, (string)originals[fi.Name]);
+								string s = (string)originals[fi.Name];
+								
+								if (! string.IsNullOrEmpty (s))
+								{
+									this[fi.Name] = JSON.DeserializeObject (fi.Type, s);
+								}
 							}
 	                    }
 	                }
