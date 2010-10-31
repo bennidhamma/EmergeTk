@@ -1277,24 +1277,7 @@ namespace EmergeTk
 			Type monoRuntime = TypeLoader.GetType("Mono.Runtime");
 			log.Info("Mono Version Information: ", 
 			         monoRuntime.InvokeMember("GetDisplayName", BindingFlags.InvokeMethod | BindingFlags.NonPublic | BindingFlags.Static | BindingFlags.DeclaredOnly | BindingFlags.ExactBinding, null, null, null) );
-#endif
-			if( Setting.GetValueT<bool>("UseAddinHost", false ) )
-			{
-				Setting addinsPath = Setting.Get("AddinsPath");
-				if( addinsPath.DataValue == null )
-				{
-					addinsPath.DataValue = System.Environment.CurrentDirectory;
-				}
-	            try
-	            {
-	                AddinHost.Startup(addinsPath.DataValue);
-	            }
-	            catch (Exception ex)
-	            {
-	                log.Error(ex);
-	            }
-			}
-			
+#endif			
 			Thread t = new Thread( delegate() {
 				while(true)
 				{

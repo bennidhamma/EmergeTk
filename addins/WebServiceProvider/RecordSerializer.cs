@@ -555,6 +555,12 @@ namespace EmergeTk.WebServices
                         record[recordFieldName] = null;
                     }
 				}
+				else if (field.DataType == DataType.Json)
+				{
+					log.Debug ("JSON serialize", val.GetType (),  val);
+					var deser = JSON.DeserializeObject(field.Type, (string)val);
+					record[recordFieldName] = deser;
+				}
 				else //scalar. 
 				{
                     if (val == null && field.Type.IsValueType)

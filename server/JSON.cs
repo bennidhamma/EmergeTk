@@ -34,6 +34,12 @@ namespace EmergeTk
 				return serializer;
 			}
 		}
+		
+		static public object DeserializeObject (Type t, string source)
+		{
+			return TypeLoader.InvokeGenericMethod 
+				(typeof (JavaScriptSerializer), "Deserialize", new Type[] {t}, serializer, new object[] {source});
+		}
         
         public string ArrayToJSON<T>(List<T> list)
         {

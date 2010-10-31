@@ -15,8 +15,6 @@ using Lucene.Net.Analysis.Standard;
 using Lucene.Net.Search;
 using Lucene.Net.QueryParsers;
 using EmergeTk;
-using Mono.Addins;
-using Mono.Addins.Description;
 using LuceneField = Lucene.Net.Documents.Field;
 
 namespace EmergeTk.Model.Search
@@ -402,146 +400,12 @@ namespace EmergeTk.Model.Search
 			get
 			{
 				//log.Debug("getting instance", instance, AddinHost.Running);
-				if( instance == null )
-				{
-					start();
-				}
 				return instance;
 			}
 			set
 			{
 				instance = value;	
 			}
-		}
-
-		/*
-		static void debug()
-		{
-			log.Info("debugging addins " + AppDomain.CurrentDomain.Id );
-
-			
-			//AddinManager.LoadAddin(null, "EmergeTk");
-			//AddinManager.LoadAddin(null, "MemCached");
-			
-			log.Info("addin EmergeTk loaded?" + AddinManager.IsAddinLoaded("EmergeTk") );
-			log.Info("addin SolrSearchProvider loaded?" + AddinManager.IsAddinLoaded("SolrSearchProvider") );
-
-				foreach( Addin a in AddinManager.Registry.GetAddinRoots() )
-				{
-					log.Debug("addin root ", a, a.Enabled );
-					foreach( ExtensionPoint e in a.Description.ExtensionPoints )
-					{
-						log.DebugFormat("extension point {0} {1} {2}", e, e.Name, e.Path );
-						foreach( ExtensionNodeType n in e.NodeSet.NodeTypes )
-						{
-							log.DebugFormat( "ext node {0} {1}", n.Id, n.NodeName );
-						}
-					}
-				}
-	
-				foreach( Addin a in AddinManager.Registry.GetAddins() )
-				{
-					log.Debug("addin" + a );
-					
-					foreach( ModuleDescription md in a.Description.AllModules )
-					{
-						//ExtensionNodeDescription end = md.Extensions[0].ExtensionNodes[0];
-						//log.Debug("module", end.NodeName, end.Id, end.GetNodeType().TypeName);
-						
-						foreach( Extension e in md.Extensions )
-						{
-							log.Debug("extension: " + e.Path );
-							foreach( ExtensionNodeDescription end in e.ExtensionNodes )
-							{
-								ExtensionNodeType ent = end.GetNodeType();
-								
-								log.Debug("ext node:" + end.NodeName );
-								if( ent != null )
-								{
-									log.DebugFormat("e node type {0} {1} {2} {3}",
-									          ent.ObjectTypeName, 
-									          ent.Description, 
-									          ent.TypeName,
-									          ent.NodeTypes );
-								}
-							}
-						}	
-					}
-				}
-		}
-		*/
-		
-		static void start()
-		{
-			log.Debug("Addin host running? ", AddinHost.Running );
-			string path = "/EmergeTk/Model/SearchServiceProvider";
-			
-			
-			
-			if( AddinHost.Running )
-			{
-				try
-				{
-					log.Debug("looking for extensions to ISearchServiceProvider");
-					foreach (ISearchServiceProvider c in AddinManager.GetExtensionObjects ( path ))
-					{
-						instance = c;
-						log.Debug("Using ISearchServiceProvider: ", instance );
-					}
-	
-					log.Debug("looking for extensions to " + path);
-	
-					foreach( ExtensionNode node in AddinManager.GetExtensionNodes(path) )
-					{
-						log.Debug("found extensions for ", node );
-					}
-
-					AddinManager.AddExtensionNodeHandler(path, OnExtensionChanged);
-				}
-				catch(Exception e )
-				{
-					log.Error("Error loading ISearchServiceProvider addins", e );
-				}
-			}
-			else
-			{
-				AddinHost.OnAddinStart += delegate {
-					instance = null;	
-				};
-			}
-			
-			if( instance == null )
-			{
-				instance = new LuceneSearchServiceProvider();
-				log.Debug("!!!!!!!!!!!!!!!!!!!!!!!!USING LUCENE!!!!!!!!!!!!!!!!!!!!!!!!!!");
-			}
-			
-			log.Debug("Using ISearchServiceProvider: ", instance, AddinHost.Running );
-		}
-		
-		static void OnExtensionChanged( object sender, ExtensionNodeEventArgs args )
-		{
-			log.Debug("extension changed", args.Change, args.Path, args.ExtensionNode.Id );
-			if( args.Change == ExtensionChange.Remove )
-			{
-				instance = null;
-			}
-			else
-			{
-				TypeExtensionNode node = args.ExtensionNode as TypeExtensionNode;
-				object i = node.CreateInstance();
-				Type icp1 = i.GetType().GetInterface("ISearchServiceProvider");
-				Type icp2 = typeof(ISearchServiceProvider);
-				log.Debug("adding from node ", 
-				          node, 
-				          i, 
-				          icp1 == icp2,
-				          icp1.AssemblyQualifiedName,
-				          icp2.AssemblyQualifiedName);
-				instance = (ISearchServiceProvider)node.CreateInstance();
-			}
-
-			log.Debug("Using ISearchServiceProvider: ", instance );
 		}
 	}
 }

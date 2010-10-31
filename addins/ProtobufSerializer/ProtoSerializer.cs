@@ -142,7 +142,7 @@ namespace ProtobufSerializer
 				else if( ci.Type == typeof(DateTime) || ci.Type == typeof(DateTime?))
 					t[ci.Name] = mr.ReadDateTime();
 				else if (ci.DataType == DataType.Json)
-					t[ci.Name] = JSON.Serializer.DeserializeObject (mr.ReadString ());
+					t[ci.Name] = JSON.DeserializeObject (ci.Type, mr.ReadString ());
 				//print("read value: "  + t[ci.Name]);
 				t.SetOriginalValue(ci.Name,t[ci.Name]);
 			}

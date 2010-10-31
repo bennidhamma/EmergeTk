@@ -1383,7 +1383,7 @@ namespace EmergeTk.Model
 							}
 							else
 							{
-								this[fi.Name] = JSON.Serializer.DeserializeObject ((string)originals[fi.Name]);
+								this[fi.Name] = JSON.DeserializeObject (fi.Type, (string)originals[fi.Name]);
 							}
 	                    }
 	                }

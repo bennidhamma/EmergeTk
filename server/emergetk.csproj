@@ -47,11 +47,6 @@
     <ConsolePause>false</ConsolePause>
   </PropertyGroup>
   <ItemGroup>
-    <Reference Include="Mono.Addins, Version=0.4.0.0, Culture=neutral, PublicKeyToken=0738eb9f132ed756">
-      <SpecificVersion>False</SpecificVersion>
-      <HintPath>..\..\lib\Mono.Addins.dll</HintPath>
-      <Package>mono-addins</Package>
-    </Reference>
     <Reference Include="System" />
     <Reference Include="System.Web" />
     <Reference Include="System.Data" />
@@ -286,7 +281,6 @@
     <Compile Include="Logging\ColoredConsoleAppender.cs" />
     <Compile Include="Logging\ConsoleCrayon.cs" />
     <Compile Include="Model\CacheProvider.cs" />
-    <Compile Include="Admin\Addins.cs" />
     <Compile Include="Widgets\Html\Layout\Stack.cs" />
     <Compile Include="Widgets\Html\CommandInput\Dialog.cs" />
     <Compile Include="Widgets\Html\Lists\ArrowBoxPager.cs" />
@@ -314,7 +308,6 @@
     <Compile Include="Model\IRecordListT.cs" />
     <Compile Include="Model\Search\ISearchServiceProvider.cs" />
     <Compile Include="IJSONSerializable.cs" />
-    <Compile Include="AddinHost.cs" />
     <Compile Include="Model\Search\DefaultSearchFilterFormatter.cs" />
     <Compile Include="Model\ReadCacheT.cs" />
     <Compile Include="Model\IVersioned.cs" />
@@ -334,6 +327,7 @@
     <None Include="build.xml" />
     <None Include="DataGridTester.xml" />
     <None Include="BSD_LICENSE" />
+    <None Include="AddinHost.cs" />
   </ItemGroup>
   <Import Project="$(MSBuildBinPath)\Microsoft.CSharp.targets" />
   <ProjectExtensions>
