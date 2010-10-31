@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.IO;
 using EmergeTk.Model;
 using ProtoSharp.Core;
+using EmergeTk;
 
 namespace ProtobufSerializer
 {
@@ -67,6 +68,8 @@ namespace ProtobufSerializer
                     mw.WriteFixed((double)val);
                 else if (type.Type == typeof(DateTime))
                     mw.WriteDateTime((DateTime)val);
+				else if(ci.DataType == DataType.Json)
+					mw.WriteString (JSON.Serializer.Serialize (val));	
 			}
 		}
 		
@@ -138,6 +141,8 @@ namespace ProtobufSerializer
 					t[ci.Name] = mr.ReadFixedDouble();
 				else if( ci.Type == typeof(DateTime) || ci.Type == typeof(DateTime?))
 					t[ci.Name] = mr.ReadDateTime();
+				else if (ci.DataType == DataType.Json)
+					t[ci.Name] = JSON.Serializer.DeserializeObject (mr.ReadString ());
 				//print("read value: "  + t[ci.Name]);
 				t.SetOriginalValue(ci.Name,t[ci.Name]);
 			}

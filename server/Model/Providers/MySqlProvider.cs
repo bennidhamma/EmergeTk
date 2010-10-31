@@ -10,6 +10,8 @@ using System.Text;
 using System.Web;
 using MySql.Data.MySqlClient;
 using EmergeTk.Model;
+using System.Runtime.Serialization.Json;
+using System.Web.Script.Serialization;
 
 namespace EmergeTk.Model.Providers
 {
@@ -597,7 +599,14 @@ namespace EmergeTk.Model.Providers
            	    }
                 else //string, enum, etc.
                 {
-					comm.Parameters.Add( new MySqlParameter("?"+ col.Name,record[col.Name] ) );
+					if (col.DataType != DataType.Json)
+					{
+						comm.Parameters.Add( new MySqlParameter("?"+ col.Name,record[col.Name] ) );
+					}
+					else
+					{
+						comm.Parameters.Add( new MySqlParameter("?"+ col.Name, JSON.Serializer.Serialize (record[col.Name]) ) );
+					}
 					parameterKeys.Add("?" + col.Name);
                     record.SetOriginalValue(col.Name, record[col.Name]);
                 }
@@ -912,6 +921,10 @@ namespace EmergeTk.Model.Providers
         		// TODO: this may be bad to create a child table here
         		CreateChildTable (tableName + "_" + col.Name, col);
             }
+			else
+			{
+				dataType = "text";
+			}			
 
             return dataType;
         }

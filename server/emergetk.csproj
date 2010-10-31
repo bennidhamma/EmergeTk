@@ -111,6 +111,9 @@
       <HintPath>..\..\lib\gdk-sharp.dll</HintPath>
       <Package>gtk-sharp-2.0</Package>
     </Reference>
+    <Reference Include="System.Runtime.Serialization" />
+    <Reference Include="System.ServiceModel.Web" />
+    <Reference Include="System.Web.Extensions" />
   </ItemGroup>
   <ItemGroup>
     <Compile Include="AssemblyInfo.cs" />

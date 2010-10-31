@@ -7,6 +7,7 @@ using System.Web.Caching;
 using System.Linq;
 using EmergeTk.Model.Security;
 using System.Runtime.Serialization;
+using System.Web.Script.Serialization;
 
 namespace EmergeTk.Model
 {
@@ -1376,7 +1377,14 @@ namespace EmergeTk.Model
         				}
                     	else
 						{
-							this[fi.Name] = PropertyConverter.Convert(originals[fi.Name], type);
+							if (fi.DataType != DataType.Json)
+							{
+								this[fi.Name] = PropertyConverter.Convert(originals[fi.Name], type);
+							}
+							else
+							{
+								this[fi.Name] = JSON.Serializer.DeserializeObject ((string)originals[fi.Name]);
+							}
 	                    }
 	                }
 	            }
