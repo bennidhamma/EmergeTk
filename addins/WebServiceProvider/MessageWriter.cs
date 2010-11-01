@@ -233,7 +233,13 @@ namespace EmergeTk.WebServices
         public void OpenList(string name)
         {
             JsonEntity list = JsonEntity.Create(JsonEntityType.List);
-            current.ParentHasChildren = true;
+            if (current.HasParent)
+            {
+                if (current.ParentHasChildren)
+                    WriteToStream(",");
+                else
+                    current.ParentHasChildren = true;
+            }
             WriteToStream("[");
             current.Push(list);
         }

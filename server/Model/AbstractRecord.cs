@@ -268,7 +268,7 @@ namespace EmergeTk.Model
 				if( newRelations.Contains( r.id ) )
 				{
 					//Don't allow duplicate saves.
-					log.Warn("Duplicate child record in list", this, r );
+					log.Debug("Duplicate child record in list", this, r );
 					continue;
 				}
 				
@@ -587,7 +587,7 @@ namespace EmergeTk.Model
         	}
             if( record == null )
 				record = new T();
-			record.id = id;
+			record.SetId (id);
 			LoadFromDataRow<T>(record, result.Rows[0]);
             PutItemInCache<T>( cacheKey, id, record );
             record.recordState = RecordState.Persisted;

@@ -7,6 +7,16 @@ using EmergeTk.Model.Providers;
 
 namespace EmergeTk.Model
 {
+    public class DuplicateRecordException : Exception
+    {
+        public DuplicateRecordException(Exception providerDupRecordException)
+        {
+            this.ProviderException = providerDupRecordException;
+        }
+
+        public Exception ProviderException { get; set; }
+    }
+
     public abstract class DataProvider
     {
     	protected static readonly EmergeTkLog log = EmergeTkLogManager.GetLogger(typeof(DataProvider));

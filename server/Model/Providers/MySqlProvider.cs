@@ -182,8 +182,13 @@ namespace EmergeTk.Model.Providers
 			catch(Exception e )
 			{
 				log.Error( sql, Util.BuildExceptionOutput(e) );
-				throw new Exception("error executing sql", e);
-			}
+                if (e is MySqlException && ((MySqlException)e).Number == 1062)
+                {
+                    // we want to distinguish and catch the duplicateRecordException.
+                    throw new DuplicateRecordException(e as MySqlException);
+                }
+                throw new Exception("error executing sql", e);
+            }
 			finally
 			{            
 	            if (mode != SqlExecutionType.Reader)

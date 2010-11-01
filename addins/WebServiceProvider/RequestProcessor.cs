@@ -54,7 +54,8 @@ namespace EmergeTk.WebServices
 			else
 			{
 				response.Expires = 0;
-				HttpContext.Current.Response.Cache.SetMaxAge(new TimeSpan(0));
+                if (HttpContext.Current != null)
+				    HttpContext.Current.Response.Cache.SetMaxAge(new TimeSpan(0));
 			}
 			log.Debug("caching:", response.Expires, response.Cacheability);
 			response.StatusCode = 404;

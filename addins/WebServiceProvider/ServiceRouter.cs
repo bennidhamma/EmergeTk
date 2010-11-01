@@ -163,7 +163,7 @@ namespace EmergeTk.WebServices
 
                             messageWriter.WriteProperty("keyPath", error.Path);
                             messageWriter.WriteProperty("description", error.Problem);
-                            messageWriter.WriteProperty("recoverySuggeston", error.Suggestion);
+                            messageWriter.WriteProperty("recoverySuggestion", error.Suggestion);
 
                             messageWriter.CloseObject();
                         }
