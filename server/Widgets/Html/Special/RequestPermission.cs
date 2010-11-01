@@ -30,6 +30,9 @@ namespace EmergeTk.Widgets.Html
 				showCancel = value;
 			}
 		}
+		
+		public string Title { get; set; }
+		public string Description { get; set; }
 
 		bool showCancel;
 		
@@ -43,13 +46,13 @@ namespace EmergeTk.Widgets.Html
 		
 		public override void Initialize ()
 		{			
-			this.Label = "Authorization Required";
+			this.Label = Title ?? "Authorization Required";
 			base.Initialize();
 			
 			if( ! test() )
 			{
 				Label head = RootContext.CreateWidget<Label>(this);
-				head.Text = "This action requires permission.  Please log in with an authorized account";
+				head.Text = Description ?? "This action requires permission.  Please log in with an authorized account";
 				Login login = RootContext.CreateWidget<Login>(this);
 				login.ShowCancel = showCancel;
 				RootContext.OnLogIn += new EventHandler<EmergeTk.UserEventArgs>( delegate( object sender, UserEventArgs e ) {

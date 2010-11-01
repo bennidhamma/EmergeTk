@@ -28,8 +28,8 @@ namespace EmergeTk
 				return;
 			base.Debug( args );
 		}
-
-		public override void DebugFormat(string format, params object[] args )
+	
+		public override void DebugFormat (string format, params object[] args )
 		{
 			Debug( string.Format( format, args ) );
 		}

@@ -586,11 +586,11 @@ QueryString args:
 			if( start != -1 && requestCount != -1 )
 			{
                 writer.WriteProperty("start", start);
-				RecordSerializer.SerializeIntsList( ids.GetRange(start,requestCount).AsEnumerable(), args["fields"], sortBy, recordType, writer);				
+				RecordSerializer.SerializeIntsList( ids.GetRange(start,requestCount).AsEnumerable(), null, args["fields"], sortBy, recordType, writer);				
 			}
 			else
 			{
-				RecordSerializer.SerializeIntsList( ids.AsEnumerable(), args["fields"], sortBy, recordType, writer );
+				RecordSerializer.SerializeIntsList( ids.AsEnumerable(), null, args["fields"], sortBy, recordType, writer );
 			}
             writer.CloseRoot();
 		}

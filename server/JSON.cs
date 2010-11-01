@@ -5,6 +5,7 @@ using System.Reflection;
 using System.Text;
 using EmergeTk.Model;
 using System.Globalization;
+using System.Web.Script.Serialization;
 
 namespace EmergeTk
 {
@@ -18,11 +19,26 @@ namespace EmergeTk
     {
 		private static readonly EmergeTkLog log = EmergeTkLogManager.GetLogger(typeof(JSON));
 		static JSON def = new JSON();
+		static JavaScriptSerializer serializer = new JavaScriptSerializer();
 		
 		static public JSON Default {
 			get {
 				return def;
 			}
+		}
+		
+		static public JavaScriptSerializer Serializer
+		{
+			get
+			{
+				return serializer;
+			}
+		}
+		
+		static public object DeserializeObject (Type t, string source)
+		{
+			return TypeLoader.InvokeGenericMethod 
+				(typeof (JavaScriptSerializer), "Deserialize", new Type[] {t}, serializer, new object[] {source});
 		}
         
         public string ArrayToJSON<T>(List<T> list)

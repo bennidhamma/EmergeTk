@@ -7,6 +7,7 @@ using System.Web.Caching;
 using System.Linq;
 using EmergeTk.Model.Security;
 using System.Runtime.Serialization;
+using System.Web.Script.Serialization;
 
 namespace EmergeTk.Model
 {
@@ -330,6 +331,9 @@ namespace EmergeTk.Model
 			}
 			string childTableName = DbSafeModelName + "_" + PropertyName;
 			if ( DataProvider.LowerCaseTableNames ) childTableName = childTableName.ToLower();
+
+			if (!GetProvider().TableExists(childTableName) || ci.IsDerived)
+                GetProvider().CreateChildTable(childTableName, ci);
 			
 			// update snapshot
 			if ( addToLocalList ) 
@@ -363,13 +367,14 @@ namespace EmergeTk.Model
 				throw new ArgumentNullException();	
 			}
 			ColumnInfo ci = this.GetFieldInfoFromName(PropertyName);
-			if( ci.ListRecordType != child.GetType() )
+			if( ci.ListRecordType != child.GetType() && ! child.GetType().IsSubclassOf( ci.ListRecordType ) )
 			{
 				throw new ArgumentException(string.Format("cannot remove relation with child of type {0} into list of type {1}", child.GetType(), ci.ListRecordType));
 			}
 
 			string childTableName = DbSafeModelName + "_" + PropertyName;
 			if ( DataProvider.LowerCaseTableNames ) childTableName = childTableName.ToLower();	
+
 			IRecordList relationsList = this[PropertyName] as IRecordList;
 			
 			log.Debug("removing single relation", PropertyName, childTableName, child, relationsList);
@@ -402,6 +407,12 @@ namespace EmergeTk.Model
 		{
 			get
 			{
+				if (definition.Type == null || definition.Id == 0)
+				{
+					if ( this.id == 0 )
+						throw new InvalidOperationException ("Cannot request defintion on a type with 0 id.");
+					definition = new RecordDefinition(this.GetType (), this.id);
+				}
 				return definition;
 			}
 		}
@@ -588,9 +599,11 @@ namespace EmergeTk.Model
             if( record == null )
 				record = new T();
 			record.SetId (id);
-			LoadFromDataRow<T>(record, result.Rows[0]);
-            PutItemInCache<T>( cacheKey, id, record );
+			if (CacheProvider.EnableCaching)
+				CacheProvider.Instance.PutLocal(cacheKey, record);
+           	LoadFromDataRow<T>(record, result.Rows[0]);
             record.recordState = RecordState.Persisted;
+			PutItemInCache<T>(cacheKey, record.id, record);
             return record;
         }
         
@@ -1351,34 +1364,36 @@ namespace EmergeTk.Model
 			SyncToSource(this.originalValues);
 		}
 		
-        public void SyncToSource(Dictionary<string,object> originals)
+        public void SyncToSource (Dictionary<string, object> originals)
         {
         	foreach (ColumnInfo fi in this.Fields)
 	        {
-	            if (fi.DataType != DataType.RecordList)
+        		if (fi.DataType != DataType.RecordList)
 	            {
-	                if (originals.ContainsKey(fi.Name) && originals[fi.Name] != DBNull.Value )
-	                {
-	                    if (fi.DataType == DataType.RecordSelect && (originals[fi.Name] is int && (int)originals[fi.Name] == this.id && this.GetType() == fi.Type))
-	                    {
-	                        this[fi.Name] = this;
-	                    }
-	                    else if( this.parent != null && fi.Type.IsInstanceOfType( this.parent ) &&
-	                    	(int)originals[fi.Name] == this.parent.id  )
-	                    {
-	                    	this[fi.Name] = this.parent;
-                    	}
-	                    else
-	                    {
-	                    	Type type = fi.Type;                    	
-	                    	
-	                    	if( fi.IsRecord )
-	                    	{
-	                    		if( originals[fi.Name] != DBNull.Value && !lazyLoadProperties )
-	                    			LoadProperty(fi);
-	                    	}
-	                    	else
-	                        	this[fi.Name] = PropertyConverter.Convert(originals[fi.Name], type);
+        			if (originals.ContainsKey (fi.Name) && originals[fi.Name] != DBNull.Value)
+					{
+        				Type type = fi.Type;
+        				
+                    	if (fi.IsRecord)
+                    	{
+        					if (originals[fi.Name] != DBNull.Value && !lazyLoadProperties)
+        						LoadProperty (fi);
+        				}
+                    	else
+						{
+							if (fi.DataType != DataType.Json)
+							{
+								this[fi.Name] = PropertyConverter.Convert(originals[fi.Name], type);
+							}
+							else
+							{
+								string s = (string)originals[fi.Name];
+								
+								if (! string.IsNullOrEmpty (s))
+								{
+									this[fi.Name] = JSON.DeserializeObject (fi.Type, s);
+								}
+							}
 	                    }
 	                }
 	            }
@@ -1480,8 +1495,13 @@ namespace EmergeTk.Model
             foreach (String prop in props)
                 this.RemoveFromLoadedProperties(prop);
         }
+		
+		public static bool IsDerived( Type t )
+		{
+			return typeof(IDerived).IsAssignableFrom(t);
+		}
 
-        private void AddToLoadedProperties(String prop)
+        internal void AddToLoadedProperties(String prop)
         {
             if (this.loadedProperties == null)
                 loadedProperties = new HashSet<string>();
@@ -1501,16 +1521,22 @@ namespace EmergeTk.Model
 				int id = (int)originalValues[fi.Name];
 				if( id == 0 )
 					return;
-    			AbstractRecord r = GetRecordFromLoadingContext( type, id );
-				//TODO: yikes - should we be creating empty values here??
-    			if( r == null )
-    			{
-    				r = Activator.CreateInstance(type) as AbstractRecord;
-    				r.parent = this;
-    				r.loadingContext = loadingContext;
-    				r = (AbstractRecord)PropertyConverter.Convert(originalValues[fi.Name], type, r);
-    			}
-    			this[fi.Name] = r;
+				
+				if( fi.IsDerived )
+				{
+					type = DataProvider.DefaultProvider.GetTypeForId(id);	
+				}
+				if( type != null )
+				{
+					AbstractRecord r = AbstractRecord.Load(type, id);
+					if( r != null )
+					{
+						r.parent = this;
+					}
+	    			this[fi.Name] = r;
+				}
+				else
+					this[fi.Name] = null;
                 AddToLoadedProperties(fi.Name);
     		}
     		catch(Exception e)

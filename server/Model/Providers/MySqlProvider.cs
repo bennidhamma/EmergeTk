@@ -10,6 +10,8 @@ using System.Text;
 using System.Web;
 using MySql.Data.MySqlClient;
 using EmergeTk.Model;
+using System.Runtime.Serialization.Json;
+using System.Web.Script.Serialization;
 
 namespace EmergeTk.Model.Providers
 {
@@ -30,7 +32,7 @@ namespace EmergeTk.Model.Providers
         	}
         }
         
-        const string UidGenTableName = "uid_gen";
+        const string UidGenTableName = "uid";
 	    const string LongStringDataType = "text";
 		const string ShortStringDataType = "varchar(20)";
 		const string StringDataType = "varchar(500)";
@@ -66,7 +68,7 @@ namespace EmergeTk.Model.Providers
         		return provider; 
         	}
         }
-       
+
 		string connectionString = ConfigurationManager.AppSettings["mysqlConnectionString"];
 		public string ConnectionString {
 			get {
@@ -79,6 +81,10 @@ namespace EmergeTk.Model.Providers
 			}
 		}
 
+		public void SetConnectionString(String cString) {
+			connectionString = cString;
+		}
+		
 		string dbName = null;
 		public string DatabaseName {
 			get {
@@ -321,11 +327,21 @@ namespace EmergeTk.Model.Providers
             //then get records that aren't in cache as ONE database call
             //
             RecordList<T> records = new RecordList<T>();
-            string name = GetTableNameT<T>();
-            if (name == null)
-            {
-                return records;
-            }
+			bool isDerived = AbstractRecord.IsDerived(typeof(T));
+			string name = null;
+			if( ! isDerived )
+			{
+	            name = GetTableNameT<T>();
+	            if (name == null)
+	            {
+	                return records;
+	            }
+			}
+			else
+			{
+				//name only used for caching at this point.
+				name = typeof(T).FullName;
+			}	
 
             // keep a map of who got found in cache, and who didn't.
             Dictionary<int, T> recordMap = new Dictionary<int, T>();
@@ -345,15 +361,39 @@ namespace EmergeTk.Model.Providers
 
             if (unCachedIds.Count > 0)
             {
-                String sql = String.Format("SELECT * FROM {0} WHERE ROWID IN ({1});", EscapeEntity(name), Util.JoinToString<int>(unCachedIds, ","));
-                DataTable result = MySqlProvider.Provider.ExecuteDataTable(sql);
-
-                for (int i = 0; i < result.Rows.Count; i++)
-                {
-                    T r = AbstractRecord.LoadFromDataRow<T>(result.Rows[i]);
-                    recordMap[r.Id] = r;
-                    AbstractRecord.PutRecordInCache(r);
-                }
+				if (AbstractRecord.IsDerived(typeof(T)))
+				{
+					foreach( int id in unCachedIds )
+					{
+						Type t = GetTypeForId(id);
+						if( t == null )
+						{
+							log.Warn("Did not find type for id " + id);
+							continue;
+						}
+						T r = AbstractRecord.Load(t,id) as T;
+						
+						if( r != null )
+						{
+							recordMap[r.Id] = r;
+							AbstractRecord.PutRecordInCache(r);
+						}
+						else
+							log.WarnFormat("Did not load a record for id {0} and type {1}", id, t);
+					}
+				}
+				else
+				{
+	                String sql = String.Format("SELECT * FROM {0} WHERE ROWID IN ({1});", EscapeEntity(name), Util.JoinToString<int>(unCachedIds, ","));
+	                DataTable result = MySqlProvider.Provider.ExecuteDataTable(sql);
+	
+	                for (int i = 0; i < result.Rows.Count; i++)
+	                {
+	                    T r = AbstractRecord.LoadFromDataRow<T>(result.Rows[i]);
+	                    recordMap[r.Id] = r;
+	                    AbstractRecord.PutRecordInCache(r);
+	                }
+				}
             }
 
             foreach (KeyValuePair<int, T> kvp in recordMap)
@@ -451,27 +491,26 @@ namespace EmergeTk.Model.Providers
         
         public int GetNewId(string typeName)
         {
-        	string table = UidGenTableName + typeName;
+        	string table = UidGenTableName;
         	if( string.IsNullOrEmpty(typeName ) )
         	{
         		throw new ArgumentNullException("Must specify a valid type name.");
         	}
-			if( ! TableExists( table ) )
-			{
-				ExecuteNonQuery(string.Format( "create table `{0}` ( `key` integer unsigned not null auto_increment, PRIMARY KEY(`key`)  );", table ) );
-				if( TableExists( typeName ) )
-				{
-					ExecuteNonQuery(string.Format( "insert into `{0}` select max(ROWID) from `{1}`;", table, typeName ) );
-				}
-				RegisterTable( table );
-			}
-			
-			int newId = Convert.ToInt32( ExecuteScalar( string.Format( "insert into `{0}` values (); SELECT LAST_INSERT_ID();", table ) ) );
+			int newId = Convert.ToInt32( ExecuteScalar( string.Format( "insert into `{0}` (type) values ('{1}'); SELECT LAST_INSERT_ID();", UidGenTableName, typeName ) ) );
 			
 			log.Debug("GetNewId: ", newId );
 			
 			return newId;
         }
+		
+		public Type GetTypeForId( int id )
+		{
+			string type = (string) ExecuteScalar("SELECT type FROM uid WHERE ID = " + id);
+			if( type == null )
+				return null;
+			else
+				return TypeLoader.GetType(type);
+		}
         
         public int GetLatestVersion( AbstractRecord r )
         {
@@ -499,7 +538,6 @@ namespace EmergeTk.Model.Providers
         public void Save(AbstractRecord record, bool SaveChildren, bool IncrementVersion, DbConnection conn)
 		{
 			log.Debug("saving record", this );
-
             if( record.Id == 0 && record.TableIdentityColumn != "ROWID" )
 			{
 				 AbstractRecord r = AbstractRecord.Load(record.GetType(),new FilterInfo(
@@ -539,7 +577,6 @@ namespace EmergeTk.Model.Providers
             bool persisted = record.Persisted;   
         	foreach( ColumnInfo col in record.Fields )
 			{
-				
 				if (col.ReadOnly || col.DataType == DataType.Volatile || col.DataType == DataType.RecordList || GetSqlTypeFromType(col, record.DbSafeModelName) == null )
                     continue;
                 
@@ -549,6 +586,7 @@ namespace EmergeTk.Model.Providers
                 if (col.Type.IsSubclassOf(typeof(AbstractRecord)))
                 {
                     AbstractRecord r = record[col.Name] as AbstractRecord;
+					record.AddToLoadedProperties (col.Name);
                     //TODO: there should be an option to decide if they want to allow adding nulls or not here.
                     if (r != null)
                     {
@@ -566,7 +604,14 @@ namespace EmergeTk.Model.Providers
            	    }
                 else //string, enum, etc.
                 {
-					comm.Parameters.Add( new MySqlParameter("?"+ col.Name,record[col.Name] ) );
+					if (col.DataType != DataType.Json)
+					{
+						comm.Parameters.Add( new MySqlParameter("?"+ col.Name,record[col.Name] ) );
+					}
+					else
+					{
+						comm.Parameters.Add( new MySqlParameter("?"+ col.Name, JSON.Serializer.Serialize (record[col.Name]) ) );
+					}
 					parameterKeys.Add("?" + col.Name);
                     record.SetOriginalValue(col.Name, record[col.Name]);
                 }
@@ -808,10 +853,6 @@ namespace EmergeTk.Model.Providers
 			if (dataType != null) 
 			{
 				pairs.Add(Util.Surround(col.Name, "`") + " " + dataType);
-				if( col.IsDerived )
-				{
-					pairs.Add(Util.Surround(col.Name + "__type", "`") + " varchar(128)");
-				}
 			}	
 		}
         
@@ -825,39 +866,41 @@ namespace EmergeTk.Model.Providers
             return Util.Surround(entity, "`");
         }
         
-        public string GetSqlTypeFromType(ColumnInfo col, string tableName)
+        public string GetSqlTypeFromType (ColumnInfo col, string tableName)
         {
-			if ( LowerCaseTableNames ) tableName = tableName.ToLower();
-        	string dataType = null; //"int";
-            if (col.Type == typeof(string))
+        	if (LowerCaseTableNames)
+        		tableName = tableName.ToLower ();
+        	string dataType = null;
+        	//"int";
+        	if (col.Type == typeof(string))
             {
-                if (col.DataType == DataType.LargeText || col.DataType == DataType.Xml)
-                    dataType = LongStringDataType;
+        		if (col.DataType == DataType.LargeText || col.DataType == DataType.Xml)
+        			dataType = LongStringDataType;
                 else if (col.DataType == DataType.SmallText)
-                    dataType = ShortStringDataType;
-                else
-                    dataType = StringDataType;
-            }
+        			dataType = ShortStringDataType;
+        		else
+        			dataType = StringDataType;
+        	}
             else if (col.Type == typeof(int) || col.Type == typeof(int?))
             {
-                dataType = "int(11)";
-            }
+        		dataType = "int(11)";
+        	}
 			else if (col.Type == typeof(decimal) || col.Type == typeof(decimal?))
             {
-                dataType = "decimal(20,2)";
-            }
+        		dataType = "decimal(20,2)";
+        	}
 			else if (col.Type == typeof(float) || col.Type == typeof(float?))
             {
-                dataType = "float";
-            }
+        		dataType = "float";
+        	}
 			else if (col.Type == typeof(double) || col.Type == typeof(double?))
             {
-                dataType = "double";
-            }
+        		dataType = "double";
+        	}
 			else if (col.Type == typeof(DateTime) || col.Type == typeof(DateTime?))
             {
-                dataType = "datetime";
-            }
+        		dataType = "datetime";
+        	}
 			else if (col.Type == typeof(TimeSpan) || col.Type == typeof(TimeSpan?))
             {
             	dataType = "bigint(20)";
@@ -872,17 +915,21 @@ namespace EmergeTk.Model.Providers
             }
 			else if (col.Type == typeof(bool) || col.Type == typeof(bool?))
             {
-                dataType = "tinyint(1)";
-            }
+        		dataType = "tinyint(1)";
+        	}
 			else if (col.Type == typeof(long) || col.Type == typeof(long?))
 			{
-				dataType = "bigint";	
-			}
-            else if (AbstractRecord.TypeIsRecordList(col.Type))
+        		dataType = "bigint";
+        	}
+            else if (AbstractRecord.TypeIsRecordList (col.Type))
             {
-				// TODO: this may be bad to create a child table here
-                CreateChildTable(tableName + "_" + col.Name, col);
+        		// TODO: this may be bad to create a child table here
+        		CreateChildTable (tableName + "_" + col.Name, col);
             }
+			else
+			{
+				dataType = "text";
+			}			
 
             return dataType;
         }
@@ -890,31 +937,9 @@ namespace EmergeTk.Model.Providers
 		public void CreateChildTable(string tableName, ColumnInfo col)
         {
 		   if ( LowerCaseTableNames ) tableName = tableName.ToLower();
-           bool create = false;
-        	
-            if (TableExists(tableName) )
-            {
-            	if( col.IsDerived )
-            	{
-	            	//make sure we have the right columns
-	            	long count = (long)ExecuteScalar( string.Format( SelectColumnFormat, DatabaseName, tableName, "Child_Type" ) );
-	            	//log.Debug(" child_type column exists sql returned: " + result + " type is " + result.GetType() );
-	            	//int count = (int)result;
-	            	if( count == 0 )
-	            	{
-	            		ExecuteNonQuery( string.Format("ALTER TABLE {0} ADD COLUMN Child_Type {1}", tableName, StringDataType) );
-	            	}
-	           	}
-            }
-            else
-            	create = true;
-            
-            if( create )
-            {
-				if( col.IsDerived )
-					ExecuteNonQuery(string.Format(CreateTableNoRowIdFormat, tableName, "Parent_Id int, Child_Id int, Child_Type varchar(128)"));					
-				else
-					ExecuteNonQuery(string.Format(CreateTableNoRowIdFormat, tableName, "Parent_Id int, Child_Id int"));		
+           if (!TableExists(tableName) )
+           {
+				ExecuteNonQuery(string.Format(CreateTableNoRowIdFormat, tableName, "Parent_Id int, Child_Id int"));		
 				existingTables[tableName] = true;
 
                 CreateChildTableIndex(tableName);
@@ -1097,10 +1122,7 @@ namespace EmergeTk.Model.Providers
 		public string GenerateAddChildTableStatement( string tableName, bool isDerived )
 		{
 			if ( LowerCaseTableNames ) tableName = tableName.ToLower();
-			if( isDerived )
-	    		return string.Format(GenerateChildTableFormat, tableName, "Parent_Id int, Child_Id int, Child_Type varchar(128)");
-			else
-				return string.Format(GenerateChildTableFormat, tableName, "Parent_Id int, Child_Id int");
+			return string.Format(GenerateChildTableFormat, tableName, "Parent_Id int, Child_Id int");
 		}
 		
 		public string CheckIdColumn( string table ) 

@@ -135,6 +135,8 @@ namespace EmergeTk.Widgets.Html
             get { return showNewButton; }
             set { showNewButton = value; }
         }
+		
+		public string EditTemplate { get; set; }
         
         private NewButtonPosition newButtonPosition = NewButtonPosition.Bottom;
         public NewButtonPosition NewButtonLocation
@@ -455,6 +457,8 @@ namespace EmergeTk.Widgets.Html
 				showAddButtonWidget.Visible = false;
 			
 			addForm = RootContext.CreateWidget<ModelForm<T>>();
+			if( !string.IsNullOrEmpty(EditTemplate) )
+				addForm.Template = EditTemplate;
 			if( ! useStack )
 				addPane.Add(addForm);
 			else
@@ -641,7 +645,9 @@ namespace EmergeTk.Widgets.Html
 
 		private ModelForm<T> SetupEditForm()
 		{
-		  ModelForm<T> mf = RootContext.CreateWidget<ModelForm<T>>();
+			ModelForm<T> mf = RootContext.CreateWidget<ModelForm<T>>();
+			if( !string.IsNullOrEmpty(EditTemplate) )
+				mf.Template = EditTemplate;
           mf.EnsureCurrentRecordOnEdit = this.EnsureCurrentRecordOnEdit;
           if( editPermission != null )
 		  	mf.Permission = editPermission;

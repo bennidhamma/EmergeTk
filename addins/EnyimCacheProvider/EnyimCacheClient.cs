@@ -48,6 +48,7 @@ namespace EmergeTk.Model
 			if( value == null )
 				throw new ArgumentException("Unable to index AbstractRecord: " + value );
 			//log.Debug("Setting key", key, value.OriginalSource.Table );
+			//log.DebugFormat ("Setting record : {0}, {1}", key, value); 
 			MemoryStream s = new MemoryStream(100);
 			ProtoSerializer.Serialize(value, s);
 			bool ret = mc.Store(StoreMode.Set,key,s.ToArray(),0,(int)s.Length,new TimeSpan(24,0,0));
@@ -161,7 +162,7 @@ namespace EmergeTk.Model
                     return localRecords[rd];
             }
             return null;
-        }
+		}
 
 		
 		public T GetRecord<T>(string key) where T : AbstractRecord, new()

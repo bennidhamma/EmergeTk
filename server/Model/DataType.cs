@@ -16,6 +16,7 @@ namespace EmergeTk.Model
         Float,
         DateTime,
         Xml,
+		Json,
         Ignore,
         Slider,
         ReadOnly,

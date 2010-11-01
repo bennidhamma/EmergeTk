@@ -204,10 +204,16 @@ namespace EmergeTk.Widgets.Html
 				log.Debug("oldRecord == new record? " + ( (object)oldRecord == (object)Record ) );
             }
 
+			log.Debug(templateParsed,ignoreDefaultTemplate);
+			
             if( ! templateParsed && ! ignoreDefaultTemplate )
 			{
+				string templatePath = typeof(T).FullName.Replace('.', Path.DirectorySeparatorChar) + "." + template;
+				
 				//attempt to load xml at ModelForm/FullName.xml
-				XmlNode node = ThemeManager.Instance.RequestView( typeof(T).FullName.Replace('.', Path.DirectorySeparatorChar) + "." + template );
+				XmlNode node = ThemeManager.Instance.RequestView( templatePath  );
+				
+				log.Debug("template? ", templatePath, node );
 				
 				if( node != null )
 				{

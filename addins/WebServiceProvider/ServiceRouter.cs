@@ -42,12 +42,12 @@ namespace EmergeTk.WebServices
 			HttpRequest request = HttpContext.Current.Request;
 			string[] segs = request.Url.Segments;
 			string path = request.Url.LocalPath;
-			log.Debug(0, segs);
-			if( segs.Length < 2 || segs[API] != "api/" )
+			log.Debug (0, segs);
+			if (segs.Length < 2 || segs[API] != "api/")
 				return;
 			
-			StopWatch watch = new StopWatch("ServiceRouter");
-			watch.Start();
+			StopWatch watch = new StopWatch ("ServiceRouter");
+			watch.Start ();
 			
 			string verb = request.HttpMethod;
 			RestOperation op = RestOperation.Get;
@@ -55,17 +55,17 @@ namespace EmergeTk.WebServices
             WebServiceFormat format = WebServiceFormat.Xml;
 
             if (request.QueryString["format"] != null)
-                format = formats[request.QueryString["format"]];
+				format = formats[request.QueryString["format"]];
             else if (request.Headers["Accept"] != null)
             {
-                if (request.Headers["Accept"].Contains("application/json")
-                   || request.Headers["Accept"].Contains("text/javascript"))
-                    format = WebServiceFormat.Json;
-            }
+				if (request.Headers["Accept"].Contains ("application/json")
+                   || request.Headers["Accept"].Contains ("text/javascript"))
+					format = WebServiceFormat.Json;
+			}
 			
 			MessageNode requestMessage = null;
 			
-			switch( verb.ToUpper() )
+			switch (verb.ToUpper ())
 			{
 			case "GET":
 				op = RestOperation.Get;
@@ -86,20 +86,20 @@ namespace EmergeTk.WebServices
 			
 			HttpFileCollection files = null;
 			//if a file is uploaded, we do not plan on supoprting parsing the InputStream in any other way.
-			if( request.Files.Count == 0 )
+			if (request.Files.Count == 0)
 			{
-				if( request.InputStream != null && request.InputStream.Length > 0 )
+				if (request.InputStream != null && request.InputStream.Length > 0)
 				{
-					switch( format )
+					switch (format)
 					{
-                    case WebServiceFormat.Xml:
-						requestMessage = XmlSerializer.DeserializeXml(request.InputStream);
+					case WebServiceFormat.Xml:
+						requestMessage = XmlSerializer.DeserializeXml (request.InputStream);
 						break;
-                    case WebServiceFormat.Json:
-						StreamReader reader = new StreamReader(request.InputStream);
-                        String s = reader.ReadToEnd();
+					case WebServiceFormat.Json:
+						StreamReader reader = new StreamReader (request.InputStream);
+						String s = reader.ReadToEnd ();
 						//requestMessage = MessageNode.ConvertFromRaw( (Dictionary<string,object>)JSON.Default.Decode( reader.ReadToEnd() ) );
-                        requestMessage = MessageNode.ConvertFromRaw((Dictionary<string, object>)JSON.Default.Decode(s));
+						requestMessage = MessageNode.ConvertFromRaw ((Dictionary<string, object>)JSON.Default.Decode (s));
 						break;
 					}
 				}
@@ -109,64 +109,67 @@ namespace EmergeTk.WebServices
 				files = request.Files;
 			}
 
-			RequestProcessor processor = WebServiceManager.Manager.GetRequestProcessor(segs);
+			RequestProcessor processor = WebServiceManager.Manager.GetRequestProcessor (segs);
 
-			if( processor != null )
+			if (processor != null)
 			{
-                IMessageWriter messageWriter = MessageWriterFactory.Create(format, HttpContext.Current.Response.OutputStream);
-				log.InfoFormat("Found processor {0} for request {1}", processor, request.Url);
+				IMessageWriter messageWriter = MessageWriterFactory.Create (format, HttpContext.Current.Response.OutputStream);
+				log.InfoFormat ("Found processor {0} for request {1}", processor, request.Url);
 				
 				try
 				{
-                    try
+					try
                     {
-                        String headerFields = request.Headers["x-5to1-fields"];
-                        String queryStringFields = request.QueryString["fields"];
-                        NameValueCollection queryStringPlusHeaders = new NameValueCollection(request.Headers);
-                        queryStringPlusHeaders.Add(request.QueryString);
-                        if (!String.IsNullOrEmpty(headerFields) && String.IsNullOrEmpty(queryStringFields))
-                            queryStringPlusHeaders["fields"] = headerFields;
-                        
+						String headerFields = request.Headers["x-5to1-fields"];
+						String queryStringFields = request.QueryString["fields"];
+						NameValueCollection queryStringPlusHeaders = new NameValueCollection (request.Headers);
+						queryStringPlusHeaders.Add (request.QueryString);
+						if (!String.IsNullOrEmpty (headerFields) && String.IsNullOrEmpty (queryStringFields))
+							queryStringPlusHeaders["fields"] = headerFields;
+						
                         Response response = processor.RouteRequest
                             (op,
-                             path.Substring(processor.WebServiceDetails.BasePath.Length),
+                             path.Substring (processor.WebServiceDetails.BasePath.Length),
                              queryStringPlusHeaders,
                              requestMessage,
                              messageWriter,
                              files);
 
                         HttpContext.Current.Response.StatusCode = response.StatusCode;
-                        HttpContext.Current.Response.StatusDescription = response.StatusDescription;		
-						log.Debug( "response.Cacheability:", response.Cacheability );
-						if( (int)response.Cacheability > 0 )
-						{							
-							HttpContext.Current.Response.Cache.SetCacheability(response.Cacheability );
+						HttpContext.Current.Response.StatusDescription = response.StatusDescription;
+						log.Debug ("response.Cacheability:", response.Cacheability);
+						if ((int)response.Cacheability > 0)
+						{
+							HttpContext.Current.Response.Cache.SetCacheability (response.Cacheability);
 						}
-                        if (response.Expires != -1)
-                            HttpContext.Current.Response.Expires = response.Expires;
-                    }
+						if (response.Expires != -1)
+							HttpContext.Current.Response.Expires = response.Expires;
+					}
                     catch (ValidationException ve)
                     {
-                        HttpContext.Current.Response.StatusCode = 409;
-                        HttpContext.Current.Response.StatusDescription = "Validation Error";
+						HttpContext.Current.Response.StatusCode = 409;
+						HttpContext.Current.Response.StatusDescription = "Validation Error";
 
                         // this is kind of an interesting problem;  we may have some already partially written stuff in here,
-                        // some of it may even have been flushed, and here we're going to write some new
-                        // stuff.   It's the same problem whether we use IMessageWriter, or the old 
-                        // MessageNode paradigm, I think.
-                        messageWriter.OpenRoot("error");
-                        messageWriter.OpenProperty("validationErrors");
-                        messageWriter.OpenList("validationError");
-                        foreach (ValidationError error in ve.Errors)
-                        {
-                            messageWriter.OpenObject();
-
-                            messageWriter.WriteProperty("keyPath", error.Path);
-                            messageWriter.WriteProperty("description", error.Problem);
-                            messageWriter.WriteProperty("recoverySuggestion", error.Suggestion);
-
-                            messageWriter.CloseObject();
-                        }
+						// some of it may even have been flushed, and here we're going to write some new
+						// stuff.   It's the same problem whether we use IMessageWriter, or the old 
+						// MessageNode paradigm, I think.
+						messageWriter.OpenRoot ("error");
+						messageWriter.OpenProperty ("validationErrors");
+						messageWriter.OpenList ("validationError");
+						if (ve.Errors != null)
+						{
+							foreach (ValidationError error in ve.Errors)
+	                        {
+								messageWriter.OpenObject ();
+	
+	                            messageWriter.WriteProperty ("keyPath", error.Path);
+								messageWriter.WriteProperty ("description", error.Problem);
+								messageWriter.WriteProperty("recoverySuggestion", error.Suggestion);
+	
+	                            messageWriter.CloseObject ();
+							}
+						}
                         log.Error("Error processing service request", ve);
 
                         messageWriter.CloseList();

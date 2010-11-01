@@ -291,10 +291,16 @@ namespace EmergeTk.Model.Security
 		
 		public void SetLoginCookie()
 		{
+			//log.Debug("setting login cookie");
 			HttpCookie sessionCookie = new HttpCookie("LoginToken", SessionToken);
             sessionCookie.Expires = DateTime.Now.AddDays(1);
             HttpContext.Current.Response.Cookies.Add(sessionCookie);
+			
+			HttpCookie userIdCookie = new HttpCookie("UserId", Id.ToString());
+            userIdCookie.Expires = DateTime.Now.AddYears(1);
+            HttpContext.Current.Response.Cookies.Add(userIdCookie);
 			SetRoleCookie(Roles.Count > 0 ? Roles.JoinToString(",") : "");
+			//throw new Exception("setting login cookie");
 		}
 		
 		public void SetRoleCookie(string role)
@@ -303,7 +309,7 @@ namespace EmergeTk.Model.Security
             sessionCookie.Expires = DateTime.Now.AddDays(1);
             HttpContext.Current.Response.Cookies.Add(sessionCookie);
 		}
-		
+
 		public static User GetUserFromCookie()
 		{
 			HttpCookie cookie = HttpContext.Current.Request.Cookies["LoginToken"];
