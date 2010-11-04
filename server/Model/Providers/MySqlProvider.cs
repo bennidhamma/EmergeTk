@@ -599,13 +599,14 @@ namespace EmergeTk.Model.Providers
            	    }
                 else //string, enum, etc.
                 {
-					if (col.DataType != DataType.Json)
+					object v = record[col.Name];
+					if (col.DataType != DataType.Json || v == null)
 					{
-						comm.Parameters.Add( new MySqlParameter("?"+ col.Name,record[col.Name] ) );
+						comm.Parameters.Add( new MySqlParameter("?"+ col.Name,v ) );
 					}
 					else
 					{
-						comm.Parameters.Add( new MySqlParameter("?"+ col.Name, JSON.Serializer.Serialize (record[col.Name]) ) );
+						comm.Parameters.Add( new MySqlParameter("?"+ col.Name, JSON.Serializer.Serialize (v) ) );
 					}
 					parameterKeys.Add("?" + col.Name);
                     record.SetOriginalValue(col.Name, record[col.Name]);
