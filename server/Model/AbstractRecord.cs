@@ -1918,14 +1918,14 @@ namespace EmergeTk.Model
     	}
     	
     	
-        public virtual List<ValidationError> Validate(string path, List<ValidationError> errors){return null;}
+        public virtual List<ValidationError> Validate(string path, List<ValidationError> errors){return errors;}
         public virtual Widget GetEditWidget(Widget parent, ColumnInfo column, IRecordList records) { return null; }
 		public virtual Widget GetPropertyEditWidget(Widget parent, ColumnInfo column, IRecordList records) { return null; }
 		
 		public void ValidateAndThrow()
 		{
-			List<ValidationError> errors = Validate(string.Empty, null);
-			if( errors != null )
+			List<ValidationError> errors = Validate(string.Empty, new List<ValidationError> ());
+			if( errors != null && errors.Count > 0)
 			{
 				throw new ValidationException("Validation error(s) occurred.", errors);
 			}

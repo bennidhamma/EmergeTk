@@ -29,6 +29,14 @@ namespace EmergeTk.WebServices
 		
 		Dictionary<Type,IRestServiceManager> restServiceManagers = new Dictionary<Type, IRestServiceManager>();
 		Dictionary<Type,RestTypeDescription> restTypeDescriptions = new Dictionary<Type, RestTypeDescription>();
+		Dictionary<string,Type> restNameMap = new Dictionary<string, Type> ();
+		
+		public Type GetTypeForRestService (string name)
+		{
+			if (restNameMap.ContainsKey (name))
+				return restNameMap[name];
+			return null;
+		}
 
         public static bool DoAuth()
         {
@@ -179,6 +187,7 @@ namespace EmergeTk.WebServices
 			service.ServiceManager = restServiceManager;
 			restServiceManagers[typeof(T)] = restServiceManager;
 			restTypeDescriptions[typeof(T)] = description;
+			restNameMap[description.ModelName] = typeof(T);
 			RegisterWebService (typeof(ModelServiceHandler<T>), service, modelServiceHandlerAttribute, service, description.ModelName, description.ModelPluralName);
 		}
 		#pragma warning restore 169
