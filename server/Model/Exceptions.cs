@@ -26,6 +26,12 @@ namespace EmergeTk.Model
 			this.Problem = problem;
 			this.Suggestion = suggestion;
 		}
+		
+		public override string ToString ()
+		{
+			return string.Format ("[ValidationError: Path={0}, Problem={1}, Suggestion={2}]", Path, Problem, Suggestion);
+		}
+
 	}
     
     public class VersionOutOfDateException : Exception

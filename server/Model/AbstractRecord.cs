@@ -1925,8 +1925,12 @@ namespace EmergeTk.Model
 		public void ValidateAndThrow()
 		{
 			List<ValidationError> errors = Validate(string.Empty, new List<ValidationError> ());
-			if( errors != null && errors.Count > 0)
+			if( errors != null && errors.Count > 0 )
 			{
+				foreach (var error in errors)
+				{
+					log.Error("Validation failed: ", error);
+				}
 				throw new ValidationException("Validation error(s) occurred.", errors);
 			}
 		}
