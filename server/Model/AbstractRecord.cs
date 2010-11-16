@@ -325,7 +325,7 @@ namespace EmergeTk.Model
 				throw new ArgumentNullException();	
 			}
 			ColumnInfo ci = this.GetFieldInfoFromName(PropertyName);
-			if( ci.ListRecordType != child.GetType() )
+			if( (!(child is IDerived) && ci.ListRecordType != child.GetType()) || (child is IDerived && !ci.ListRecordType.IsInstanceOfType (child) ) )
 			{
 				throw new ArgumentException(string.Format("cannot save relation with child of type {0} into list of type {1}", child.GetType(), ci.ListRecordType));
 			}
