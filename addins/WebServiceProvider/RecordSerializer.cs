@@ -454,7 +454,13 @@ namespace EmergeTk.WebServices
 
             return false;
         }
-				
+		
+		public static AbstractRecord DeserializeRecordType (Type t, MessageNode node, DeserializationContext context)
+		{
+			return (AbstractRecord) TypeLoader.InvokeGenericMethod (typeof(RecordSerializer), "DeserializeRecord", new Type[] {t},
+				null, new object[] {node, context});
+		}
+		
 		public static T DeserializeRecord<T>(MessageNode node, DeserializationContext context) where T : AbstractRecord, new()
 		{
 			IRestServiceManager serviceManager = WebServiceManager.Manager.GetRestServiceManager(typeof(T));

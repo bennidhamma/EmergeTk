@@ -29,6 +29,14 @@ namespace EmergeTk.WebServices
 		
 		Dictionary<Type,IRestServiceManager> restServiceManagers = new Dictionary<Type, IRestServiceManager>();
 		Dictionary<Type,RestTypeDescription> restTypeDescriptions = new Dictionary<Type, RestTypeDescription>();
+		Dictionary<string,Type> restNameMap = new Dictionary<string, Type> ();
+		
+		public Type GetTypeForRestService (string name)
+		{
+			if (restNameMap.ContainsKey (name))
+				return restNameMap[name];
+			return null;
+		}
 
         public static bool DoAuth()
         {
@@ -81,7 +89,7 @@ namespace EmergeTk.WebServices
 				try
 				{
 					Type type = types[i];
-					log.DebugFormat("initializing {0} generic? {1} attribute: {2}", type, type.IsGenericParameter, attributes[i]);
+					//log.DebugFormat("initializing {0} generic? {1} attribute: {2}", type, type.IsGenericParameter, attributes[i]);
 					//we don't automagically process generic typedefs.
 					if (type.IsGenericTypeDefinition)
 						continue;
@@ -179,6 +187,7 @@ namespace EmergeTk.WebServices
 			service.ServiceManager = restServiceManager;
 			restServiceManagers[typeof(T)] = restServiceManager;
 			restTypeDescriptions[typeof(T)] = description;
+			restNameMap[description.ModelName] = typeof(T);
 			RegisterWebService (typeof(ModelServiceHandler<T>), service, modelServiceHandlerAttribute, service, description.ModelName, description.ModelPluralName);
 		}
 		#pragma warning restore 169
@@ -212,7 +221,7 @@ namespace EmergeTk.WebServices
 						}
 					}
 					processor.AddMessageEndPoint (messageAttribute);
-					log.InfoFormat("creating endPoint '{0}' on service '{1}'", method.Name, service);
+					//log.InfoFormat("creating endPoint '{0}' on service '{1}'", method.Name, service);
 				}
 			}
 			log.InfoFormat("Registering web service '{0}' at '{1}'", service, att.BasePath);
@@ -236,7 +245,7 @@ namespace EmergeTk.WebServices
 			for( int i = segs.Length; i >= 0; i-- )
 			{
 				basePath = string.Join("", segs, 0, i );
-				log.Debug("looking for router for base path ", basePath);
+				//log.Debug("looking for router for base path ", basePath);
 				if (routeMap.ContainsKey (basePath)) {
 					return routeMap[basePath];
 				}

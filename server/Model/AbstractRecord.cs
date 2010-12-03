@@ -325,7 +325,7 @@ namespace EmergeTk.Model
 				throw new ArgumentNullException();	
 			}
 			ColumnInfo ci = this.GetFieldInfoFromName(PropertyName);
-			if( ci.ListRecordType != child.GetType() )
+			if( (!(child is IDerived) && ci.ListRecordType != child.GetType()) || (child is IDerived && !ci.ListRecordType.IsInstanceOfType (child) ) )
 			{
 				throw new ArgumentException(string.Format("cannot save relation with child of type {0} into list of type {1}", child.GetType(), ci.ListRecordType));
 			}
@@ -1918,15 +1918,19 @@ namespace EmergeTk.Model
     	}
     	
     	
-        public virtual List<ValidationError> Validate(string path, List<ValidationError> errors){return null;}
+        public virtual List<ValidationError> Validate(string path, List<ValidationError> errors){return errors;}
         public virtual Widget GetEditWidget(Widget parent, ColumnInfo column, IRecordList records) { return null; }
 		public virtual Widget GetPropertyEditWidget(Widget parent, ColumnInfo column, IRecordList records) { return null; }
 		
 		public void ValidateAndThrow()
 		{
-			List<ValidationError> errors = Validate(string.Empty, null);
-			if( errors != null )
+			List<ValidationError> errors = Validate(string.Empty, new List<ValidationError> ());
+			if( errors != null && errors.Count > 0 )
 			{
+				foreach (var error in errors)
+				{
+					log.Error("Validation failed: ", error);
+				}
 				throw new ValidationException("Validation error(s) occurred.", errors);
 			}
 		}
