@@ -563,14 +563,14 @@ namespace EmergeTk.Model
             {
             	loads++;
             	hits++;
-            	log.Debug("CACHE HIT ", cacheKey, loads, hits, misses, hits/loads );
+            	//log.Debug("CACHE HIT ", cacheKey, loads, hits, misses, hits/loads );
             	return cacheRecord;            		
             }
 			else
 			{
 				loads++;
 				misses++;
-				log.Debug("CACHE MISS ", cacheKey, loads, hits, misses, hits/loads );
+				//log.Debug("CACHE MISS ", cacheKey, loads, hits, misses, hits/loads );
 				//I don't think we need to do IoC here - all dbs support this simple of a select stmt!
 				result = provider.ExecuteDataTable(string.Format("SELECT * FROM {0} WHERE {1} ", provider.EscapeEntity(name), WhereClause));
             }
