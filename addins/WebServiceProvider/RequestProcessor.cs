@@ -63,7 +63,7 @@ namespace EmergeTk.WebServices
             response.Writer = writer;
 			for( int i = 0; i < endPoints.Count; i++ )
 			{
-				log.DebugFormat("Testing verbs: {0}, pattern: {1}", endPoints[i].Verb, endPoints[i].Pattern);
+				//log.DebugFormat("Testing verbs: {0}, pattern: {1}", endPoints[i].Verb, endPoints[i].Pattern);
 				
 				//first check to see if we are a match for verb
 				if( (verb & endPoints[i].Verb) != verb )
@@ -76,7 +76,7 @@ namespace EmergeTk.WebServices
 				if( m.Count > 0 )
 				{
 					//we found a valid match.  exit.
-					log.Debug("Found match: " + verb + " " + m[0].Captures[0].Value);
+					//log.Debug("Found match: " + verb + " " + m[0].Captures[0].Value);
 
                     if (WebServiceManager.DoAuth())
     					ServiceManager.Authorize( verb, endPoints[i].MethodName, message );
@@ -95,8 +95,8 @@ namespace EmergeTk.WebServices
                     BuildResponse(response, arguments);
 					break;
 				}
-				else
-					log.Debug("no match");
+				//else
+				//	log.Debug("no match");
 			}
 			
 			return response;

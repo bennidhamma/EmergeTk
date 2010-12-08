@@ -10,7 +10,6 @@ using System.Text;
 using System.Web;
 using MySql.Data.MySqlClient;
 using EmergeTk.Model;
-using System.Runtime.Serialization.Json;
 using System.Web.Script.Serialization;
 
 namespace EmergeTk.Model.Providers
