@@ -508,7 +508,9 @@ namespace EmergeTk.Model.Providers
 			if( type == null )
 				return null;
 			else
-				return TypeLoader.GetType(type);
+			{
+				return AbstractRecord.GetTypeFromDbSafeName(type);
+			}
 		}
         
         public int GetLatestVersion( AbstractRecord r )

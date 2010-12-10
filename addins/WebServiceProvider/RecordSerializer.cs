@@ -96,6 +96,11 @@ namespace EmergeTk.WebServices
 
             writer.WriteProperty("id", record.Id);
 			
+			if (record is IDerived)
+			{
+				writer.WriteProperty ("type", record.DbSafeModelName);	
+			}
+			
 			foreach( object o in fields )
 			{
 				if( o is Dictionary<string,object> )

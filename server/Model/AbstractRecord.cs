@@ -998,14 +998,26 @@ namespace EmergeTk.Model
         }
 		
 		static Dictionary<Type,string> dbSafeModelNames = new Dictionary<Type, string>();
+		static Dictionary<string,Type> dbSafeModelNamesRev = new Dictionary<string, Type>();
+		
 		public static string GetDbSafeModelName(Type t)
 		{
+			if (t == null || t.IsGenericTypeDefinition || t.IsAbstract)
+				return null;
 			if( ! dbSafeModelNames.ContainsKey(t) )
 			{
 				AbstractRecord r = (AbstractRecord)Activator.CreateInstance(t);
 				dbSafeModelNames[t] = r.DbSafeModelName;
+				dbSafeModelNamesRev[r.DbSafeModelName] = t;
 			}
 			return dbSafeModelNames[t];
+		}
+		
+		public static Type GetTypeFromDbSafeName (string safeName)
+		{
+			if (dbSafeModelNamesRev.ContainsKey(safeName))
+				return dbSafeModelNamesRev[safeName];
+			return null;
 		}
         
         public string DbSafeModelName
@@ -1512,7 +1524,15 @@ namespace EmergeTk.Model
         
         private void LoadProperty(ColumnInfo fi )
         {
-            if (originalValues == null || !originalValues.ContainsKey(fi.Name) || originalValues[fi.Name] == DBNull.Value || originalValues[fi.Name] == null)
+			if (fi == null)
+				throw new ArgumentNullException ("fi", "invalid ColumnInfo provided.");
+            if (originalValues == null )
+				return;
+			if (!originalValues.ContainsKey(fi.Name))
+				return;
+			if (originalValues[fi.Name] == DBNull.Value)
+				return;
+			if (originalValues[fi.Name] == null)
                 return;
         		
         	try
@@ -1917,6 +1937,30 @@ namespace EmergeTk.Model
     		}
     	}
     	
+		static AbstractRecord ()
+		{
+			try
+			{
+				HashSet<string> names = new HashSet<string> ();
+				//get all derived types.
+				foreach (Type t in TypeLoader.GetTypesOfBaseType (typeof(AbstractRecord)))
+				{
+					string n = GetDbSafeModelName (t);
+					if (n == null)
+						continue;
+					if (names.Contains (n))
+					{
+						log.Warn ("Name: ", t, "New Type:", t, "Old Type:", GetTypeFromDbSafeName (n) );
+						throw new InvalidOperationException ("Duplicate safe name detected.");
+					}
+					names.Add (n);
+				}
+			}
+			catch (Exception e)
+			{
+				log.Error ("Error initializing AbstractRecord!", e);
+			}
+		}
     	
         public virtual List<ValidationError> Validate(string path, List<ValidationError> errors){return errors;}
         public virtual Widget GetEditWidget(Widget parent, ColumnInfo column, IRecordList records) { return null; }
