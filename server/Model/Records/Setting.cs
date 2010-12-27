@@ -46,7 +46,29 @@ namespace EmergeTk.Model
 			else
 				return default(T);
 		}
+		
+		static public T GetConfigT<T>(String name)
+		{
+			Setting s = Get(name, null, true);
+			if( s!= null && ! string.IsNullOrEmpty( s.DataValue ) )
+				return (T)PropertyConverter.Convert(s.DataValue, typeof(T));
+			else
+				return default(T);
+		}
 
+		static public T GetConfigT<T>(String name, T defaultValue)
+		{
+			Setting s = Get(name, null, true);
+			if (s != null && !String.IsNullOrEmpty(s.DataValue))
+			{
+				return (T)PropertyConverter.Convert(s.DataValue, typeof(T));
+			}
+			else
+			{
+				return defaultValue;
+			}
+		}
+		
 		static public T GetValueT<T>(String name, T defaultValue)
 		{
 			
@@ -61,7 +83,6 @@ namespace EmergeTk.Model
 			}
 		}
 
-
 		public Setting()
 		{
 		}
@@ -70,11 +91,22 @@ namespace EmergeTk.Model
 		
 		static Setting()
 		{
-			//let's load all the app config settings, if possible.	
-			foreach( string k in ConfigurationManager.AppSettings.Keys )
+			Setup ();
+		}
+		
+		static bool setup = false;
+		
+		public static void Setup ()
+		{
+			if (!setup)
 			{
-				settings[k] = ConfigurationManager.AppSettings[k];
-				log.Debug("config key: ", k, settings[k] );	
+				//let's load all the app config settings, if possible.	
+				foreach( string k in ConfigurationManager.AppSettings.Keys )
+				{
+					settings[k] = ConfigurationManager.AppSettings[k];
+					log.Debug("config key: ", k, settings[k] );	
+				}
+				setup = true;
 			}
 		}
 		
@@ -85,12 +117,18 @@ namespace EmergeTk.Model
 		
 		public static Setting Get(string key)
 		{
-			return Get(key, null );
+			return Get(key, null, false);
 		}
+		
+		public static Setting GetConfig (string key)
+		{
+			return Get (key, null, true);
+		}
+
 		
 		static Dictionary<string,Setting> settingsCache = new Dictionary<string, Setting>();
 
-		public static Setting Get(string key, string defaultValue )
+		public static Setting Get(string key, string defaultValue, bool configOnly )
 		{
 			if( settingsCache.ContainsKey(key) )
 				return settingsCache[key];
@@ -106,7 +144,7 @@ namespace EmergeTk.Model
 					s.dataKey = key;
 					s.DataValue = v;
 				}
-				else
+				else if ( ! configOnly)
 				{
 					s = Setting.Load<Setting>("DataKey", key);
 				}
@@ -116,7 +154,7 @@ namespace EmergeTk.Model
 				log.Error("Error getting setting",e);
 			}
 			
-			if( s == null )
+			if (s == null && defaultValue != null)
 			{
 				s = new Setting();
 				s.dataKey = key;

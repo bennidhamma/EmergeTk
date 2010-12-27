@@ -52,7 +52,6 @@
   <ItemGroup>
     <Reference Include="System" />
     <Reference Include="Mono.Addins, Version=0.4.0.0, Culture=neutral, PublicKeyToken=0738eb9f132ed756">
-      <Package>mono-addins</Package>
     </Reference>
     <Reference Include="System.Xml" />
     <Reference Include="System.Core">
@@ -115,7 +114,7 @@
   </ItemGroup>
   <Import Project="$(MSBuildBinPath)\Microsoft.CSharp.targets" />
   <ItemGroup>
-    <ProjectReference Include="..\..\server\emergetk.csproj">
+    <ProjectReference Include="..\..\..\SuperFunCon\EmergeTk\server\emergetk.csproj">
       <Project>{52E41D18-8F12-430D-B5B5-43C7BBA18F61}</Project>
       <Name>emergetk</Name>
     </ProjectReference>

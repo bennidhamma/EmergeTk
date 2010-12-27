@@ -572,7 +572,7 @@ namespace EmergeTk.Model
 				misses++;
 				//log.Debug("CACHE MISS ", cacheKey, loads, hits, misses, hits/loads );
 				//I don't think we need to do IoC here - all dbs support this simple of a select stmt!
-				result = provider.ExecuteDataTable(string.Format("SELECT * FROM {0} WHERE {1} ", provider.EscapeEntity(name), WhereClause));
+				result = provider.ExecuteDataTable(string.Format("SELECT * FROM {0} WHERE {1} ", provider.EscapeEntity(name), WhereClause));				
             }
 
             id = record != null ? record.id : id;
