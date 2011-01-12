@@ -38,7 +38,7 @@ namespace EmergeTk.Model.Providers
 		const string IntDataType = "int";
 
 		//IVersioned stmts
-		const string IdentityColumnSignature = "`ROWID` INTEGER UNSIGNED NOT NULL AUTO_INCREMENT PRIMARY KEY";
+		const string IdentityColumnSignature = "`ROWID` INTEGER UNSIGNED NOT NULL PRIMARY KEY";
         const string CreateTableFormat = "CREATE TABLE `{0}` ( " + IdentityColumnSignature + " {1} )";
 		
         const string InsertTableFormat = "REPLACE `{0}`({2}) VALUES( {1} );";

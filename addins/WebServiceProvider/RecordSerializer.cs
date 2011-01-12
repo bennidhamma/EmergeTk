@@ -473,20 +473,21 @@ namespace EmergeTk.WebServices
 				throw new Exception("No IRestServiceManager defined.  Cannot deseialize objects of type " + typeof(T) );
 			//TODO: we need to provide feedback on errors. i.e. "expecting integer for child id, but found 'name' instead."			
 			T record = null;
+			T oldRecord = null;
 			RestOperation op = RestOperation.Post;
 			if( node.ContainsKey( "id" ) )
 			{
 				log.Debug("loading with id", node["id"]);
-				record = AbstractRecord.Load<T>(node["id"]);			
+				oldRecord = AbstractRecord.Load<T>(node["id"]);			
 				if( WebServiceManager.DoAuth() )
-					serviceManager.Authorize(RestOperation.Put,node,record);
+					serviceManager.Authorize(RestOperation.Put,node,oldRecord);
 				op = RestOperation.Put;
-				if( record == null )
+				if( oldRecord == null )
 				{
 					throw new RecordNotFoundException(string.Format("Record: {0}, {1} does not exist.", typeof(T), node["id"] ) );
 				}
 				//now create a writable copy to avoid modification collisions / corrupting good data with a bad operation.
-				record = AbstractRecord.CreateFromRecord<T>(record);
+				record = AbstractRecord.CreateFromRecord<T>(oldRecord);
 			}
 			else
 			{
@@ -583,6 +584,9 @@ namespace EmergeTk.WebServices
 			if( context.Records == null )
 				context.Records = new List<AbstractRecord>();
 			context.Records.Add(record);
+			//mark old record as stale.
+			if (oldRecord != null)
+				oldRecord.MarkAsStale ();
 			return record;
 		}
 		

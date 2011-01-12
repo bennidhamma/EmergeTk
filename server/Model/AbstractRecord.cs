@@ -825,6 +825,7 @@ namespace EmergeTk.Model
             {
                 this.SetLoadState(oldLoadState);
             }
+			this.isStale = false;
 			log.Debug("done reloading");
 		}
 		
@@ -1399,7 +1400,16 @@ namespace EmergeTk.Model
 							}
 							else
 							{
-								string s = (string)originals[fi.Name];
+								string s = null;
+								try
+								{
+									s = (string)originals[fi.Name];
+								}
+								catch (InvalidCastException ce)
+								{
+									log.ErrorFormat ("Attempted to cast {0} as a string on {1} and it failed.", originals[fi.Name], this);
+									throw new Exception ("Failed cast", ce);
+								}
 								
 								if (! string.IsNullOrEmpty (s))
 								{
@@ -1434,16 +1444,25 @@ namespace EmergeTk.Model
         public void CheckProperty(string prop, AbstractRecord record)
         {
 			if( record != null )
-			{				
-				if( !record.isStale ) //valid record.
+			{
+				//THIS IS COMPLICATED
+				if (!CacheProvider.Instance.IsMostUpToDate (record))
+				{
+					UnsetProperty(prop);
+				}
+				if ( !record.isStale && record.recordState != RecordState.Deleted ) //valid record.
 					return;
-
-                UnsetProperty(prop);
-
 				if( record.recordState == RecordState.Deleted )
+				{
+					UnsetProperty(prop);
 					return;
+				}
+				if (record.isStale)
+				{
+					record.Reload ();
+					return;
+				}
 			}
-
 			bool unsetLoading = false;
         	
         	if( loadedProperties == null )
@@ -1462,7 +1481,7 @@ namespace EmergeTk.Model
         		loading = true;
         	}
         	
-			LoadProperty(this.GetFieldInfoFromName(prop));	        	
+			LoadProperty(this.GetFieldInfoFromName(prop));
 			
 			if( unsetLoading )
 			{

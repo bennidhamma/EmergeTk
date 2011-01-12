@@ -110,7 +110,11 @@ namespace EmergeTk.Model
 	            else if (destinationType == typeof(int) && input.GetType().IsEnum)
 	            {
 	                output = System.Convert.ToInt16(input);
-	            }  
+	            } 
+				else if (destinationType.IsEnum && input is string)
+				{
+					output = Enum.Parse (destinationType, (string)input);
+				}
 	            else if (destinationType == typeof(TimeSpan) && input is long)
 	            {
 	            	output = new TimeSpan( (long)input );

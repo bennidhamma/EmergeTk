@@ -136,6 +136,27 @@ namespace EmergeTk.Model
 			return items;
 		}
 		
+		public bool IsMostUpToDate (AbstractRecord record)
+		{
+			RecordDefinition rd = record.Definition;
+			if (localRecords.ContainsKey (rd))
+			{
+				AbstractRecord crecord = localRecords[rd];
+				
+				if (record is IVersioned)
+				{
+					if (record.Version == crecord.Version)
+						return true;
+				}
+				else
+				{
+					return object.ReferenceEquals (record, crecord);
+				}
+			}
+			//if it's not in the cache, return false.
+			return false;
+		}
+		
 		public AbstractRecord GetLocalRecord(RecordDefinition rd)
 		{
 			return localRecords.ContainsKey(rd) ? localRecords[rd] : null;
