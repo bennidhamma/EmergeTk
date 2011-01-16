@@ -15,6 +15,7 @@ namespace EmergeTk.Model
 		bool IsMostUpToDate (AbstractRecord record);
 		object GetObject( string key );
 		AbstractRecord GetLocalRecord( string key );
+		AbstractRecord GetLocalRecord( RecordDefinition def );
 		void PutLocal ( string key, AbstractRecord value);
 		T GetRecord<T>(string key) where T : AbstractRecord, new();
 		AbstractRecord GetRecord(Type t, string key);

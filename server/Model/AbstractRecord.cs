@@ -586,6 +586,17 @@ namespace EmergeTk.Model
             }
 			
 			id = Convert.ToInt32(result.Rows[0][provider.GetIdentityColumn()]);
+			
+			//if record with id is already in cache, we want to use that, to ensure we get the shared ref.
+			if (CacheProvider.EnableCaching)
+			{
+				T localCacheRecord = (T)CacheProvider.Instance.GetLocalRecord (new RecordDefinition (typeof(T), id));
+				if (localCacheRecord != null)
+				{
+					CacheProvider.Instance.PutLocal(cacheKey, localCacheRecord);
+					return localCacheRecord;
+				}
+			}
 
 			//do we always want to use ROWID?
 			string k = typeof(T).Name + "." + id;
@@ -1446,7 +1457,7 @@ namespace EmergeTk.Model
 			if( record != null )
 			{
 				//THIS IS COMPLICATED
-				if (!CacheProvider.Instance.IsMostUpToDate (record))
+				if (record.Persisted && !CacheProvider.Instance.IsMostUpToDate (record))
 				{
 					UnsetProperty(prop);
 				}
@@ -1459,8 +1470,7 @@ namespace EmergeTk.Model
 				}
 				if (record.isStale)
 				{
-					record.Reload ();
-					return;
+					UnsetProperty(prop);
 				}
 			}
 			bool unsetLoading = false;
