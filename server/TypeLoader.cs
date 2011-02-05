@@ -131,17 +131,26 @@ namespace EmergeTk
 			return genericType.MakeGenericType( genericParameter );
 		}
 		
+		//TODO: consider caching type/base types listings.
 		public static Type[] GetTypesOfBaseType( Type baseType )
 		{
 			List<Type> types = new List<Type>();
 			
 			foreach( Assembly a in AppDomain.CurrentDomain.GetAssemblies() )
 			{
-				foreach( Type t in a.GetTypes() )
+				try
 				{
-					if( t.IsSubclassOf( baseType ) )
-						types.Add( t );
-				}				
+					foreach( Type t in a.GetTypes() )
+					{
+						if( t.IsSubclassOf( baseType ) )
+							types.Add( t );
+					}
+				}
+				catch (Exception e)
+				{
+					log.Error ("Error loading assembly: " + a, e);
+				}
+				
 			}
 			return types.ToArray();
 		}
