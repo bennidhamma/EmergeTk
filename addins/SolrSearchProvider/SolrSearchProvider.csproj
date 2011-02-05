@@ -114,12 +114,6 @@
   </ItemGroup>
   <Import Project="$(MSBuildBinPath)\Microsoft.CSharp.targets" />
   <ItemGroup>
-    <ProjectReference Include="..\..\..\SuperFunCon\EmergeTk\server\emergetk.csproj">
-      <Project>{52E41D18-8F12-430D-B5B5-43C7BBA18F61}</Project>
-      <Name>emergetk</Name>
-    </ProjectReference>
-  </ItemGroup>
-  <ItemGroup>
     <EmbeddedResource Include="SolrSearchProvider.addin" />
   </ItemGroup>
   <ProjectExtensions>
