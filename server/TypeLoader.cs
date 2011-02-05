@@ -163,13 +163,20 @@ namespace EmergeTk
 			
 			foreach( Assembly a in AppDomain.CurrentDomain.GetAssemblies() )
 			{
-				foreach( Type t in a.GetTypes() )
+				try
 				{
-					if( t.GetInterface(iface.Name ) != null )
+					foreach( Type t in a.GetTypes() )
 					{
-						types.Add( t );
+						if( t.GetInterface(iface.Name ) != null )
+						{
+							types.Add( t );
+						}
 					}
-				}				
+				}
+				catch (Exception e)
+				{
+					log.Error ("Error loading assembly: " + a, e);
+				}
 			}
 			return types.ToArray();
 		}
@@ -193,9 +200,9 @@ namespace EmergeTk
 						}
 					}		
 				}
-				catch
+				catch (Exception e)
 				{
-					log.ErrorFormat("Error loading assembly {0}", a );					
+					log.Error("Error loading assembly " + a, e );					
 				}
 			}
 			attributes = listAtts.ToArray();
