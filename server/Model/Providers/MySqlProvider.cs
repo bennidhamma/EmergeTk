@@ -248,6 +248,7 @@ namespace EmergeTk.Model.Providers
 				conn.Open();
 				using( MySqlCommand comm = new MySqlCommand(sql, conn) )
 				{
+					log.Debug ("ExecuteReader exeucting sql: ", sql);
 					using(IDataReader r = comm.ExecuteReader())
 					{
 						while(r.Read())

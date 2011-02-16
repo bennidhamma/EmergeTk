@@ -1279,7 +1279,10 @@ namespace EmergeTk.Model
         
         public static T LoadFromDataRow<T>(DataRow row) where T : AbstractRecord, new()
         {
-        	return LoadFromDataRow(new T(), row);
+        	T newT = new T ();
+			LoadFromDataRow(newT, row);
+			PutRecordInCache (newT);
+			return newT;
         }
         
         public static T LoadFromDataRow<T>(T r, DataRow row) where T : AbstractRecord, new()
@@ -1296,7 +1299,31 @@ namespace EmergeTk.Model
             r.Authorize();
             r.FireLoadEvents();
             return r;
-        }		
+        }	
+		
+		public static void VoidLoadFromReader<T>(IDataReader reader) where T : AbstractRecord, new()
+		{
+			//overload to allow for one line reader to load code.
+			LoadFromReader<T>(reader);
+		}
+		
+		public static T LoadFromReader<T>(IDataReader reader) where T : AbstractRecord, new()
+        {
+        	T r = new T ();
+			r.loading = true;            
+            r.SetId(Convert.ToInt32(reader["ROWID"]));
+			if( r is IVersioned )			
+            	r.Version = Convert.ToInt32( reader["Version"] );
+            r.SetRecordToLoadingContext(r);
+			r.SetupOriginalValues(reader);
+           	r.SyncToSource();
+           	r.ClearLoadingContext();
+            r.loading = false;
+            r.Authorize();
+            r.FireLoadEvents();
+            PutRecordInCache (r);
+			return r;
+        }
 		
 		/// <summary>
 		/// The purpose of CreateFromRecord is to create a copy of the input record as close as possible
@@ -1355,6 +1382,14 @@ namespace EmergeTk.Model
 			foreach( DataColumn col in row.Table.Columns)
 			{
 				SetOriginalValue( col.ColumnName, row[col.ColumnName] );
+			}
+		}
+		
+		private void SetupOriginalValues(IDataReader reader)
+		{
+			for (int i = 0; i < reader.FieldCount; i++)
+			{
+				SetOriginalValue (reader.GetName(i), reader[i]);
 			}
 		}
 		
