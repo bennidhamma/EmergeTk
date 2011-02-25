@@ -706,8 +706,10 @@ namespace EmergeTk.Model.Providers
             if (invalidateCache)
                 CacheProvider.Instance.Remove(record);
 
-             record.UnmarkAsStale();
-             CacheProvider.Instance.PutLocal(record.CreateStandardCacheKey(), record);
+            record.UnmarkAsStale();
+			
+			string cacheKey = record.CreateStandardCacheKey();
+       	    CacheProvider.Instance.PutLocal(cacheKey, record);
 		}
 
 	

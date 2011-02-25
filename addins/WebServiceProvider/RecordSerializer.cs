@@ -98,7 +98,7 @@ namespace EmergeTk.WebServices
 			
 			if (record is IDerived)
 			{
-				writer.WriteProperty ("type", record.DbSafeModelName);	
+				writer.WriteProperty ("type", record.DbSafeModelName);
 			}
 			
 			foreach( object o in fields )
@@ -544,12 +544,24 @@ namespace EmergeTk.WebServices
                     }
 					else if( val is string )
 					{
-						record[recordFieldName] = AbstractRecord.Load(field.Type, val);
+						Type loadType = field.Type;
+						int id = int.Parse ((string)val);
+						if (AbstractRecord.IsDerived (field.Type))
+						{
+							
+							loadType = DataProvider.DefaultProvider.GetTypeForId (id);
+						}
+						record[recordFieldName] = AbstractRecord.Load(loadType, id);
 					}
 					else if( val is MessageNode )
 					{
 						MessageNode propNode = (MessageNode)val;
-						record[recordFieldName] = TypeLoader.InvokeGenericMethod(typeof(RecordSerializer),"DeserializeRecord", new Type[] { field.Type }, null, new object[]{propNode,context});
+						Type loadType = field.Type;
+						if (AbstractRecord.IsDerived (field.Type))
+						{
+							loadType = TypeLoader.GetType (propNode["type"].ToString ());
+						}
+						record[recordFieldName] = TypeLoader.InvokeGenericMethod(typeof(RecordSerializer),"DeserializeRecord", new Type[] { loadType }, null, new object[]{propNode,context});
 					}					
 				}
 				else if( field.Type == typeof( Dictionary<string,string> ) )

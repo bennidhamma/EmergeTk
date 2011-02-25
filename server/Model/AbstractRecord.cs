@@ -1321,6 +1321,7 @@ namespace EmergeTk.Model
             r.loading = false;
             r.Authorize();
             r.FireLoadEvents();
+			//CacheProvider.Instance.PutLocal (string.Format("{0} . ROWID = {1}", GetDbSafeModelName(typeof(T)), r.id), r);
             PutRecordInCache (r);
 			return r;
         }
@@ -1449,7 +1450,15 @@ namespace EmergeTk.Model
 								string s = null;
 								try
 								{
-									s = (string)originals[fi.Name];
+									object original = originals[fi.Name];
+									if (original is string)
+									{
+										s = (string)original;
+									}
+									else
+									{
+										this[fi.Name] = original;
+									}
 								}
 								catch (InvalidCastException ce)
 								{
