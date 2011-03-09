@@ -95,7 +95,7 @@ namespace EmergeTk.Model
 			int dbVersion = DataProvider.DefaultProvider.GetLatestVersion( modelName, id ) ;
 			int localVersion = 0;
 			if( map[id] != null )
-				localVersion = map[id].Version;
+				localVersion = ((IVersioned)map[id]).Version;
 			//log.DebugFormat("dbVersion {0}, localVersion {1}", dbVersion, localVersion );
 			if( dbVersion == localVersion )
 			{

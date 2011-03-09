@@ -1347,6 +1347,12 @@ namespace EmergeTk.Model
 				//if id is 0, this is identical to a clone operation.
 				return source.Clone() as T;
 			}
+			if (source is IDerived && source.GetType () != typeof(T))
+			{
+				return TypeLoader.InvokeGenericMethod(typeof(AbstractRecord), "CreateFromRecord", new Type[] {source.GetType()}, 
+					null, new object[] {source}) as T;
+			}
+			
 			if( source.OriginalValues == null )
 			{
 				//I think that if we have no original values, honoring the spirit of this function
@@ -1563,7 +1569,7 @@ namespace EmergeTk.Model
             // does not have unwanted side effects.
 
             RemoveFromLoadedProperties(prop);
-            this[prop] = null;
+			this[prop] = null;
             loading = oldLoading;
         }
 
@@ -2016,6 +2022,7 @@ namespace EmergeTk.Model
 			{
 				HashSet<string> names = new HashSet<string> ();
 				//get all derived types.
+				System.Console.WriteLine ("loading base types");
 				foreach (Type t in TypeLoader.GetTypesOfBaseType (typeof(AbstractRecord)))
 				{
 					string n = GetDbSafeModelName (t);
@@ -2028,10 +2035,12 @@ namespace EmergeTk.Model
 					}
 					names.Add (n);
 				}
+				System.Console.WriteLine ("done");
 			}
 			catch (Exception e)
 			{
 				log.Error ("Error initializing AbstractRecord!", e);
+				throw new Exception ("Error initializing AbstractRecord!", e);
 			}
 		}
     	

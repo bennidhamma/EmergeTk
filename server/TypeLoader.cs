@@ -21,9 +21,9 @@ namespace EmergeTk
             Assembly assembly = null;
             String assemblyPath = String.Empty;
 
-			if( HttpContext.Current != null )
+			if( false && HttpContext.Current != null )
 			{
-				loadAssemblyPath(  HttpContext.Current.Server.MapPath("/bin") );
+				//loadAssemblyPath(  HttpContext.Current.Server.MapPath("/bin") );
 			}
 			else
 			{
@@ -40,7 +40,7 @@ namespace EmergeTk
                     assemblyPath = System.Environment.CurrentDirectory;
                     log.InfoFormat("TypeLoader ctor - GetEntryAssembly returned null - using System.Environment.CurrentDirectory = {0} to load assemblies", assemblyPath);
                 }
-                loadAssemblyPath(assemblyPath);
+				loadAssemblyPath(assemblyPath);
 			}
 		}
 
