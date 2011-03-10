@@ -161,6 +161,7 @@ namespace EmergeTk
 			thistext = thistext.Replace("\n", "\\n");
             thistext = thistext.Replace("\r", "\\r");
 			thistext = thistext.Replace("\"","\\\"");
+			thistext = thistext.Replace("\t","\\t");
 			thistext = thistext.Replace(System.Environment.NewLine, " ");
 			return thistext;
 		}
