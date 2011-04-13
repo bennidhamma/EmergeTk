@@ -75,11 +75,6 @@ namespace EmergeTk.Model
 			return null;
 		}
 		
-		public bool IsMostUpToDate (AbstractRecord record)
-		{
-			throw new NotImplementedException ();
-		}
-		
 		public AbstractRecord GetLocalRecord(string key)
 		{
 			return Cache.Get(key) as AbstractRecord;

@@ -445,7 +445,7 @@ namespace EmergeTk.Model.Providers
             for (int i = 0; i < result.Rows.Count; i++)
             {
                 T r;
-				string cacheKey = name + ".rowid = " + result.Rows[i]["ROWID"];
+				string cacheKey = AbstractRecord.CreateStandardCacheKey (name, Convert.ToInt32(result.Rows[i]["ROWID"]));
 
 				r = (T)CacheProvider.Instance.GetLocalRecord(cacheKey);
 				if( r == null )
@@ -705,8 +705,6 @@ namespace EmergeTk.Model.Providers
 
             if (invalidateCache)
                 CacheProvider.Instance.Remove(record);
-
-            record.UnmarkAsStale();
 			
 			string cacheKey = record.CreateStandardCacheKey();
        	    CacheProvider.Instance.PutLocal(cacheKey, record);

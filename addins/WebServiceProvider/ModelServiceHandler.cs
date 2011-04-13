@@ -45,6 +45,11 @@ namespace EmergeTk.WebServices
 			if( ci == null )
 				throw new Exception("The requested property is unavailable for the requested type.");
 			log.DebugFormat("Got ci {0} for pro {1}", ci, uProperty);
+			
+			if (record == null)
+			{
+				throw new ArgumentNullException ("id", "Could not find record matching " + arguments.Matches[0].Groups[1].Value);
+			}
 
 			if( ci.IsList )
 			{

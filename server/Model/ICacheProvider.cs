@@ -12,7 +12,6 @@ namespace EmergeTk.Model
 	{
 		bool Set( string key, AbstractRecord value );
 		bool Set(string key, object value);
-		bool IsMostUpToDate (AbstractRecord record);
 		object GetObject( string key );
 		AbstractRecord GetLocalRecord( string key );
 		AbstractRecord GetLocalRecord( RecordDefinition def );

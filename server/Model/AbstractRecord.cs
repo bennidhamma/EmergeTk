@@ -519,8 +519,13 @@ namespace EmergeTk.Model
 		
 		public string CreateStandardCacheKey()
 		{
-			return string.Format("{0}.rowid-=-{1}", this.DbSafeModelName.ToLower(), this.id );
-		}	
+			return CreateStandardCacheKey (this.DbSafeModelName.ToLower(), this.id);
+		}
+		
+		public static string CreateStandardCacheKey (string model, int id)
+		{
+			return string.Format("{0}.rowid-=-{1}", model, id );
+		}
 
 		static float loads, hits, misses, singularHits, pluralHits;
 		public static T Load<T>(T record, int id, bool allowCustomLoad, string WhereClause) where T : AbstractRecord, new()
@@ -633,7 +638,7 @@ namespace EmergeTk.Model
         	if( CacheProvider.EnableCaching == true ) 
         	{
 				string key = r.CreateStandardCacheKey();
-        		PutObjectInCache( key, r );	            
+        		PutObjectInCache( key, r );	 
 				AppendCacheKey(r.Definition, key );
 	        }
         }
@@ -812,12 +817,21 @@ namespace EmergeTk.Model
 		}
 
         public static T LoadUsingRecord<T>(T record, object id) where T : AbstractRecord, new()
-        {        	
-		   return Load<T>(record, id, "ROWID" );
+		{
+			return Load<T>(record, id, "ROWID" );
         }
 		
 		public static T LoadUsingRecord<T>(T record, int id) where T : AbstractRecord, new()
-        {        	
+        {
+			if (record == null)
+			{
+				RecordDefinition rd = new RecordDefinition (typeof(T), id);
+				record = (T) CacheProvider.Instance.GetLocalRecord (rd);
+				if (record != null)
+				{
+					return record;	
+				}
+			}
 			return Load<T>(record, id,  "ROWID" );
         }
 		
@@ -846,8 +860,9 @@ namespace EmergeTk.Model
 			if (this.loadedProperties != null )
 			{
 				string[] props = this.loadedProperties.ToArray();
-				foreach( string key in props )
+				foreach( string key in props)
 				{
+					log.Debug ("Nulling out property", key);
 					this[key] = null;
 				}
 				this.loadedProperties.Clear();
@@ -1507,10 +1522,10 @@ namespace EmergeTk.Model
 			if( record != null )
 			{
 				//THIS IS COMPLICATED
-				if (record.Persisted && !CacheProvider.Instance.IsMostUpToDate (record))
-				{
-					UnsetProperty(prop);
-				}
+//				if (record.Persisted && !CacheProvider.Instance.IsMostUpToDate (record))
+//				{
+//					UnsetProperty(prop);
+//				}
 				if ( !record.isStale && record.recordState != RecordState.Deleted ) //valid record.
 					return;
 				if( record.recordState == RecordState.Deleted )
@@ -2053,9 +2068,10 @@ namespace EmergeTk.Model
 			List<ValidationError> errors = Validate(string.Empty, new List<ValidationError> ());
 			if( errors != null && errors.Count > 0 )
 			{
+				log.ErrorFormat("Validation failed for record: {0} ", this);
 				foreach (var error in errors)
 				{
-					log.Error("Validation failed: ", error);
+					 log.Error (error);
 				}
 				throw new ValidationException("Validation error(s) occurred.", errors);
 			}
