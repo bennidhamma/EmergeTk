@@ -293,7 +293,7 @@ namespace EmergeTk
         	return JSON.Default.Encode(o.Serialize());
         }
         
-        public string Encode( IList o )
+        public string Encode( IEnumerable o )
         {
         	if( o == null )
         		return "null";
@@ -305,9 +305,7 @@ namespace EmergeTk
         
         public string Encode( object o )
         {
-        	if( o is IList )
-        		return Encode( o as IList );
-        	else if( o is bool )
+        	if( o is bool )
         		return Encode( (bool)o );
         	else if( o is double )
         		return Encode( (double)o );
@@ -321,6 +319,8 @@ namespace EmergeTk
         		return Encode( (string)o );
         	else if( o is IDictionary )
         		return Encode( (IDictionary)o );
+        	else if( o is IEnumerable )
+        		return Encode( o as IEnumerable );
         	else if( o is IJSONSerializable )
         		return Encode( o as IJSONSerializable ); 
         	if( o == null )

@@ -6,6 +6,7 @@ using System.Text.RegularExpressions;
 using EmergeTk.Model;
 using EmergeTk.Model.Security;
 using System.Text;
+using System.Collections;
 
 
 namespace EmergeTk.WebServices
@@ -268,9 +269,13 @@ namespace EmergeTk.WebServices
 		
 		public static void Serialize<T> (IEnumerable<T> items, string fields, Type recordType, IMessageWriter writer) where T : AbstractRecord
 		{
-			Serialize<T>(items, SetupFields(fields,recordType),recordType, writer );
+			Serialize<T>(items, SetupFields(fields,recordType), recordType, writer );
 		}
-
+		
+		public static void Serialize<T> (IEnumerable<T> items, string fields, IMessageWriter writer) where T : AbstractRecord
+		{
+			Serialize<T>(items, SetupFields(fields,typeof(T)), typeof(T), writer );
+		}
 
         public static void Serialize<T>(IEnumerable<T> items, string listName, string fields, Type recordType, IMessageWriter writer) where T : AbstractRecord
         {
@@ -288,7 +293,7 @@ namespace EmergeTk.WebServices
             RestTypeDescription att = WebServiceManager.Manager.GetRestTypeDescription(recordType);
             if (att.RestType == null || items == null)
 			{
-				log.Warn("No attribute");
+				log.Warn("No attribute for type " + recordType);
                 return;
 			}
 
@@ -526,6 +531,7 @@ namespace EmergeTk.WebServices
                         IRecordList oldList = (IRecordList)record[recordFieldName];
                         if (oldList != null)
                             newList.RecordSnapshot = oldList.RecordSnapshot;
+						log.DebugFormat ("Assinging {0} to {1} of {2}", newList, recordFieldName, record);
                         record[recordFieldName] = newList;
                         if (context.Lists == null)
                             context.Lists = new List<RecordPropertyList>();
@@ -581,9 +587,22 @@ namespace EmergeTk.WebServices
 				}
 				else if (field.DataType == DataType.Json)
 				{
-					log.Debug ("JSON serialize", val.GetType (),  val);
-					var deser = JSON.DeserializeObject(field.Type, (string)val);
-					record[recordFieldName] = deser;
+					log.Debug ("JSON deserialize", val.GetType (),  val);
+					if (val is string)
+					{
+						var deser = JSON.DeserializeObject(field.Type, (string)val);
+						record[recordFieldName] = deser;
+					}
+					else if (val is MessageList)
+					{
+						MessageList ml = (MessageList)val;
+						IList target = (IList)Activator.CreateInstance (field.Type);
+						record[recordFieldName] = target;
+						foreach (var item in ml)
+						{
+							target.Add (item);
+						}
+					}
 				}
 				else //scalar. 
 				{
@@ -650,19 +669,22 @@ namespace EmergeTk.WebServices
 	
 	public class DeserializationContext
 	{
+		private static readonly EmergeTkLog log = EmergeTkLogManager.GetLogger(typeof(DeserializationContext));
+		
 		public List<AbstractRecord> Records;
 		public List<RecordPropertyList> Lists;
 		
 		public void SaveChanges()
 		{
+			foreach( RecordPropertyList rpl in Lists )
+			{
+				log.DebugFormat ("saving list property {0} of record {1} with list {2}", rpl.Record, rpl.Property, rpl.Record[rpl.Property]);
+				rpl.Record.SaveRelations(rpl.Property);	
+			}
+			
 			foreach( AbstractRecord r in Records )
 			{
 				r.Save();	
-			}
-			
-			foreach( RecordPropertyList rpl in Lists )
-			{
-				rpl.Record.SaveRelations(rpl.Property);	
 			}
 		}
 	}

@@ -116,9 +116,10 @@ namespace EmergeTk.Model
 				Cache.Remove(key);
 		}
 		
-		public void Remove(AbstractRecord record)
+		public void Remove(AbstractRecord record, bool remoteOnly)
 		{
-			record.InvalidateCache();
+			if (!remoteOnly)
+				record.InvalidateCache();
 		}
 		
 		public void FlushAll()

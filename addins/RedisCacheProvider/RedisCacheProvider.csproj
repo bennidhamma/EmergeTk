@@ -48,15 +48,15 @@
     <WarningLevel>4</WarningLevel>
   </PropertyGroup>
   <ItemGroup>
-    <ProjectReference Include="..\..\server\emergetk.csproj">
+    <ProjectReference Include="..\..\..\SuperFunCon\EmergeTk\server\emergetk.csproj">
       <Project>{52E41D18-8F12-430D-B5B5-43C7BBA18F61}</Project>
       <Name>emergetk</Name>
     </ProjectReference>
-    <ProjectReference Include="..\WebServiceProvider\WebServiceProvider.csproj">
+    <ProjectReference Include="..\..\..\SuperFunCon\EmergeTk\addins\WebServiceProvider\WebServiceProvider.csproj">
       <Project>{2648AC85-2BB4-4DA0-AF7E-F43FA0D756DA}</Project>
       <Name>WebServiceProvider</Name>
     </ProjectReference>
-    <ProjectReference Include="..\ProtobufSerializer\ProtobufSerializer.csproj">
+    <ProjectReference Include="..\..\..\SuperFunCon\EmergeTk\addins\ProtobufSerializer\ProtobufSerializer.csproj">
       <Project>{91E45347-1107-4DEC-A95A-A6388878FF0D}</Project>
       <Name>ProtobufSerializer</Name>
     </ProjectReference>

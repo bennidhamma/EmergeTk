@@ -407,13 +407,17 @@ namespace EmergeTk.Model
 			}
 		}
 		
-		public void Remove(AbstractRecord record)
+		public void Remove(AbstractRecord record, bool remoteOnly)
 		{
-            if (localRecords.Contains(new KeyValuePair<RecordDefinition, AbstractRecord>(record.Definition, record)))
-            {
-                localRecords[record.Definition].MarkAsStale();
-                localRecords.Remove(record.Definition);
-            }
+			if (!remoteOnly)
+			{
+	            if (localRecords.Contains(new KeyValuePair<RecordDefinition, AbstractRecord>(record.Definition, record)))
+	            {
+	                localRecords[record.Definition].MarkAsStale();
+	                localRecords.Remove(record.Definition);
+	                record.MarkAsStale();
+	            }
+			}
 			try
 			{
 				CheckRedisClient();
@@ -426,7 +430,6 @@ namespace EmergeTk.Model
 			{
 				log.ErrorFormat("Remove error. key={0}. Exception={1}", record.CreateStandardCacheKey(), ex);
 			}
-			record.MarkAsStale();
 			record.InvalidateCache();
 			SetExpirationEvent(record.Definition.ToString());
 		}

@@ -704,10 +704,7 @@ namespace EmergeTk.Model.Providers
 			}
 
             if (invalidateCache)
-                CacheProvider.Instance.Remove(record);
-			
-			string cacheKey = record.CreateStandardCacheKey();
-       	    CacheProvider.Instance.PutLocal(cacheKey, record);
+                CacheProvider.Instance.Remove(record, true);
 		}
 
 	

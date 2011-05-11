@@ -193,5 +193,19 @@ namespace EmergeTk.Model
 				yield return items[i] as T;
 			}
 		}
+		
+		public override string ToString ()
+		{
+			string ids = null;
+			foreach (var r in items)
+			{
+				if (ids == null)
+					ids = r.Id.ToString ();
+				else
+					ids += "," + r.Id.ToString ();
+			}
+			var s = string.Format ("[RecordList<{0}>, Count: {1}, IDs: {2}", typeof(T).Name, this.Count, ids);
+			return s;
+		}
     }
 }

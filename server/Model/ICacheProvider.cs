@@ -20,7 +20,7 @@ namespace EmergeTk.Model
 		AbstractRecord GetRecord(Type t, string key);
 		object[] GetList( params string[] key );
 		void Remove(string key);
-		void Remove(AbstractRecord record);
+		void Remove(AbstractRecord record, bool remoteOnly);
 		void FlushAll();
 		
 		//safe list functions.

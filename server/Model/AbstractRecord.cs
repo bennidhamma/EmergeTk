@@ -233,7 +233,8 @@ namespace EmergeTk.Model
 			{				
 				foreach( AbstractRecord r in list )
 				{
-					r.EnsureId();
+					if (r != null)
+						r.EnsureId();
 				}
 			}
 			
@@ -427,7 +428,7 @@ namespace EmergeTk.Model
 			this.recordState = RecordState.Deleted;
 			GetProvider().Delete(this);
             if( CacheProvider.Instance != null )
-				CacheProvider.Instance.Remove(this);
+				CacheProvider.Instance.Remove(this, false);
             if (deletedRecordListeners.ContainsKey(this.GetType() ) )
                 deletedRecordListeners[this.GetType()](this, new RecordEventArgs( this ) );
             if (OnDelete != null)
