@@ -97,7 +97,7 @@ namespace EmergeTk.WebServices
 
             writer.WriteProperty("id", record.Id);
 			
-			if (record is IDerived)
+			if (record is IDerived || fields.Contains ("type"))
 			{
 				writer.WriteProperty ("type", record.DbSafeModelName);
 			}
