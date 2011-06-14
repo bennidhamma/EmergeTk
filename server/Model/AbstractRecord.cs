@@ -1531,12 +1531,12 @@ namespace EmergeTk.Model
 					return;
 				if( record.recordState == RecordState.Deleted )
 				{
-					UnsetProperty(prop);
+					UnsetProperty(prop, true);
 					return;
 				}
 				if (record.isStale)
 				{
-					UnsetProperty(prop);
+					UnsetProperty(prop, false);
 				}
 			}
 			bool unsetLoading = false;
@@ -1577,7 +1577,7 @@ namespace EmergeTk.Model
 			NotifyChanged("IsStale");
 		}
 
-        public void UnsetProperty(String prop)
+        public void UnsetProperty(String prop, bool setToNull)
         {
             bool oldLoading = loading;
             loading = true;
@@ -1585,7 +1585,8 @@ namespace EmergeTk.Model
             // does not have unwanted side effects.
 
             RemoveFromLoadedProperties(prop);
-			this[prop] = null;
+			if(setToNull)
+				this[prop] = null;
             loading = oldLoading;
         }
 
