@@ -1,4 +1,3 @@
-#define IM_LOSING_MY_MIND
 using System;
 using System.Collections.Specialized;
 using System.IO;
@@ -25,7 +24,7 @@ namespace EmergeTk.WebServices
 			string username = (string)arguments.InMessage["username"];
 			string password = (string)arguments.InMessage["password"];
 			
-			User u = User.AuthenticateUser(username,password);
+			User u = User.LoginUser(username,password);
 
 			if (u != null)
 			{
@@ -52,7 +51,6 @@ namespace EmergeTk.WebServices
 				log.InfoFormat("{0}, {1}, logged out", u.Id, u.Name);
 				u.SessionToken = string.Empty;
 				u.Save();
-				HttpContext.Current.Response.Cookies["LoginToken"].Value = String.Empty;
 			}
 			else
 				throw new UnauthorizedAccessException("Not currently logged in.");
@@ -178,7 +176,7 @@ namespace EmergeTk.WebServices
             StopWatch watchRespStm = new StopWatch("Timing time to write to response stream");
             watchRespStm.Start();
             this.write("Starting direct stream to output stream.");
-            DateTime start = DateTime.Now;
+            DateTime start = DateTime.UtcNow;
             this.WriteStm("{\"testList\":[0");
 
             for (int i = 1; i < 100000; i++)
@@ -187,14 +185,14 @@ namespace EmergeTk.WebServices
             }
             this.WriteStm("]}");
             watchRespStm.Stop();
-            TimeSpan ts = DateTime.Now - start;
+            TimeSpan ts = DateTime.UtcNow - start;
             this.write(String.Format("Time for streaming to output stream {0} ms.", ts.TotalMilliseconds));
 
             StopWatch watchMsgList = new StopWatch("Timing time to write to MessageList");
             watchMsgList.Start();
             this.write("Starting to write to messagelist");
 
-            start = DateTime.Now;
+            start = DateTime.UtcNow;
             MessageNode node = new MessageNode("response");
             MessageList list = new MessageList();
            
@@ -206,14 +204,14 @@ namespace EmergeTk.WebServices
             String s = JSON.Default.Encode(node);
             write(JSON.Default.Encode(node));
             watchMsgList.Stop();
-            ts = DateTime.Now - start;
+            ts = DateTime.UtcNow - start;
             this.write(String.Format("Time for writing to MsgList, then JSON.Default.Encoding, and then writing to output = {0} ms.", ts.TotalMilliseconds));
 
             IMessageWriter writer = arguments.Response.Writer;
             StopWatch stopWatchMsgWriter = new StopWatch("Timing time to write using IMessageWriter");
             stopWatchMsgWriter.Start();
             this.WriteStm("Starting write to messagewriter");
-            start = DateTime.Now;
+            start = DateTime.UtcNow;
 
             writer.OpenRoot("response");
             writer.OpenProperty("testList");
@@ -225,7 +223,7 @@ namespace EmergeTk.WebServices
             writer.CloseList();
             writer.CloseRoot();
 
-            ts = DateTime.Now - start;
+            ts = DateTime.UtcNow - start;
             this.write(String.Format("Time for writing using MessageWriter = {0} ms.", ts.TotalMilliseconds));
             stopWatchMsgWriter.Stop();
         }

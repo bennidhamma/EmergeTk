@@ -29,7 +29,7 @@ namespace EmergeTk.Model.Search
         String Type { get; set; }   // leave empty for heterogenous search results - used with SearchInt
         int Start { get; set; }
         int Rows { get; set; }
-        SortInfo Sort { get; set; }
+        List<SortInfo> Sorts { get; set; }
         bool RandomSort { get; set; }  // add an additional random sort on the end? 
         IFacets Facets { get; set;  }
         IMoreLikeThis MoreLikeThis { get; set; }

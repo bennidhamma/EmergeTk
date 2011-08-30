@@ -130,8 +130,21 @@ namespace EmergeTk
 				//first trim any gunk
 				s = s.Trim();
 				//then kill the quotes
-				if (s.Contains("\\"))
-					s = s.Replace("\\", "");
+				StringBuilder unescaped = new StringBuilder();
+				for (int i = 0; i < s.Length; i++)
+				{
+					char c = s[i];
+					if (c != '\\')
+					{
+						unescaped.Append(c);
+					}
+					else if (s[i + 1] == '\\')
+					{
+						i++;
+						unescaped.Append(c);
+					}
+				}
+				s = unescaped.ToString();
 				if( s[0] == '\"' ) 
 					s = s.Substring(1,s.Length-2);
         		return s;

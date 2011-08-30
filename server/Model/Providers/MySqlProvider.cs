@@ -35,10 +35,11 @@ namespace EmergeTk.Model.Providers
 	    const string LongStringDataType = "text";
 		const string ShortStringDataType = "varchar(20)";
 		const string StringDataType = "varchar(500)";
+        const string VarStringDataTypeMask = "varchar({0})";
 		const string IntDataType = "int";
 
 		//IVersioned stmts
-		const string IdentityColumnSignature = "`ROWID` INTEGER UNSIGNED NOT NULL PRIMARY KEY";
+		const string IdentityColumnSignature = "`ROWID` INTEGER UNSIGNED NOT NULL AUTO_INCREMENT PRIMARY KEY";
         const string CreateTableFormat = "CREATE TABLE `{0}` ( " + IdentityColumnSignature + " {1} )";
 		
         const string InsertTableFormat = "REPLACE `{0}`({2}) VALUES( {1} );";
@@ -248,7 +249,6 @@ namespace EmergeTk.Model.Providers
 				conn.Open();
 				using( MySqlCommand comm = new MySqlCommand(sql, conn) )
 				{
-					log.Debug ("ExecuteReader exeucting sql: ", sql);
 					using(IDataReader r = comm.ExecuteReader())
 					{
 						while(r.Read())
@@ -257,6 +257,19 @@ namespace EmergeTk.Model.Providers
 						}
 					}
 					conn.Close();
+				}
+			}
+		}
+		
+		public void ExecuteCommandReader(MySqlCommand comm, ReaderDelegate del)
+		{
+			if (comm.Connection == null)
+				comm.Connection = CreateConnection ();
+			using(IDataReader r = comm.ExecuteReader())
+			{
+				while(r.Read())
+				{
+					del(r);
 				}
 			}
 		}
@@ -539,8 +552,7 @@ namespace EmergeTk.Model.Providers
         }
         public void Save(AbstractRecord record, bool SaveChildren, bool IncrementVersion, DbConnection conn)
 		{
-			log.Debug("saving record", this );
-            if( record.Id == 0 && record.TableIdentityColumn != "ROWID" )
+			if( record.Id == 0 && record.TableIdentityColumn != "ROWID" )
 			{
 				 AbstractRecord r = AbstractRecord.Load(record.GetType(),new FilterInfo(
 					record.TableIdentityColumn, record.Value, FilterOperation.Equals ) );
@@ -606,14 +618,18 @@ namespace EmergeTk.Model.Providers
            	    }
                 else //string, enum, etc.
                 {
-					object v = record[col.Name];
-					if (col.DataType != DataType.Json || v == null)
+					if (col.DataType != DataType.Json || record[col.Name] == null)
 					{
-						comm.Parameters.Add( new MySqlParameter("?"+ col.Name,v ) );
+						comm.Parameters.Add( new MySqlParameter("?"+ col.Name,record[col.Name] ) );
+					}
+					else if (col.Type == typeof(DateTime))
+					{
+						DateTime v = (DateTime)record[col.Name];
+						comm.Parameters.Add( new MySqlParameter("?"+ col.Name, v.ToString ("u") ) );
 					}
 					else
 					{
-						comm.Parameters.Add( new MySqlParameter("?"+ col.Name, JSON.Serializer.Serialize (v) ) );
+						comm.Parameters.Add( new MySqlParameter("?"+ col.Name, JSON.Serializer.Serialize (record[col.Name]) ) );
 					}
 					parameterKeys.Add("?" + col.Name);
                     record.SetOriginalValue(col.Name, record[col.Name]);
@@ -704,7 +720,11 @@ namespace EmergeTk.Model.Providers
 			}
 
             if (invalidateCache)
-                CacheProvider.Instance.Remove(record, true);
+			{
+				//N.B. it's very important here that we MUST NOT mark 'record' as stale.
+				//it's correct to mark the prior version, the one that is currently in the cache, as stale.
+                CacheProvider.Instance.Update(record);				
+			}
 		}
 
 	
@@ -877,10 +897,15 @@ namespace EmergeTk.Model.Providers
         		if (col.DataType == DataType.LargeText || col.DataType == DataType.Xml)
         			dataType = LongStringDataType;
                 else if (col.DataType == DataType.SmallText)
-        			dataType = ShortStringDataType;
-        		else
-        			dataType = StringDataType;
-        	}
+                    dataType = ShortStringDataType;
+                else
+                {
+                    if (col.Length == null)
+                        dataType = StringDataType;
+                    else
+                        dataType = String.Format(VarStringDataTypeMask, col.Length);
+                }
+            }
             else if (col.Type == typeof(int) || col.Type == typeof(int?))
             {
         		dataType = "int(11)";
@@ -905,7 +930,7 @@ namespace EmergeTk.Model.Providers
             {
             	dataType = "bigint(20)";
             }
-			else if (col.Type.IsSubclassOf(typeof(Enum)))
+			else if (col.Type.IsSubclassOf(typeof(Enum)) || col.IsNullableEnum)
             {
                 dataType = "varchar(128)";
             }
@@ -926,25 +951,35 @@ namespace EmergeTk.Model.Providers
         		// TODO: this may be bad to create a child table here
         		CreateChildTable (tableName + "_" + col.Name, col);
             }
-			else
+			else if (col.DataType == DataType.Json)
 			{
 				dataType = "text";
-			}			
+			}
 
             return dataType;
         }
 
 		public void CreateChildTable(string tableName, ColumnInfo col)
-        {
-		   if ( LowerCaseTableNames ) tableName = tableName.ToLower();
-           if (!TableExists(tableName) )
-           {
-				ExecuteNonQuery(string.Format(CreateTableNoRowIdFormat, tableName, "Parent_Id int, Child_Id int"));		
+		{
+			if (LowerCaseTableNames) tableName = tableName.ToLower();
+			if (!TableExists(tableName))
+			{
+				ExecuteNonQuery(string.Format(CreateTableNoRowIdFormat, tableName, "Parent_Id int, Child_Id int"));
 				existingTables[tableName] = true;
 
-                CreateChildTableIndex(tableName);
-            }
-        }
+				bool uniqueChildItems = false;
+				if (col.PropertyInfo != null)
+				{
+					// see if the property on the object is decorated with a [UniqueValues] attribute.  If it
+					// is, we're going to add a database unique index to the Child_Id column of the 
+					// join table.
+					if (col.PropertyInfo.GetCustomAttributes(typeof(UniqueValuesAttribute), false).Length > 0)
+						uniqueChildItems = true;
+				}
+
+				CreateChildTableIndex(tableName, uniqueChildItems);
+			}
+		}
 
         #region publicly_exposed_jointable_index_helpers
         // N.B. these are exposed publicly even though they are NOT part of the DataProvider interface, because it makes
@@ -954,6 +989,11 @@ namespace EmergeTk.Model.Providers
         {
             return String.Format("IX_{0}_PARENTID_CHILDID", tableName.ToUpper());
         }
+
+		public String GenerateChildTableUniqueChildIndexName(String tableName)
+		{
+			return String.Format("IX_{0}_UNIQUE_CHILDID", tableName.ToUpper());
+		}
 
         public bool ChildTableIndexExists(String tableName, String indexName)
         {
@@ -976,7 +1016,7 @@ namespace EmergeTk.Model.Providers
         }
         #endregion
 
-        private void CreateChildTableIndex(String tableName)
+        private void CreateChildTableIndex(String tableName, bool uniqueChildItems)
         {
             String indexName = GenerateChildTableIndexName(tableName);
             if (!ChildTableIndexExists(tableName, indexName))
@@ -991,6 +1031,30 @@ namespace EmergeTk.Model.Providers
                                      indexName, tableName, ex.Message, ex.StackTrace);
                 }
             }
+			if (uniqueChildItems)
+			{
+				// this means we're going to add a unique index to the Child_Id column of the join table.   We only do that for 
+				// relationships that have business semantics such that the child column is 
+				// unique (perhaps this is too obvious, but...for people reading this later).  
+				// For example, the Advertiser->Creative relationship in AppNexus is such that 
+				// there should never be more than one instance of a Creative Id in the Child_Id
+				// column of the Advertiser_Creatives table.   This is not true for all join 
+				// tables, e.g., the User_Roles and Role_Permissions table are inherently cases 
+				// where there will be dups in the Child_ID column.  
+				indexName = GenerateChildTableUniqueChildIndexName(tableName);
+				if (!ChildTableIndexExists(tableName, indexName))
+				{
+					try
+					{
+						this.ExecuteNonQuery(String.Format("ALTER IGNORE TABLE `{0}` ADD UNIQUE INDEX `{1}` (Child_Id);", tableName, indexName));
+					}
+					catch (Exception ex)
+					{
+						log.ErrorFormat("Error creating unique child index {0} on table {1}, error = {2}, stack = {3}, continuing on",
+										indexName, tableName, ex.Message, ex.StackTrace);
+					}
+				}
+			}
         }
 
         

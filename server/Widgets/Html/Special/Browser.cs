@@ -70,7 +70,7 @@ namespace EmergeTk.Widgets.Html
                             System.Net.WebClient wc = new WebClient();
                             StreamReader sr = new StreamReader(wc.OpenRead(source));
                             html = sr.ReadToEnd();
-                            RootContext.HttpContext.Cache.Add(source, html, null, DateTime.Now.AddMinutes(20),
+                            RootContext.HttpContext.Cache.Add(source, html, null, DateTime.UtcNow.AddMinutes(20),
                                 System.Web.Caching.Cache.NoSlidingExpiration, System.Web.Caching.CacheItemPriority.Normal,
                                 null);
                         }

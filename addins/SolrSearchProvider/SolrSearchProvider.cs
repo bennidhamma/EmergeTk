@@ -10,6 +10,9 @@ using SolrNet.Commands.Parameters;
 using SolrNet.Impl;
 using SolrNet.Impl.FieldSerializers;
 using System.Xml;
+using System.Threading;
+using SolrNet.Impl.QuerySerializers;
+using SolrNet.Impl.FacetQuerySerializers;
 
 namespace EmergeTk.Model.Search
 {
@@ -102,23 +105,33 @@ namespace EmergeTk.Model.Search
             return conn;
         }
 		
+		object throttleLock = new object ();
+		
 		private void ExecuteCommand( ISolrCommand cmd )
 		{
-			log.Debug("executing command ", cmd );
-            ISolrConnection conn = GetConnection();
-			cmd.Execute(conn);
-			log.Debug("done executing command, comitting.");
-			Commit();
-			log.Debug("committed");
+			lock (throttleLock)
+			{
+				log.Debug("executing command ", cmd );
+	            ISolrConnection conn = GetConnection();
+				cmd.Execute(conn);
+				log.Debug("done executing command, comitting.");
+				Commit();
+				log.Debug("committed");
+				Thread.Sleep (30);
+			}
 		}
 
 		public void Commit()
 		{
 			if (commitEnabled)
 			{
-				CommitCommand cmd = new CommitCommand();
-                SolrConnection conn = GetConnection();
-				cmd.Execute(conn);
+				lock (throttleLock)
+				{
+					CommitCommand cmd = new CommitCommand();
+	                SolrConnection conn = GetConnection();
+					cmd.Execute(conn);
+					Thread.Sleep (30);
+				}
 			}
 		}
 		
@@ -127,7 +140,7 @@ namespace EmergeTk.Model.Search
         {
             if (testHook == null)
             {
-                AddCommand<AbstractRecord> cmd = new AddCommand<AbstractRecord>(elements.ToArray(), new EmergeTkSolrSerializer<AbstractRecord>());
+                AddCommand<AbstractRecord> cmd = new AddCommand<AbstractRecord>(elements.ToArray().Select(r=> new KeyValuePair<AbstractRecord, double?>(r, null)), new EmergeTkSolrSerializer<AbstractRecord>());
                 ExecuteCommand(cmd);
             }
             else
@@ -135,20 +148,20 @@ namespace EmergeTk.Model.Search
                 EmergeTkSolrSerializer<AbstractRecord> serializer = new EmergeTkSolrSerializer<AbstractRecord>();
                 foreach (AbstractRecord r in elements)
                 {
-                    testHook(serializer.Serialize(r));
+                    testHook(serializer.Serialize(r, null));
                 }
             }
 		}
 		
 		public void GenerateIndex (AbstractRecord r)
 		{
-			AddCommand<AbstractRecord> cmd = new AddCommand<AbstractRecord>(new AbstractRecord[]{r}, new EmergeTkSolrSerializer<AbstractRecord>());
+			AddCommand<AbstractRecord> cmd = new AddCommand<AbstractRecord>(new KeyValuePair<AbstractRecord, double?>[]{new KeyValuePair<AbstractRecord, double?>(r, null)}, new EmergeTkSolrSerializer<AbstractRecord>());
 			ExecuteCommand(cmd);
 		}
 		
 		public void Delete (AbstractRecord r)
 		{
-			DeleteCommand cmd = new DeleteCommand( new DeleteByMultipleIdParam( new string[] {  r.GetType().FullName  + "." + r.Id } ) );
+			DeleteCommand cmd = new DeleteCommand(new DeleteByIdAndOrQueryParam(new string[] { r.GetType().FullName + "." + r.Id }, null, null));
 			ExecuteCommand(cmd);
 		}
 		
@@ -159,7 +172,7 @@ namespace EmergeTk.Model.Search
 			{
 				deleteList.Add( r.GetType().FullName + "." + r.Id );
 			}
-			DeleteCommand cmd = new DeleteCommand( new DeleteByMultipleIdParam( deleteList.ToArray() ) );
+			DeleteCommand cmd = new DeleteCommand(new DeleteByIdAndOrQueryParam(deleteList.ToArray(), null, null));
 			ExecuteCommand(cmd);
 		}
 		
@@ -175,7 +188,7 @@ namespace EmergeTk.Model.Search
 		
 		public void DeleteByQuery(string query)
 		{
-			DeleteCommand cmd = new DeleteCommand( new DeleteByQueryParam(new SolrQuery(query) ) );
+			DeleteCommand cmd = new DeleteCommand(new DeleteByIdAndOrQueryParam(null, new SolrQuery(query), new DefaultQuerySerializer(new DefaultFieldSerializer())));
 			ExecuteCommand(cmd);
 		}
 		
@@ -183,12 +196,20 @@ namespace EmergeTk.Model.Search
 		{			
 			return Search(string.Format("{0}:{1}", field, key));
 		}
-		
+
+		private SolrQueryExecuter<T> GetExecuterT<T>(ISolrQueryResultParser<T> parser)
+		{
+			SolrConnection conn = GetConnection();
+			ISolrFieldSerializer fieldSerializer = new DefaultFieldSerializer();
+			ISolrQuerySerializer querySerializer = new DefaultQuerySerializer(fieldSerializer);
+			ISolrFacetQuerySerializer facetQuerySerializer = new DefaultFacetQuerySerializer(querySerializer, fieldSerializer);
+			return new SolrQueryExecuter<T>(parser, conn, querySerializer, facetQuerySerializer);
+		}
+
 		public IRecordList Search( string query )
 		{
-            SolrConnection conn = GetConnection();
 			SolrQuery q = new SolrQuery( query );
-			SolrQueryExecuter<RecordKey> queryExec = new SolrQueryExecuter<RecordKey>(conn, new EmergeTkFastParser() );
+			SolrQueryExecuter<RecordKey> queryExec = GetExecuterT<RecordKey>(new EmergeTkFastParser());
 			ISolrQueryResults<RecordKey> results = queryExec.Execute( q, new QueryOptions() );
 			RecordList list = new RecordList();
 			foreach( RecordKey k in results )
@@ -232,9 +253,8 @@ namespace EmergeTk.Model.Search
 		
 		public IRecordList<T> Search<T> (string query) where T : AbstractRecord, new()
 		{
-            SolrConnection conn = GetConnection();
 			SolrQuery q = new SolrQuery( query + " RecordType:" + typeof(T).FullName);
-			SolrQueryExecuter<T> queryExec = new SolrQueryExecuter<T>(conn, new EmergeTkParser<T>() );
+			SolrQueryExecuter<T> queryExec = GetExecuterT<T>(new EmergeTkParser<T>());
 			ISolrQueryResults<T> results = queryExec.Execute( q, new QueryOptions() );
 			RecordList<T> list = new RecordList<T>();
 			foreach( T t in results )
@@ -263,7 +283,7 @@ namespace EmergeTk.Model.Search
 
 			SolrConnection conn = GetConnection();
 			SolrQuery q = new SolrQuery( query + " RecordType:" +  typeof(T).FullName );
-			SolrQueryExecuter<T> queryExec = new SolrQueryExecuter<T>(conn, new EmergeTkParser<T>() );
+			SolrQueryExecuter<T> queryExec = GetExecuterT<T>(new EmergeTkParser<T>());
 			ISolrQueryResults<T> results = queryExec.Execute( q, options );
 			RecordList<T> list = new RecordList<T>();
 			foreach( T t in results )
@@ -326,7 +346,9 @@ namespace EmergeTk.Model.Search
             StopWatch watch = new StopWatch("SolrQLogString", queryLog);
             watch.Start();
             StringBuilder sb = new StringBuilder(query + "&");
-            IEnumerable<String> fqs = options.FilterQueries.Select(q => String.Format("fq={0}", q.Query));
+
+		
+            IEnumerable<String> fqs = options.FilterQueries.Select(q => String.Format("fq={0}", ((SolrQuery)q).Query));
             sb.Append(String.Join("&", fqs.ToArray()));
             watch.Stop();
             queryLog.InfoFormat("Issuing SOLR query = {0}", sb.ToString());
@@ -353,7 +375,7 @@ namespace EmergeTk.Model.Search
 
             SolrConnection conn = GetConnection();
             SolrQuery q = new SolrQuery(query);
-            SolrQueryExecuter<RecordKey> queryExec = new SolrQueryExecuter<RecordKey>(conn, new EmergeTkFastParser());
+			SolrQueryExecuter<RecordKey> queryExec = GetExecuterT<RecordKey>(new EmergeTkFastParser());
             SolrSearchProvider.ProviderWatch.Stop();
 
             SolrSearchProvider.SolrWatch.Start();  // parser will stop this watch. 
@@ -457,7 +479,7 @@ namespace EmergeTk.Model.Search
             SolrQLogString(query, queryOptions);
             SolrConnection conn = GetConnection();
 			SolrQuery q = new SolrQuery(query);
-			SolrQueryExecuter<T> queryExec = new SolrQueryExecuter<T>(conn, new EmergeTkParser<T>(options));
+			SolrQueryExecuter<T> queryExec = GetExecuterT<T>(new EmergeTkParser<T>(options));
 
             SolrSearchProvider.ProviderWatch.Stop();
             SolrSearchProvider.SolrWatch.Start();
@@ -474,7 +496,7 @@ namespace EmergeTk.Model.Search
             if (options.MoreLikeThis != null)
             {
                 Dictionary<T, int> moreLikeThisOrder = new Dictionary<T, int>();
-                foreach (KeyValuePair<T, IList<T>> kvp in resultsSolrNet.SimilarResults)
+                foreach (KeyValuePair<String, IList<T>> kvp in resultsSolrNet.SimilarResults)
                 {
                     // we don't care about kvp.Key - it's the original result doc; we're throwing
                     // away that relationship for now.
@@ -513,7 +535,7 @@ namespace EmergeTk.Model.Search
             SolrConnection conn = GetConnection();
 
 			SolrQuery q = new SolrQuery(query);
-			SolrQueryExecuter<RecordKey> queryExec = new SolrQueryExecuter<RecordKey>(conn, new EmergeTkFastParser(options));
+			SolrQueryExecuter<RecordKey> queryExec = GetExecuterT<RecordKey>(new EmergeTkFastParser(options));
 
             SolrSearchProvider.ProviderWatch.Stop();
             SolrSearchProvider.SolrWatch.Start();
@@ -530,7 +552,7 @@ namespace EmergeTk.Model.Search
             if (options.MoreLikeThis != null)
             {
                 Dictionary<RecordKey, int> moreLikeThisOrder = new Dictionary<RecordKey, int>();
-                foreach (KeyValuePair<RecordKey, IList<RecordKey>> kvp in resultsSolrNet.SimilarResults)
+                foreach (KeyValuePair<string, IList<RecordKey>> kvp in resultsSolrNet.SimilarResults)
                 {
                     // we don't care about kvp.Key - it's the original result doc; we're throwing
                     // away that relationship for now.
@@ -567,13 +589,12 @@ namespace EmergeTk.Model.Search
 			return new SolrMoreLikeThis();
 		}
 
-        private void SetSorts(QueryOptions queryOptions, SortInfo sort, bool random)
+        private void SetSorts(QueryOptions queryOptions, IEnumerable<SortInfo> sorts, bool random)
         {
-            if (sort != null)
+            if (sorts != null)
             {
-                // add whatever sort the caller wanted to use.
-                SortOrder soCaller = new SortOrder(sort.ColumnName, sort.Direction == SortDirection.Ascending ? Order.ASC : Order.DESC);
-                queryOptions.AddOrder(soCaller);
+                SortOrder[] sortOrders = sorts.Select(sort => new SortOrder(sort.ColumnName, sort.Direction == SortDirection.Ascending ? Order.ASC : Order.DESC)).ToArray();
+                queryOptions.AddOrder(sortOrders);
             }
             if (random)
             {
@@ -592,7 +613,7 @@ namespace EmergeTk.Model.Search
 			queryOptions.Rows = options.Rows;
 			queryOptions.Start = options.Start;
 
-            SetSorts(queryOptions, options.Sort, options.RandomSort);
+            SetSorts(queryOptions, options.Sorts, options.RandomSort);
 
 			// get the facets, if they exist.
 			if (options.Facets != null && options.Facets.Fields.Count > 0)
@@ -725,7 +746,6 @@ namespace EmergeTk.Model.Search
                     {
                         results.SimilarResults = FacetAndMoreLikeThisLoader.GenerateMoreLikeThis<T>
                             (xml,
-                            (t, i) => { T rec = new T(); rec["id"] = i; return rec; },
                             (t, i) => {
                                 SolrSearchProvider.ParseWatch.Stop(); 
                                 T record = (T)AbstractRecord.Load(t, i);
@@ -806,7 +826,6 @@ namespace EmergeTk.Model.Search
                 {
                     results.SimilarResults = FacetAndMoreLikeThisLoader.GenerateMoreLikeThis<RecordKey>
                         (xml,
-                        (t, i) => new RecordKey(t.FullName, i),
                         (t, i) => new RecordKey(t.FullName, i));
 
                     watch.Lap("Completed parsing out MoreLikeThis information");
@@ -892,10 +911,9 @@ namespace EmergeTk.Model.Search
         }
 
         public delegate T LoadT<T>(Type type, int id);
-        public delegate T LoadTKey<T>(Type type, int id);
 
-        public static IDictionary<T, IList<T>>
-        GenerateMoreLikeThis<T>(XmlDocument xml, LoadTKey<T> keyLoader, LoadT<T> loader)
+        public static IDictionary<String, IList<T>>
+        GenerateMoreLikeThis<T>(XmlDocument xml, LoadT<T> loader)
         {
             // get the MoreLikeThis results
 
@@ -904,26 +922,19 @@ namespace EmergeTk.Model.Search
             XmlNodeList lsts = xml.SelectNodes("/response/lst[@name=\"moreLikeThis\"]/result");
 
             // create a datastructure for the overall MoreLikeThis results
-            Dictionary<T, IList<T>> similarResults = new Dictionary<T, IList<T>>();
+            Dictionary<String, IList<T>> similarResults = new Dictionary<String, IList<T>>();
             // for each parent result node
             Type t = null;
             foreach (XmlNode result in lsts)
             {
-                string type;
-                int id = GetRecordId(result, out type);
-                if (id == -1)
-                    continue;
-                if (t == null)
-                    t = TypeLoader.GetType(type);
-                T parent = keyLoader(t, id);
-
+				String name = result.Attributes["name"].Value;
                 List<T> moreLikeThisKids = new List<T>();
                 XmlNodeList docs = result.SelectNodes("doc");
                 foreach (XmlNode doc in docs)
                 {
                     moreLikeThisKids.Add(loader(t, int.Parse(doc.SelectSingleNode("int[@name=\"RecordId\"]").InnerText)));                 
                 }
-                similarResults[parent] = moreLikeThisKids;
+                similarResults[name] = moreLikeThisKids;
             }
             return similarResults;
         }
@@ -931,7 +942,7 @@ namespace EmergeTk.Model.Search
 	
 	public class EmergeTkSolrSerializer<T> : ISolrDocumentSerializer<T> where T : AbstractRecord, new()
 	{
-		public XmlDocument Serialize(T doc)
+		public XmlDocument Serialize(T doc, double? boost)
 		{
 			//REQUIRED FIELDS: RecordDefinition, RecordId, RecordType
 			var xml = new XmlDocument();
@@ -979,17 +990,8 @@ namespace EmergeTk.Model.Search
 		public String Type { get; set; }
 		public int Start { get; set; }
 		public int Rows { get; set; }
-		public SortInfo Sort
-		{
-			get
-			{
-				return sort;
-			}
-			set
-			{
-				sort = value;
-			}
-		}
+		public List<SortInfo> Sorts {get; set;}
+
         public bool RandomSort
         {
             get
@@ -1082,7 +1084,6 @@ namespace EmergeTk.Model.Search
 	public class SolrSearchProviderQueryResults<T> : ISearchProviderQueryResults<T>
 	{
 		private Dictionary<String, ICollection<KeyValuePair<String, int>>> facets;
-        private IDictionary<String, int> facetQueries;
 		private IEnumerable<T> results;
         private IDictionary<T, int> moreLikeThisOrder;
 		private int numFound = 0;

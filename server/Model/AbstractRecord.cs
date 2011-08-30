@@ -170,7 +170,7 @@ namespace EmergeTk.Model
 		{
 			if( CacheProvider.Instance == null )
 				return;
-			CacheProvider.Instance.Remove( record.GetCacheKey() );
+			CacheProvider.Instance.Remove( record.GetCacheKey() );  
 		}
 		
 		private static void DeleteCacheKeyList(RecordDefinition rd)
@@ -211,7 +211,7 @@ namespace EmergeTk.Model
 				{
 					log.Debug("removing cache item " + s);
 					CacheProvider.Instance.Remove(s);
-				}				
+				}
 			}
 		}
 
@@ -428,7 +428,7 @@ namespace EmergeTk.Model
 			this.recordState = RecordState.Deleted;
 			GetProvider().Delete(this);
             if( CacheProvider.Instance != null )
-				CacheProvider.Instance.Remove(this, false);
+				CacheProvider.Instance.Remove(this);
             if (deletedRecordListeners.ContainsKey(this.GetType() ) )
                 deletedRecordListeners[this.GetType()](this, new RecordEventArgs( this ) );
             if (OnDelete != null)
@@ -521,8 +521,8 @@ namespace EmergeTk.Model
 		public string CreateStandardCacheKey()
 		{
 			return CreateStandardCacheKey (this.DbSafeModelName.ToLower(), this.id);
-		}
-		
+		}	
+
 		public static string CreateStandardCacheKey (string model, int id)
 		{
 			return string.Format("{0}.rowid-=-{1}", model, id );
@@ -578,7 +578,7 @@ namespace EmergeTk.Model
 				misses++;
 				//log.Debug("CACHE MISS ", cacheKey, loads, hits, misses, hits/loads );
 				//I don't think we need to do IoC here - all dbs support this simple of a select stmt!
-				result = provider.ExecuteDataTable(string.Format("SELECT * FROM {0} WHERE {1} ", provider.EscapeEntity(name), WhereClause));				
+				result = provider.ExecuteDataTable(string.Format("SELECT * FROM {0} WHERE {1} ", provider.EscapeEntity(name), WhereClause));
             }
 
             id = record != null ? record.id : id;
@@ -592,17 +592,6 @@ namespace EmergeTk.Model
             }
 			
 			id = Convert.ToInt32(result.Rows[0][provider.GetIdentityColumn()]);
-			
-			//if record with id is already in cache, we want to use that, to ensure we get the shared ref.
-			if (CacheProvider.EnableCaching)
-			{
-				T localCacheRecord = (T)CacheProvider.Instance.GetLocalRecord (new RecordDefinition (typeof(T), id));
-				if (localCacheRecord != null)
-				{
-					CacheProvider.Instance.PutLocal(cacheKey, localCacheRecord);
-					return localCacheRecord;
-				}
-			}
 
 			//do we always want to use ROWID?
 			string k = typeof(T).Name + "." + id;
@@ -639,7 +628,7 @@ namespace EmergeTk.Model
         	if( CacheProvider.EnableCaching == true ) 
         	{
 				string key = r.CreateStandardCacheKey();
-        		PutObjectInCache( key, r );	 
+        		PutObjectInCache( key, r );	            
 				AppendCacheKey(r.Definition, key );
 	        }
         }
@@ -650,7 +639,7 @@ namespace EmergeTk.Model
         	{	           
         		if( o is AbstractRecord )
         		{
-        			CacheProvider.Instance.Set(key,o as AbstractRecord);
+					CacheProvider.Instance.Set(key, o as AbstractRecord);
         		}
         		else
         		{
@@ -725,9 +714,10 @@ namespace EmergeTk.Model
         	{
         		throw new ArgumentNullException("ColumnInfo");
         	}
-            string childTableName = DbSafeModelName + "_" + fi.Name;
-			if ( DataProvider.LowerCaseTableNames ) childTableName = childTableName.ToLower();
-            if (!GetProvider().TableExists(childTableName))
+            string joinTable = DbSafeModelName + "_" + fi.Name;
+			string childTable = GetDbSafeModelName(fi.ListRecordType);
+			if ( DataProvider.LowerCaseTableNames ) joinTable = joinTable.ToLower();
+            if (!GetProvider().TableExists(joinTable) || !GetProvider ().TableExists (childTable))
                 return null;
 			
             string cacheKey = GetFieldReference( fi.Name ).ToString();
@@ -739,7 +729,8 @@ namespace EmergeTk.Model
 	        	
         	if( childrenIds == null )
         	{
-        		childrenIds = GetProvider().ExecuteVectorInt(string.Format("SELECT Child_Id FROM {0} WHERE Parent_Id = '{1}'", childTableName, ObjectId));
+				childrenIds = GetProvider().ExecuteVectorInt(string.Format("SELECT Child_Id FROM {0} a JOIN {2} b on a.child_id = b.rowid WHERE Parent_Id = '{1}'", 
+                                       joinTable, ObjectId, childTable));
         		PutObjectInCache( cacheKey, childrenIds);
         	}
 			return childrenIds;
@@ -818,12 +809,12 @@ namespace EmergeTk.Model
 		}
 
         public static T LoadUsingRecord<T>(T record, object id) where T : AbstractRecord, new()
-		{
-			return Load<T>(record, id, "ROWID" );
+        {        	
+		   return Load<T>(record, id, "ROWID" );
         }
 		
 		public static T LoadUsingRecord<T>(T record, int id) where T : AbstractRecord, new()
-        {
+        {        	
 			if (record == null)
 			{
 				RecordDefinition rd = new RecordDefinition (typeof(T), id);
@@ -851,17 +842,16 @@ namespace EmergeTk.Model
             {
                 this.SetLoadState(oldLoadState);
             }
-			this.isStale = false;
 			log.Debug("done reloading");
 		}
 		
 		public void Reload<T>() where T : AbstractRecord, new()
 		{
-			log.Debug("Reloading ", this.Definition);
+			log.Debug("Reloading ", this.Definition, System.Environment.StackTrace);
 			if (this.loadedProperties != null )
 			{
 				string[] props = this.loadedProperties.ToArray();
-				foreach( string key in props)
+				foreach( string key in props )
 				{
 					log.Debug ("Nulling out property", key);
 					this[key] = null;
@@ -1040,7 +1030,7 @@ namespace EmergeTk.Model
 			}
 			return dbSafeModelNames[t];
 		}
-		
+        
 		public static Type GetTypeFromDbSafeName (string safeName)
 		{
 			if (dbSafeModelNamesRev.ContainsKey(safeName))
@@ -1224,6 +1214,8 @@ namespace EmergeTk.Model
                             fi.DataType = pta.Type;
 							if( pta.Type == DataType.ReadOnly )
 								fi.ReadOnly = true;
+                            if (pta.Type == DataType.Text)
+                                fi.Length = pta.Length;
                         }
                         else
                         {
@@ -1339,8 +1331,8 @@ namespace EmergeTk.Model
             r.FireLoadEvents();
 			//CacheProvider.Instance.PutLocal (string.Format("{0} . ROWID = {1}", GetDbSafeModelName(typeof(T)), r.id), r);
             PutRecordInCache (r);
-			return r;
-        }
+            return r;
+        }		
 		
 		/// <summary>
 		/// The purpose of CreateFromRecord is to create a copy of the input record as close as possible
@@ -1469,24 +1461,8 @@ namespace EmergeTk.Model
 							}
 							else
 							{
-								string s = null;
-								try
-								{
-									object original = originals[fi.Name];
-									if (original is string)
-									{
-										s = (string)original;
-									}
-									else
-									{
-										this[fi.Name] = original;
-									}
-								}
-								catch (InvalidCastException ce)
-								{
-									log.ErrorFormat ("Attempted to cast {0} as a string on {1} and it failed.", originals[fi.Name], this);
-									throw new Exception ("Failed cast", ce);
-								}
+								Object o = originals[fi.Name];
+								string s = (string)o;
 								
 								if (! string.IsNullOrEmpty (s))
 								{
@@ -1521,24 +1497,16 @@ namespace EmergeTk.Model
         public void CheckProperty(string prop, AbstractRecord record)
         {
 			if( record != null )
-			{
-				//THIS IS COMPLICATED
-//				if (record.Persisted && !CacheProvider.Instance.IsMostUpToDate (record))
-//				{
-//					UnsetProperty(prop);
-//				}
-				if ( !record.isStale && record.recordState != RecordState.Deleted ) //valid record.
+			{				
+				if( !record.isStale ) //valid record.
 					return;
+
+                UnsetProperty(prop);
+
 				if( record.recordState == RecordState.Deleted )
-				{
-					UnsetProperty(prop, true);
 					return;
-				}
-				if (record.isStale)
-				{
-					UnsetProperty(prop, false);
-				}
 			}
+
 			bool unsetLoading = false;
         	
         	if( loadedProperties == null )
@@ -1557,7 +1525,7 @@ namespace EmergeTk.Model
         		loading = true;
         	}
         	
-			LoadProperty(this.GetFieldInfoFromName(prop));
+			LoadProperty(this.GetFieldInfoFromName(prop));	        	
 			
 			if( unsetLoading )
 			{
@@ -1577,7 +1545,7 @@ namespace EmergeTk.Model
 			NotifyChanged("IsStale");
 		}
 
-        public void UnsetProperty(String prop, bool setToNull)
+        public void UnsetProperty(String prop)
         {
             bool oldLoading = loading;
             loading = true;
@@ -1585,8 +1553,7 @@ namespace EmergeTk.Model
             // does not have unwanted side effects.
 
             RemoveFromLoadedProperties(prop);
-			if(setToNull)
-				this[prop] = null;
+            this[prop] = null;
             loading = oldLoading;
         }
 
@@ -1620,15 +1587,7 @@ namespace EmergeTk.Model
         
         private void LoadProperty(ColumnInfo fi )
         {
-			if (fi == null)
-				throw new ArgumentNullException ("fi", "invalid ColumnInfo provided.");
-            if (originalValues == null )
-				return;
-			if (!originalValues.ContainsKey(fi.Name))
-				return;
-			if (originalValues[fi.Name] == DBNull.Value)
-				return;
-			if (originalValues[fi.Name] == null)
+            if (originalValues == null || !originalValues.ContainsKey(fi.Name) || originalValues[fi.Name] == DBNull.Value || originalValues[fi.Name] == null)
                 return;
         		
         	try

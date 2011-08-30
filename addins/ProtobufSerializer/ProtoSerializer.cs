@@ -45,12 +45,18 @@ namespace ProtobufSerializer
 				}
 				
 				//print(string.Format("writing key {0} as value {1}", ci.Name, val));
-				ProtocolTypeMap type = Map(ci.Type);
+				Type t = Nullable.GetUnderlyingType(ci.Type);
+				if (t == null)
+				{
+					t = ci.Type;
+				}    
+
+				ProtocolTypeMap type = Map(t);
 				mw.WriteHeader(i,WireType.Varint);
 				//print("writing value: " + val);
                 if (val is AbstractRecord)
                     mw.WriteVarint(((AbstractRecord)val).Id);
-                else if (ci.Type.IsEnum)
+                else if (t.IsEnum) 
                     mw.WriteVarint(((int)val));
                 else if (type.Type == typeof(int))
                     mw.WriteVarint((int)val);
@@ -112,6 +118,11 @@ namespace ProtobufSerializer
 				//print("field length: " + fields.Length);
 				ColumnInfo ci = fields[index];
 				//print(string.Format("Reading field {0} of type {1} with tag {2} ", ci.Name, ci.Type, tag.Number) );
+				Type type = Nullable.GetUnderlyingType(ci.Type);
+				if (type == null)
+				{
+					type = ci.Type;
+				}   
 				if( ci.IsRecord )
 				{
 					int id = mr.ReadInt32();
@@ -125,21 +136,21 @@ namespace ProtobufSerializer
 						t.SetOriginalValue(ci.Name, id);
 					continue;
 				}
-				else if( ci.Type == typeof(int) || ci.Type == typeof(int?) || ci.Type.IsEnum)
+				else if( type == typeof(int) || type.IsEnum)
 					t[ci.Name] = mr.ReadInt32();
-				else if( ci.Type == typeof(long) || ci.Type == typeof(long?))
+				else if( type == typeof(long) )
 					t[ci.Name] = mr.ReadInt64();
-				else if( ci.Type == typeof(string))
+				else if( type == typeof(string))
 					t[ci.Name] = mr.ReadString();
-				else if( ci.Type == typeof(decimal) || ci.Type == typeof(decimal?))
+				else if( type == typeof(decimal))
 					t[ci.Name] = mr.ReadDecimal();
-				else if( ci.Type == typeof(bool) || ci.Type == typeof(bool?))
+				else if( type == typeof(bool))
 					t[ci.Name] = mr.ReadBoolean();
-				else if( ci.Type == typeof(float) || ci.Type == typeof(float?))
+				else if( type == typeof(float))
 					t[ci.Name] = mr.ReadFixedSingle();
-				else if( ci.Type == typeof(double) || ci.Type == typeof(double?))
+				else if(type == typeof(double))
 					t[ci.Name] = mr.ReadFixedDouble();
-				else if( ci.Type == typeof(DateTime) || ci.Type == typeof(DateTime?))
+				else if( type == typeof(DateTime))
 					t[ci.Name] = mr.ReadDateTime();
 				else if (ci.DataType == DataType.Json)
 					t[ci.Name] = JSON.DeserializeObject (ci.Type, mr.ReadString ());

@@ -33,7 +33,7 @@ namespace EmergeTk.Widgets.Html
 			set {
 				savePath = value;
 				if( img != null )
-					img.Url = SavePath + "?" + (uid ?? Util.ConvertToBase32(DateTime.Now.Ticks));
+					img.Url = SavePath + "?" + (uid ?? Util.ConvertToBase32(DateTime.UtcNow.Ticks));
 				RaisePropertyChangedNotification( "SavePath" );
 			}
 		}
@@ -65,7 +65,7 @@ namespace EmergeTk.Widgets.Html
 			set {
 				uid = value;
 				if( img != null )
-					img.Url = SavePath + "?" + (uid ?? Util.ConvertToBase32(DateTime.Now.Ticks));
+					img.Url = SavePath + "?" + (uid ?? Util.ConvertToBase32(DateTime.UtcNow.Ticks));
 				RaisePropertyChangedNotification("ImageUid");
 			}
 		}
@@ -93,7 +93,7 @@ namespace EmergeTk.Widgets.Html
 			imgPane.ClassName = "Preview";
 			img = RootContext.CreateWidget<Image>(imgPane);
 			if( ! string.IsNullOrEmpty( SavePath ) )
-				img.Url = SavePath + "?" + (uid ?? Util.ConvertToBase32(DateTime.Now.Ticks));
+				img.Url = SavePath + "?" + (uid ?? Util.ConvertToBase32(DateTime.UtcNow.Ticks));
 			else
 				img.Visible = false;
 			//imgPane.SetClientElementAttribute("align", Util.ToJavaScriptString("center") );
@@ -114,7 +114,7 @@ namespace EmergeTk.Widgets.Html
 					savePath = savePath.Replace("$Extension", name.Substring(name.LastIndexOf('.') + 1));
 					physicalPath = RootContext.HttpContext.Server.MapPath(savePath);
 					fu.File.SaveAs(physicalPath);
-					img.Url = savePath + "?" + (uid ?? Util.ConvertToBase32(DateTime.Now.Ticks));
+					img.Url = savePath + "?" + (uid ?? Util.ConvertToBase32(DateTime.UtcNow.Ticks));
 				}
 				else
 				{

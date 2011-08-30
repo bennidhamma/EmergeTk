@@ -33,7 +33,7 @@ namespace EmergeTk
 		private static Dictionary<string,Context> activeContexts = new Dictionary<string, Context>();
 		
         private string _clientClass = "Pane";
-		private DateTime lastKeepAlive = DateTime.Now; 
+		private DateTime lastKeepAlive = DateTime.UtcNow; 
 		
         public override string ClientClass {
         	get { return _clientClass; }
@@ -182,7 +182,7 @@ namespace EmergeTk
 
         public bool LogIn(string username, string password)
         {
-            User u = User.AuthenticateUser(username, password);
+            User u = User.LoginUser(username, password);
 
             if (this.currentUser != null)
             {
@@ -218,15 +218,15 @@ namespace EmergeTk
         public void LogOut()
         {
         	User.UnregisterActiveUser( this.currentUser );
-            this.CurrentUser = null;
-
-            this.HttpContext.Response.Cookies["LoginToken"].Value = String.Empty;
+			this.CurrentUser.SessionToken = String.Empty;
+			this.CurrentUser.Save();
 
             if (this.OnLogOut != null)
             {
                 this.OnLogOut(this, new UserEventArgs(this.currentUser));
             }
-        }
+			this.CurrentUser = null;
+		}
 
         public void EnsureAccess( Permission permission, EventHandler successCallback )
         {
@@ -696,10 +696,10 @@ namespace EmergeTk
 			{
 	            if (!c.IsLoggedIn)
 	            {
-	                HttpCookie cookie = HttpContext.Current.Request.Cookies["LoginToken"];
-	                if (cookie != null && !String.IsNullOrEmpty(cookie.Value))
+	                string loginToken = HttpContext.Current.Request.Headers["x-5to1-LoginToken"];
+					if (!String.IsNullOrEmpty(loginToken))
 	                {
-	                	c.currentUser = User.FindBySessionToken( cookie.Value );
+						c.currentUser = User.FindBySessionToken(loginToken);
 	                    if (c.currentUser != null && c.OnLogIn != null)
 	                    {
 	                        c.OnLogIn(c, new UserEventArgs(c.CurrentUser));
@@ -709,7 +709,7 @@ namespace EmergeTk
 			} 
 			catch (Exception e)
 			{
-				log.Warn("Unable to CheckUserCookie: " + e);
+				log.Error("Unable to CheckUserCookie (LoginToken header): " + e);
 			}
 				
 	
@@ -746,7 +746,7 @@ namespace EmergeTk
 		
 		public void Transform(string widgetKey, string evt, string args)
 		{
-			DateTime transformStart = DateTime.Now;
+			DateTime transformStart = DateTime.UtcNow;
 			log.Debug("transforming", widgetKey, evt, args );
 			if( ! this.IsProxyContext )
 			{
@@ -876,7 +876,7 @@ namespace EmergeTk
 			if( OnPostTransform != null )
 				OnPostTransform( this, new ContextEventArgs() );
 				
-			log.InfoFormat("Context Transform took {0}ms", (DateTime.Now - transformStart).TotalMilliseconds);
+			log.InfoFormat("Context Transform took {0}ms", (DateTime.UtcNow - transformStart).TotalMilliseconds);
 
             StopWatch.Summary(log);
 		}
@@ -945,7 +945,7 @@ namespace EmergeTk
           		RawCmd("setExpireState({0});", JSON.Default.Encode( Serialize() ) );
           		break;
 			case "KeepAlive":
-				this.lastKeepAlive = DateTime.Now;
+				this.lastKeepAlive = DateTime.UtcNow;
 				break;
           	}
             base.HandleEvents( evt, args );
@@ -1284,7 +1284,7 @@ namespace EmergeTk
 					try{
 						foreach( Context c in activeContexts.Values.ToArray() )
 						{
-							if( (DateTime.Now - c.lastKeepAlive).TotalSeconds > 120 )
+							if( (DateTime.UtcNow - c.lastKeepAlive).TotalSeconds > 120 )
 							{
 								c.Unregister();	
 							}

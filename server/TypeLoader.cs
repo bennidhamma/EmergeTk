@@ -40,8 +40,16 @@ namespace EmergeTk
                     assemblyPath = System.Environment.CurrentDirectory;
                     log.InfoFormat("TypeLoader ctor - GetEntryAssembly returned null - using System.Environment.CurrentDirectory = {0} to load assemblies", assemblyPath);
                 }
-				loadAssemblyPath(assemblyPath);
+                loadAssemblyPath(assemblyPath);
 			}
+		}
+
+		private static bool? isRunningOnMono = null;
+		public static bool IsRunningOnMono()
+		{
+			if (isRunningOnMono == null)
+				isRunningOnMono = (Type.GetType("Mono.Runtime") != null);
+			return Convert.ToBoolean(isRunningOnMono);
 		}
 
 		static private void loadAssemblyPath(string path )
@@ -131,7 +139,6 @@ namespace EmergeTk
 			return genericType.MakeGenericType( genericParameter );
 		}
 		
-		//TODO: consider caching type/base types listings.
 		public static Type[] GetTypesOfBaseType( Type baseType )
 		{
 			List<Type> types = new List<Type>();
@@ -140,12 +147,12 @@ namespace EmergeTk
 			{
 				try
 				{
-					foreach( Type t in a.GetTypes() )
-					{
-						if( t.IsSubclassOf( baseType ) )
-							types.Add( t );
-					}
-				}
+				foreach( Type t in a.GetTypes() )
+				{
+					if( t.IsSubclassOf( baseType ) )
+						types.Add( t );
+				}				
+			}
 				catch (Exception e)
 				{
 					log.Error ("Error loading assembly: " + a, e);
@@ -171,7 +178,7 @@ namespace EmergeTk
 						{
 							types.Add( t );
 						}
-					}
+					}				
 				}
 				catch (Exception e)
 				{

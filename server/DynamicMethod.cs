@@ -74,7 +74,9 @@ namespace EmergeTk
 			parameters = null;
 
 			if (null == parameterTypes) {
-				methodInfo = type.GetMethod (methodName, BindingFlags.Public | BindingFlags.Instance | BindingFlags.Static | BindingFlags.NonPublic);
+				methodInfo = type.GetMethod (methodName, BindingFlags.Public | BindingFlags.Instance | BindingFlags.Static);
+				if (null == methodInfo)
+					methodInfo = type.GetMethod(methodName, BindingFlags.Instance | BindingFlags.Static | BindingFlags.NonPublic);
 				methodInfo = methodInfo.MakeGenericMethod (typeArguments);
 				parameters = methodInfo.GetParameters ();
 			} else {

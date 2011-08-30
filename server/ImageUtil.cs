@@ -290,7 +290,7 @@ namespace EmergeTk
 				{
 					string path = Path.GetTempFileName() + ".png";
 					log.Info("Attempting to load via pixbuf", path);
-					Gdk.Pixbuf p = new Gdk.Pixbuf(file);					
+					Gdk.Pixbuf p = new Gdk.Pixbuf(file);	
 					p.Save(path, "png");
 					Image i = Bitmap.FromFile(path);
 					log.Debug("got image ", i.Size);

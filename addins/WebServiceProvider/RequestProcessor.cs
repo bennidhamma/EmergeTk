@@ -57,7 +57,7 @@ namespace EmergeTk.WebServices
                 if (HttpContext.Current != null)
 				    HttpContext.Current.Response.Cache.SetMaxAge(new TimeSpan(0));
 			}
-			//log.Debug("caching:", response.Expires, response.Cacheability);
+			//log.Debug("caching:", HttpContext.Current.Request.Url, response.Expires, response.Cacheability);
 			response.StatusCode = 404;
 			response.StatusDescription = "Service not found.";
             response.Writer = writer;
@@ -78,8 +78,8 @@ namespace EmergeTk.WebServices
 					//we found a valid match.  exit.
 					//log.Debug("Found match: " + verb + " " + m[0].Captures[0].Value);
 
-                    if (WebServiceManager.DoAuth())
-    					ServiceManager.Authorize( verb, endPoints[i].MethodName, message );
+					if (WebServiceManager.DoAuth())
+						ServiceManager.Authorize(verb, endPoints[i].MethodName, message);
 
 					//consider passing a response into the endpoint call as a ref.
 					response.StatusCode = 200;
@@ -95,8 +95,8 @@ namespace EmergeTk.WebServices
                     BuildResponse(response, arguments);
 					break;
 				}
-				//else
-				//	log.Debug("no match");
+				else
+					log.Debug("no match");
 			}
 			
 			return response;
@@ -104,8 +104,11 @@ namespace EmergeTk.WebServices
 
         private void BuildResponse(Response resp, MessageEndPointArguments arguments)
         {
-            resp.Cacheability = arguments.Cacheability;;
-            resp.Expires = arguments.Expires;
+			if (arguments.Expires != -1)
+			{
+            	resp.Cacheability = arguments.Cacheability;
+            	resp.Expires = arguments.Expires;
+			}
         }
 	}
 }

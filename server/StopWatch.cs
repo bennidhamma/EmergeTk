@@ -84,14 +84,14 @@ namespace EmergeTk
 		
 		public void Start()
 		{
-			lap = start = DateTime.Now;			
+			lap = start = DateTime.UtcNow;			
             if (String.IsNullOrEmpty(this.Group))
 			    log.InfoFormat("[{0}] Starting stopwatch at {1}", Name, start );
 		}
 		
 		public void Lap(string message)
 		{
-			DateTime now = DateTime.Now;
+			DateTime now = DateTime.UtcNow;
             TimeSpan ts = now - lap;
             if (String.IsNullOrEmpty(this.Group))
 			    log.InfoFormat("[{0}] {1} Lap #{2}. Elapsed time: {3}ms", Name, message, laps++, ts.TotalMilliseconds);
@@ -101,7 +101,7 @@ namespace EmergeTk
 		
 		public void Stop()
 		{
-			DateTime stopTime = DateTime.Now;
+			DateTime stopTime = DateTime.UtcNow;
             TimeSpan total = stopTime - start;
 			laps = 0;
 

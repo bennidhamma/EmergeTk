@@ -54,9 +54,16 @@ namespace EmergeTk.Model
 	public class PropertyTypeAttribute : Attribute
 	{
 		private DataType type;
+        private int? length = null;
+
 		public DataType Type
         {
             get { return type; }
+        }
+
+        public int? Length
+        {
+            get { return length; }
         }
 
 		public PropertyTypeAttribute( DataType type )
@@ -65,5 +72,11 @@ namespace EmergeTk.Model
 		}
 		
 		public PropertyTypeAttribute() { }
+
+        public PropertyTypeAttribute(DataType type, int length)
+        {
+            this.type = type;
+            this.length = length;
+        }
 	}
 }

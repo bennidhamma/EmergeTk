@@ -6,10 +6,9 @@ namespace EmergeTk.WebServices
 {
 	public class RestServiceAttribute : Attribute
 	{
-		string modelName;
 		public string ModelName {
-			get { return modelName; }
-			set { modelName = value; }
+			get;
+			set;
 		}
 		
 		string modelPluralName;
@@ -23,14 +22,12 @@ namespace EmergeTk.WebServices
 			}
 		}
 		
-		Type serviceManager = typeof (DefaultServiceManager);
-		public Type ServiceManager { get { return serviceManager; } set { serviceManager = value; } }
+		public Type ServiceManager { get; set; }
 		
 		public RestOperation Verb {
 			get;
 			set;
 		}
-		
 		public RestServiceAttribute ()
 		{
 			Verb = RestOperation.Delete | RestOperation.Get | RestOperation.Post | RestOperation.Put;

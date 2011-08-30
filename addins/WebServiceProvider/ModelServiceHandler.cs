@@ -1,4 +1,5 @@
 using System;
+using System.Collections;
 using System.Collections.Generic;
 using System.Collections.Specialized;
 using System.Linq;
@@ -45,11 +46,6 @@ namespace EmergeTk.WebServices
 			if( ci == null )
 				throw new Exception("The requested property is unavailable for the requested type.");
 			log.DebugFormat("Got ci {0} for pro {1}", ci, uProperty);
-			
-			if (record == null)
-			{
-				throw new ArgumentNullException ("id", "Could not find record matching " + arguments.Matches[0].Groups[1].Value);
-			}
 
 			if( ci.IsList )
 			{
@@ -67,11 +63,11 @@ namespace EmergeTk.WebServices
 							list.Sort(sortInfo);
 						}
 					}
-					BuildReturnList("response",property,arguments.QueryString,list, arguments.Response.Writer);
+					BuildReturnList("response",property, list.Count, arguments.QueryString,list, arguments.Response.Writer);
 				}
                 else
                 {
-                    BuildReturnList("response", property, arguments.QueryString, ids, ci.ListRecordType, arguments.Response.Writer);
+                    BuildReturnList("response", property, ids.Count, arguments.QueryString, ids, ci.ListRecordType, arguments.Response.Writer);
                 }				
 			}
 			else if( ci.IsRecord )
@@ -103,6 +99,7 @@ namespace EmergeTk.WebServices
 			BuildReturnList
 				("response",
 				 this.RestDescription.ModelPluralName,
+				 records.Count,
 				 arguments.QueryString,
 				 records,
 				 arguments.Response.Writer);
@@ -144,75 +141,88 @@ namespace EmergeTk.WebServices
 				{
 					records.Sort(sortInfo);
 				}
-				BuildReturnList("response",this.RestDescription.ModelPluralName,arguments.QueryString,records, arguments.Response.Writer);
+				BuildReturnList("response",this.RestDescription.ModelPluralName, records.Count, arguments.QueryString,records, arguments.Response.Writer);
 			}
             writer.Flush();
 		}
 
-        [MessageServiceEndPoint("search", Verb = RestOperation.Post)]
+
+        [MessageServiceEndPoint("query", Verb = RestOperation.Get)]
         [MessageDescription(
-@"Search for a list of {ModelPluralName}, using POST to specify the search criteria.  
-PostData:
-* '''predicates''' JSON array of GalleryPredicates
+@"Query the data source for a list of {ModelPluralName}, using GET to specify the search criteria.  
 QueryString args:
+* '''predicates''' JSON array of GalleryPredicates
 * '''sortBy''' a field to sort against - append desc or asc to control sort order
 ")]
-        public void PostSearch(MessageEndPointArguments arguments)
+        public void GetDataProviderSearch(MessageEndPointArguments arguments)
         {
-            IRecordList<ModelPredicate> preds = RecordSerializer.DeserializeList<ModelPredicate>((MessageList)arguments.InMessage["predicates"], new DeserializationContext());
+			MessageList predicates = null;
+			if (arguments.QueryString["predicates"] != null)
+				predicates = MessageList.ConvertFromRaw(JSON.Default.JSONToArray(arguments.QueryString["predicates"]));
+			IRecordList<ModelPredicate> preds = RecordSerializer.DeserializeList<ModelPredicate>(predicates, new DeserializationContext());
             IRecordList<T> records = DataProvider.LoadList<T>(preds.Select(pred => (FilterInfo) pred).ToArray());
             SortInfo sortInfo = GetSortInfo(arguments.QueryString["sortBy"]);
             if (sortInfo != null)
                 records.Sort(sortInfo);
 
-            BuildReturnList("response", this.RestDescription.ModelPluralName, arguments.QueryString, records, arguments.Response.Writer);
+            BuildReturnList("response", this.RestDescription.ModelPluralName, records.Count, arguments.QueryString, records, arguments.Response.Writer);
             arguments.Response.Writer.Flush();
         }
-		
-		[MessageServiceEndPoint("search",Verb=RestOperation.Get)]
+
+
+		[MessageServiceEndPoint("search", Verb = RestOperation.Get)]
 		[MessageDescription(
-@"Search for a list of {ModelPluralName}.  
+@"Search via SearchProvider for a list of {ModelPluralName}.  
 QueryString args: 
 * '''q:''' the search query.
 * '''start:''' the starting position to return values from (defaults to 0)
 * '''count:''' the # of records to return (defaults to 10)
 * '''sortBy''' a field to sort against - append desc or asc to control sort order.
+* '''predicates''' JSON array of GalleryPredicates
 ")]
-		public void GetSearch(MessageEndPointArguments arguments)
+		public void GetSolrSearch(MessageEndPointArguments arguments)
 		{
-			NameValueCollection args = arguments.QueryString;
-			
-			var writer = arguments.Response.Writer;
+			MessageList predicates = null;
+			IRecordList<ModelPredicate> preds = null;
+			if (arguments.QueryString["predicates"] != null)
+			{
+				predicates = MessageList.ConvertFromRaw(JSON.Default.JSONToArray(arguments.QueryString["predicates"]));
+				preds = RecordSerializer.DeserializeList<ModelPredicate>(predicates, new DeserializationContext());
+			}
+			SearchSolr(arguments.QueryString, arguments.Response.Writer, preds);
+		}
+
+		public void SearchSolr(NameValueCollection args, IMessageWriter writer, IRecordList<ModelPredicate> preds)
+		{
 			string query = args["q"];
             int requestCount = args["count"] != null ? int.Parse(args["count"]) : 10;
             int start = args["start"] != null ? int.Parse(args["start"]) : 0;
 
             SortInfo sortInfo = this.GetSortInfo(args["sortBy"]);
+			SortInfo dataProviderSort =  this.GetSortInfo(args["dataProviderSortBy"]);
+			FilterSet filterQueries = BuildCachedFilterSetT<T>(preds);
 
             // build response object
             writer.OpenRoot("response");
 
             Type type = typeof(T);
-            RestTypeDescription att = WebServiceManager.Manager.GetRestTypeDescription(type);
-
             ISearchOptions options = IndexManager.Instance.GenerateOptionsObject();
             options.Type = type.ToString();
             options.Facets = GetFacets(args);
             options.Rows = requestCount;
-            options.Sort = sortInfo;
+			if (sortInfo != null)
+			{
+				options.Sorts = new List<SortInfo> { sortInfo };
+			}
             options.Start = start;
 
-			options.ExtraParams = new Dictionary<string,string> {
-				{"fq", "RecordType:" + typeof(T).FullName}
-			};
-			
             // set up the query handler to use.
             if (!string.IsNullOrEmpty(args["qt"]) )
-				options.ExtraParams["qt"] = args["qt"];			
+				options.ExtraParams["qt"] = args["qt"];
 
-			ISearchProviderQueryResults<RecordKey> results = IndexManager.Instance.SearchInt(query, null, options);
+			ISearchProviderQueryResults<RecordKey> results = IndexManager.Instance.SearchInt(query, filterQueries, options);
 			List<int> ids = results.Results.Select(rk => rk.Id).ToList();
-			IRecordList<T> recordsFound = DataProvider.LoadList<T>(new FilterInfo("ROWID", ids, FilterOperation.In));			
+			IRecordList<T> recordsFound = DataProvider.LoadList<T>(new FilterInfo("ROWID", ids, FilterOperation.In), dataProviderSort);			
 
             try
             {
@@ -317,6 +327,20 @@ QueryString args:
             }
             return valueBool;
         }
+
+		private FilterSet BuildCachedFilterSetT<T>(IRecordList<ModelPredicate> preds) where T : AbstractRecord, new()
+		{
+			FilterSet cachedFilterSet = new FilterSet(FilterJoinOperator.And);
+			cachedFilterSet.Rules.Add(new FilterInfo("RecordType", typeof(T).FullName));
+			if (preds != null)
+			{
+				foreach (var pred in preds)
+				{
+					cachedFilterSet.Rules.Add((FilterInfo)pred);
+				}
+			}
+			return cachedFilterSet;
+		}
 		
 		[MessageServiceEndPoint("",Verb=RestOperation.Get)]
 		public void Get(MessageEndPointArguments arguments)
@@ -324,7 +348,7 @@ QueryString args:
 			IRecordList<T> records = DataProvider.LoadList<T>();
 			IMessageWriter writer = arguments.Response.Writer;
 			writer.OpenRoot("response");            
-			RecordSerializer.Serialize<T>(records, arguments.QueryString["fields"], writer);
+			RecordSerializer.Serialize(records, arguments.QueryString["fields"], writer);
             writer.CloseRoot();
 		}
 
@@ -360,8 +384,8 @@ QueryString args:
 			T record = AbstractRecord.Load<T>(arguments.Matches[0].Groups[1].Value);
 			string lProperty = arguments.Matches[0].Groups[2].Value;
 			string uProperty = Util.CamelToPascal(lProperty);
-			if(WebServiceManager.DoAuth() && !ServiceManager.AuthorizeField(RestOperation.Put,record,lProperty) )
-				throw new UnauthorizedAccessException("Cannot modify this field: " + lProperty);
+			if (WebServiceManager.DoAuth())
+				ServiceManager.AuthorizeField(RestOperation.Put, record, lProperty);
 			IRecordList recordPropertyList = (IRecordList)record[uProperty];
 			DeserializationContext context = new DeserializationContext(){Records = new List<AbstractRecord>(), Lists = new List<RecordPropertyList>()};
 			IRecordList newItems = RecordSerializer.DeserializeNonGenericList( recordPropertyList.RecordType, (MessageList)arguments.InMessage[lProperty], context );			
@@ -388,28 +412,9 @@ QueryString args:
 					recordPropertyList.Add( r );
 			}
 			record.SaveRelations(uProperty);
-            IMessageWriter writer = arguments.Response.Writer;
-
-            // the desired behavior here, to achieve parity with the old MessageList/MessageNode code, is to
-            // create a single XML element that looks like <total>24</total> for the XML 
-            // case, and for JSON it should look like {"total":24}.   It takes an 
-            // OpenObject()/CloseObject() call surrounding the WriteProperty() call and a  
-            // subsequent Flush() to achieve that.
-            writer.OpenObject();
-            writer.WriteProperty("total", recordPropertyList.Count);
-			//create an array of ids that were created.
-			writer.OpenProperty("details");
-			writer.OpenList("details");
-			foreach(  AbstractRecord r in newItems )
-			{
-				writer.OpenObject();
-				writer.WriteProperty("id", r.Id);
-				writer.CloseObject();
-			}
-			writer.CloseList();
-			writer.CloseProperty();
-            writer.CloseObject();
-            writer.Flush();  // seems to be necessary to get the XML version to just write out a single <total>\d+</total> element.
+			
+            BuildReturnList("details", "details", recordPropertyList.Count, arguments.QueryString, newItems, arguments.Response.Writer);
+            arguments.Response.Writer.Flush();
 		}
 		
 		[MessageServiceEndPoint("saveAll", Verb=RestOperation.Post)]
@@ -459,8 +464,8 @@ QueryString args:
 			T record = AbstractRecord.Load<T>(arguments.Matches[0].Groups[1].Value);
 			string lProperty = arguments.Matches[0].Groups[2].Value;
 			string uProperty = Util.CamelToPascal(lProperty);
-			if(WebServiceManager.DoAuth() && !ServiceManager.AuthorizeField(RestOperation.Put,record,lProperty) )
-				throw new UnauthorizedAccessException("Cannot modify this field.");
+			if (WebServiceManager.DoAuth())
+				ServiceManager.AuthorizeField(RestOperation.Put, record, lProperty);
 			IRecordList recordPropertyList = (IRecordList)record[uProperty];
 			DeserializationContext context = new DeserializationContext();  //create an empty instance to pass along.
 			IRecordList itemsToDelete = RecordSerializer.DeserializeNonGenericList( recordPropertyList.RecordType, (MessageList)arguments.InMessage[lProperty], context );
@@ -541,21 +546,21 @@ QueryString args:
 			return sortInfo;
 		}
 		
-		private void BuildReturnList(string nodeName, string listName, NameValueCollection args, IRecordList records, IMessageWriter writer)
+		private void BuildReturnList(string nodeName, string listName, int totalCount, NameValueCollection args, IRecordList records, IMessageWriter writer)
 		{
 			int requestCount = args["count"] != null ? int.Parse(args["count"]) : -1;
 			int start = args["start"] != null ? int.Parse(args["start"]) : -1;
-			BuildReturnList(nodeName,listName,args,records,start,requestCount, writer);
+			BuildReturnList(nodeName,listName,args,records,start,requestCount, totalCount, writer);
 		}
 		
 		private void BuildReturnList(string rootName, string listName, NameValueCollection args, IRecordList records,
-		                                    int start, int requestCount, IMessageWriter writer)
+		                                    int start, int requestCount, int totalCount, IMessageWriter writer)
 		{
 			log.DebugFormat("building return list: rootName: {4}, records: {0} with count: {1}, start #: {2}, requestCount: {3}", records, records.Count,
 			                start, requestCount, rootName);
 
             writer.OpenRoot(rootName);
-            writer.WriteProperty("total", records.Count);
+            writer.WriteProperty("total", totalCount);
 			//validate all records.  if any fail, UnauthorizedAccessException will abort the request.
 
 			if( start != -1 && requestCount != -1 )
@@ -570,22 +575,22 @@ QueryString args:
 		}
 
 		
-		private void BuildReturnList(string nodeName, string listName, NameValueCollection args, List<int> ids, Type recordType, IMessageWriter writer)
+		private void BuildReturnList(string nodeName, string listName, int totalCount, NameValueCollection args, List<int> ids, Type recordType, IMessageWriter writer)
 		{
 			int requestCount = args["count"] != null ? int.Parse(args["count"]) : -1;
 			int start = args["start"] != null ? int.Parse(args["start"]) : -1;
             String sortBy = args["sortBy"];
-			BuildReturnList(nodeName,listName,args,ids,start,requestCount,sortBy, recordType, writer);
+			BuildReturnList(nodeName, listName, args, ids, start, requestCount, totalCount, sortBy, recordType, writer);
 		}
 		
 		private void BuildReturnList(string nodeName, string listName, NameValueCollection args, List<int> ids,
-		                                    int start, int requestCount, String sortBy, Type recordType, IMessageWriter writer)
+		                                    int start, int requestCount, int totalCount, String sortBy, Type recordType, IMessageWriter writer)
 		{
 			log.DebugFormat("building return list: nodeName: {4}, records: {0} with count: {1}, start #: {2}, requestCount: {3}", ids, ids.Count,
 			                start, requestCount, nodeName);
 
             writer.OpenRoot(nodeName);
-            writer.WriteProperty("total", ids.Count);
+            writer.WriteProperty("total", totalCount);
 			//validate all records.  if any fail, UnauthorizedAccessException will abort the request.
 
 			if( start != -1 && requestCount != -1 )

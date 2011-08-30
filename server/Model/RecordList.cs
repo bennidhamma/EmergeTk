@@ -243,8 +243,11 @@ namespace EmergeTk.Model
 
         public void Add(AbstractRecord value)
 		{
-			if( value == null )
-				throw new ArgumentNullException("value");
+			if (value == null)
+			{
+				log.Warn("Trying to add NULL value into a record list. Returning without processing...");
+				return;
+			}
 			clean = false;
 			items.Add( value );
 			if( parent != null )

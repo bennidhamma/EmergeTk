@@ -52,7 +52,7 @@ namespace EmergeTk.Model
 			//if we are running in multi server, and using local cache, it should be much less - that or we should check for
 			//Not Modified status.
 			int cacheTime = 30;
-			Cache.Add(key, value, null, DateTime.Now.AddMinutes(cacheTime),new TimeSpan(0),CacheItemPriority.Normal,null);
+			Cache.Add(key, value, null, DateTime.UtcNow.AddMinutes(cacheTime),new TimeSpan(0),CacheItemPriority.Normal,null);
 			return true;
 		}
 		
@@ -78,11 +78,6 @@ namespace EmergeTk.Model
 		public AbstractRecord GetLocalRecord(string key)
 		{
 			return Cache.Get(key) as AbstractRecord;
-		}
-		
-		public AbstractRecord GetLocalRecord(RecordDefinition def)
-		{
-			throw new NotImplementedException ();
 		}
 		
 		public object GetObject (string key)
@@ -116,10 +111,14 @@ namespace EmergeTk.Model
 				Cache.Remove(key);
 		}
 		
-		public void Remove(AbstractRecord record, bool remoteOnly)
+		public void Remove(AbstractRecord record)
 		{
-			if (!remoteOnly)
-				record.InvalidateCache();
+			record.InvalidateCache();
+		}
+		
+		public void Update(AbstractRecord record)
+		{
+			record.InvalidateCache();
 		}
 		
 		public void FlushAll()
@@ -133,7 +132,16 @@ namespace EmergeTk.Model
 		{
 			Set(key,value);
 		}
-		
+
+		public bool Set(string key, string value)
+		{
+			throw new NotImplementedException("CacheManager doesn't implement this.");
+		}
+		public string GetString(string key)
+		{
+			throw new NotImplementedException("CacheManager doesn't implement this.");
+		}
+
 		#endregion 
 				
 		static CacheManager manager = new CacheManager();

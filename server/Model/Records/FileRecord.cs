@@ -13,7 +13,7 @@ namespace EmergeTk.Model
 		//private static new readonly EmergeTkLog log = EmergeTkLogManager.GetLogger(typeof(FileRecord));
 	
 		private User uploadedBy;
-		private DateTime uploadedOn = DateTime.Now;
+		private DateTime uploadedOn = DateTime.UtcNow;
 		private string relativeUrl, fileType, description = string.Empty;
 		private string originalFileName, originalExtension, saveDirectory, physicalPath;
 		private int size, version = -1;
@@ -124,7 +124,7 @@ namespace EmergeTk.Model
 				else
 					size = 0;
 				uploadedBy = Context.Current.CurrentUser;
-				uploadedOn = DateTime.Now;
+				uploadedOn = DateTime.UtcNow;
 				version++;
 			});
 			

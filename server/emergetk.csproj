@@ -10,10 +10,10 @@
     <SchemaVersion>2.0</SchemaVersion>
     <FileUpgradeFlags>
     </FileUpgradeFlags>
-    <OldToolsVersion>2.0</OldToolsVersion>
+    <OldToolsVersion>3.5</OldToolsVersion>
     <UpgradeBackupLocation>
     </UpgradeBackupLocation>
-    <TargetFrameworkVersion>v4.0</TargetFrameworkVersion>
+    <TargetFrameworkVersion>v3.5</TargetFrameworkVersion>
     <RootNamespace>emergetk</RootNamespace>
     <AssemblyOriginatorKeyFile>.</AssemblyOriginatorKeyFile>
     <ReleaseVersion>0.9</ReleaseVersion>
@@ -47,29 +47,9 @@
     <ConsolePause>false</ConsolePause>
   </PropertyGroup>
   <ItemGroup>
-    <Reference Include="System" />
-    <Reference Include="System.Web" />
-    <Reference Include="System.Data" />
-    <Reference Include="System.Drawing" />
-    <Reference Include="System.Xml" />
-    <Reference Include="System.Configuration" />
-    <Reference Include="System.Core">
-    </Reference>
-    <Reference Include="log4net, Version=1.2.10.0, Culture=neutral, PublicKeyToken=1b44e1d426115821">
+    <Reference Include="Boo.Lang, Version=1.0.0.0, Culture=neutral, PublicKeyToken=32c39770e9a21a67">
       <SpecificVersion>False</SpecificVersion>
-      <HintPath>..\lib\log4net.dll</HintPath>
-    </Reference>
-    <Reference Include="Lucene.Net, Version=2.0.0.4, Culture=neutral, PublicKeyToken=null">
-      <SpecificVersion>False</SpecificVersion>
-      <HintPath>..\lib\Lucene.Net.dll</HintPath>
-    </Reference>
-    <Reference Include="MySql.Data, Version=6.0.3.0, Culture=neutral, PublicKeyToken=c5687fc88969c44d">
-      <SpecificVersion>False</SpecificVersion>
-      <HintPath>..\lib\MySql.Data.dll</HintPath>
-    </Reference>
-    <Reference Include="CookComputing.XmlRpcV2, Version=2.3.2.0, Culture=neutral, PublicKeyToken=a7d6e17aa302004d">
-      <SpecificVersion>False</SpecificVersion>
-      <HintPath>..\lib\CookComputing.XmlRpcV2.dll</HintPath>
+      <HintPath>..\lib\Boo.Lang.dll</HintPath>
     </Reference>
     <Reference Include="Boo.Lang.CodeDom, Version=1.0.0.0, Culture=neutral, PublicKeyToken=32c39770e9a21a67">
       <SpecificVersion>False</SpecificVersion>
@@ -78,10 +58,6 @@
     <Reference Include="Boo.Lang.Compiler, Version=1.0.0.0, Culture=neutral, PublicKeyToken=32c39770e9a21a67">
       <SpecificVersion>False</SpecificVersion>
       <HintPath>..\lib\Boo.Lang.Compiler.dll</HintPath>
-    </Reference>
-    <Reference Include="Boo.Lang, Version=1.0.0.0, Culture=neutral, PublicKeyToken=32c39770e9a21a67">
-      <SpecificVersion>False</SpecificVersion>
-      <HintPath>..\lib\Boo.Lang.dll</HintPath>
     </Reference>
     <Reference Include="Boo.Lang.Interpreter, Version=1.0.0.0, Culture=neutral, PublicKeyToken=32c39770e9a21a67">
       <SpecificVersion>False</SpecificVersion>
@@ -95,17 +71,40 @@
       <SpecificVersion>False</SpecificVersion>
       <HintPath>..\lib\Boo.Lang.Useful.dll</HintPath>
     </Reference>
-    <Reference Include="gtk-sharp, Version=2.12.0.0, Culture=neutral, PublicKeyToken=35e10195dab3c99f">
-      <SpecificVersion>False</SpecificVersion>
-      <HintPath>..\..\lib\gtk-sharp.dll</HintPath>
-      <Package>gtk-sharp-2.0</Package>
-    </Reference>
-    <Reference Include="gdk-sharp, Version=2.12.0.0, Culture=neutral, PublicKeyToken=35e10195dab3c99f">
-      <SpecificVersion>False</SpecificVersion>
-      <HintPath>..\..\lib\gdk-sharp.dll</HintPath>
-      <Package>gtk-sharp-2.0</Package>
+    <Reference Include="System" />
+    <Reference Include="System.Web" />
+    <Reference Include="System.Data" />
+    <Reference Include="System.Drawing" />
+    <Reference Include="System.Xml" />
+    <Reference Include="System.Configuration" />
+    <Reference Include="System.Core">
+      <RequiredTargetFramework>3.5</RequiredTargetFramework>
     </Reference>
     <Reference Include="System.Web.Extensions" />
+    <Reference Include="gdk-sharp, Version=2.12.0.0, Culture=neutral, PublicKeyToken=35e10195dab3c99f">
+      <SpecificVersion>False</SpecificVersion>
+      <HintPath>..\lib\gdk-sharp.dll</HintPath>
+    </Reference>
+    <Reference Include="gtk-sharp, Version=2.12.0.0, Culture=neutral, PublicKeyToken=35e10195dab3c99f">
+      <SpecificVersion>False</SpecificVersion>
+      <HintPath>..\lib\gtk-sharp.dll</HintPath>
+    </Reference>
+    <Reference Include="CookComputing.XmlRpcV2, Version=2.3.2.0, Culture=neutral, PublicKeyToken=a7d6e17aa302004d">
+      <SpecificVersion>False</SpecificVersion>
+      <HintPath>..\lib\CookComputing.XmlRpcV2.dll</HintPath>
+    </Reference>
+    <Reference Include="log4net, Version=1.2.10.0, Culture=neutral, PublicKeyToken=1b44e1d426115821">
+      <SpecificVersion>False</SpecificVersion>
+      <HintPath>..\lib\log4net.dll</HintPath>
+    </Reference>
+    <Reference Include="Lucene.Net, Version=2.0.0.4, Culture=neutral, PublicKeyToken=null">
+      <SpecificVersion>False</SpecificVersion>
+      <HintPath>..\lib\Lucene.Net.dll</HintPath>
+    </Reference>
+    <Reference Include="MySql.Data, Version=6.0.3.0, Culture=neutral, PublicKeyToken=c5687fc88969c44d">
+      <SpecificVersion>False</SpecificVersion>
+      <HintPath>..\lib\MySql.Data.dll</HintPath>
+    </Reference>
   </ItemGroup>
   <ItemGroup>
     <Compile Include="AssemblyInfo.cs" />
@@ -118,6 +117,8 @@
     <Compile Include="IDataBindable.cs" />
     <Compile Include="IDataSource.cs" />
     <Compile Include="JSON.cs" />
+    <Compile Include="Model\Locks.cs" />
+    <Compile Include="Model\UniqueValuesAttribute.cs" />
     <Compile Include="Router.cs" />
     <Compile Include="StringSurface.cs" />
     <Compile Include="Surface.cs" />
@@ -318,6 +319,7 @@
     <Compile Include="Model\DataSourceAttribute.cs" />
     <Compile Include="Model\Providers\IDataProviderFactory.cs" />
     <Compile Include="Model\IDerived.cs" />
+    <Compile Include="Model\Providers\MockDataProvider.cs" />
   </ItemGroup>
   <ItemGroup>
     <None Include="ChangeLog" />

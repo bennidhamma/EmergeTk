@@ -39,6 +39,7 @@ namespace EmergeTk.Model
 		{
 			get
 			{
+				//log.Debug("getting instance", instance, AddinHost.Running);
 				return instance;
 			}
 			set
@@ -49,8 +50,8 @@ namespace EmergeTk.Model
 
 		static CacheProvider()
 		{
-			enableCaching = Setting.GetConfigT<bool>("EnableCaching");
-			isSingleServer = Setting.GetConfigT<bool>("IsSingleServer");
+			enableCaching = Setting.GetValueT<bool>("EnableCaching");
+			isSingleServer = Setting.GetValueT<bool>("IsSingleServer");
 		}
 	}
 }

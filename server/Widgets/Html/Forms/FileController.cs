@@ -139,7 +139,7 @@ namespace EmergeTk.Widgets.Html
 			log.Debug("FileRecord File is ", Record);
 			File.Size = fu.File.ContentLength;
 			File.UploadedBy = Context.Current.CurrentUser;
-			File.UploadedOn = DateTime.Now;
+			File.UploadedOn = DateTime.UtcNow;
 			File.RelativeUrl = path;
 			File.OriginalFileName = fu.File.FileName;
 			File.OriginalExtension = ext;

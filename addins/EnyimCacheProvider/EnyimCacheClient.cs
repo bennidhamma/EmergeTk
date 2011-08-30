@@ -136,27 +136,6 @@ namespace EmergeTk.Model
 			return items;
 		}
 		
-		public bool IsMostUpToDate (AbstractRecord record)
-		{
-			RecordDefinition rd = record.Definition;
-			if (localRecords.ContainsKey (rd))
-			{
-				AbstractRecord crecord = localRecords[rd];
-				
-				if (record is IVersioned)
-				{
-					if (record.Version == crecord.Version)
-						return true;
-				}
-				else
-				{
-					return object.ReferenceEquals (record, crecord);
-				}
-			}
-			//if it's not in the cache, return false.
-			return false;
-		}
-		
 		public AbstractRecord GetLocalRecord(RecordDefinition rd)
 		{
 			return localRecords.ContainsKey(rd) ? localRecords[rd] : null;
@@ -272,13 +251,13 @@ namespace EmergeTk.Model
 			return values.ToArray();
 		}
 		
-		public void Remove (string key)
+		public void Remove (string key, bool purgeLocalRecord)
 		{
 			key = prepareKey(key);
             StopWatch watch = new StopWatch("EnyimCacheClient.Remove", this.GetType().Name);
             watch.Start();
 			mc.Remove(key);
-			ClearFromLocalCache (key);
+			ClearFromLocalCache (key, purgeLocalRecord);
 			//now send out the expiration notice
 			SetExpirationEvent (key);
 			//done.
@@ -292,20 +271,23 @@ namespace EmergeTk.Model
 			Set(BuildModificationEntryKey(modPosition), key);
 		}
 		
-		public void Remove(AbstractRecord record)
+		public void Remove(AbstractRecord record, bool remoteOnly)
 		{
-            if (localRecords.Contains(new KeyValuePair<RecordDefinition, AbstractRecord>(record.Definition, record)))
-            {
-                localRecords[record.Definition].MarkAsStale();
-                localRecords.Remove(record.Definition);
-            }
-			mc.Remove(record.CreateStandardCacheKey());
-			record.MarkAsStale();
-			record.InvalidateCache();
+			if (!remoteOnly)
+			{
+	            if (localRecords.Contains(new KeyValuePair<RecordDefinition, AbstractRecord>(record.Definition, record)))
+	            {
+	                localRecords[record.Definition].MarkAsStale();
+	                localRecords.Remove(record.Definition);
+	            }
+				record.MarkAsStale();
+			}
+			mc.Remove(record.CreateStandardCacheKey());			
+			record.InvalidateCache(); //removes local cache keys associated to the record.  we should always be doing this on any remove.
 			SetExpirationEvent(record.Definition.ToString());
 		}
 		
-		private void ClearFromLocalCache (string key)
+		private void ClearFromLocalCache (string key, bool purgeLocalRecord)
 		{
 			if( key == null )
 			{
@@ -316,10 +298,11 @@ namespace EmergeTk.Model
 			//log.Debug("clearing from cache " + key);
 			if( localRecordKeyMap.ContainsKey(key) )
 			{
-				RemoveRecordByDefinition(localRecordKeyMap[key]);
+				if (purgeLocalRecord)
+					RemoveRecordByDefinition(localRecordKeyMap[key]);
 				localRecordKeyMap.Remove(key);
 			}
-			else if( key.StartsWith("record:") )
+			else if( purgeLocalRecord && key.StartsWith("record:") )
 			{
 				RemoveRecordByDefinition(RecordDefinition.FromString(key));
 			}
@@ -352,6 +335,14 @@ namespace EmergeTk.Model
 			localRecordKeyMap.Clear();
 			localRecords.Clear();
 			mc.FlushAll();
+		}
+		public bool Set(string key, string value)
+		{
+			throw new NotImplementedException("EnyimCacheClient doesn't implement this.");
+		}
+		public string GetString(string key)
+		{
+			throw new NotImplementedException("EnyimCacheClient doesn't implement this.");
 		}
 		#endregion
 		
@@ -421,7 +412,7 @@ namespace EmergeTk.Model
 							{
 								log.WarnFormat("Expiration event at position {0} is null. ", i);
 							}
-							ClearFromLocalCache(key);
+							ClearFromLocalCache(key, true);
 						}
 					}
 					lastModPos = nextLogPos;					

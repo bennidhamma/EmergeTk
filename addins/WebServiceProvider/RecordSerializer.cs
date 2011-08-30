@@ -6,7 +6,6 @@ using System.Text.RegularExpressions;
 using EmergeTk.Model;
 using EmergeTk.Model.Security;
 using System.Text;
-using System.Collections;
 
 
 namespace EmergeTk.WebServices
@@ -33,6 +32,7 @@ namespace EmergeTk.WebServices
 		private static object[] SetupFields(string fields, Type rType)
 		{
 			//strip out spaces
+			if (fields == null) fields = "id";
 			fields = fields.Replace(" ", "");
 			object[] fieldArray;
 			if( fields.StartsWith("[") )
@@ -44,7 +44,7 @@ namespace EmergeTk.WebServices
 					string simpleJsonString = fields;
 					if( !fields.Contains('"') )
 						simpleJsonString = simpleJsonRegex.Replace(fields,"\"$0\"");
-					log.Debug(simpleJsonString);
+					//log.Debug(simpleJsonString);
 					fieldArray = JSON.Default.JSONToArray(simpleJsonString);
 					jsonParameters[fields] = fieldArray;
 				}
@@ -96,6 +96,8 @@ namespace EmergeTk.WebServices
             writer.OpenObject();
 
             writer.WriteProperty("id", record.Id);
+			if (record is IVersioned)
+				writer.WriteProperty ("version", record.Version);
 			
 			if (record is IDerived || fields.Contains ("type"))
 			{
@@ -269,9 +271,9 @@ namespace EmergeTk.WebServices
 		
 		public static void Serialize<T> (IEnumerable<T> items, string fields, Type recordType, IMessageWriter writer) where T : AbstractRecord
 		{
-			Serialize<T>(items, SetupFields(fields,recordType), recordType, writer );
+			Serialize<T>(items, SetupFields(fields,recordType),recordType, writer );
 		}
-		
+
 		public static void Serialize<T> (IEnumerable<T> items, string fields, IMessageWriter writer) where T : AbstractRecord
 		{
 			Serialize<T>(items, SetupFields(fields,typeof(T)), typeof(T), writer );
@@ -469,30 +471,40 @@ namespace EmergeTk.WebServices
 		{
 			return (AbstractRecord) TypeLoader.InvokeGenericMethod (typeof(RecordSerializer), "DeserializeRecord", new Type[] {t},
 				null, new object[] {node, context});
-		}
-		
+        }
+				
 		public static T DeserializeRecord<T>(MessageNode node, DeserializationContext context) where T : AbstractRecord, new()
 		{
 			IRestServiceManager serviceManager = WebServiceManager.Manager.GetRestServiceManager(typeof(T));
 			if( serviceManager == null )
-				throw new Exception("No IRestServiceManager defined.  Cannot deseialize objects of type " + typeof(T) );
+				throw new Exception("No IRestServiceManager defined.  Cannot deserialize objects of type " + typeof(T) );
 			//TODO: we need to provide feedback on errors. i.e. "expecting integer for child id, but found 'name' instead."			
 			T record = null;
-			T oldRecord = null;
 			RestOperation op = RestOperation.Post;
 			if( node.ContainsKey( "id" ) )
 			{
-				log.Debug("loading with id", node["id"]);
-				oldRecord = AbstractRecord.Load<T>(node["id"]);			
+				//log.Debug("loading with id", node["id"]);
+				record = AbstractRecord.Load<T>(node["id"]);
 				if( WebServiceManager.DoAuth() )
-					serviceManager.Authorize(RestOperation.Put,node,oldRecord);
+					serviceManager.Authorize(RestOperation.Put,node,record);
 				op = RestOperation.Put;
-				if( oldRecord == null )
+				if (record is IVersioned)
+				{
+					if (!node.ContainsKey ("version"))
+						throw new ArgumentNullException ("version");
+					
+					if (record.Version != Convert.ToInt32 (node["version"]))
+					{
+						throw new VersionOutOfDateException (string.Format ("Version mismatch - actual: {0}.  supplied: {1}", record.Version, 
+							node["version"]));
+					}
+				}
+				if( record == null )
 				{
 					throw new RecordNotFoundException(string.Format("Record: {0}, {1} does not exist.", typeof(T), node["id"] ) );
 				}
 				//now create a writable copy to avoid modification collisions / corrupting good data with a bad operation.
-				record = AbstractRecord.CreateFromRecord<T>(oldRecord);
+				record = AbstractRecord.CreateFromRecord<T>(record);
 			}
 			else
 			{
@@ -502,7 +514,7 @@ namespace EmergeTk.WebServices
 			}
 			foreach( string k in node.GetKeys() )
 			{
-				if( k == "id" )
+				if( k == "id" || k == "version")
 				{
 					continue;
 				}
@@ -531,7 +543,6 @@ namespace EmergeTk.WebServices
                         IRecordList oldList = (IRecordList)record[recordFieldName];
                         if (oldList != null)
                             newList.RecordSnapshot = oldList.RecordSnapshot;
-						log.DebugFormat ("Assinging {0} to {1} of {2}", newList, recordFieldName, record);
                         record[recordFieldName] = newList;
                         if (context.Lists == null)
                             context.Lists = new List<RecordPropertyList>();
@@ -554,7 +565,6 @@ namespace EmergeTk.WebServices
 						int id = int.Parse ((string)val);
 						if (AbstractRecord.IsDerived (field.Type))
 						{
-							
 							loadType = DataProvider.DefaultProvider.GetTypeForId (id);
 						}
 						record[recordFieldName] = AbstractRecord.Load(loadType, id);
@@ -566,9 +576,8 @@ namespace EmergeTk.WebServices
 						if (AbstractRecord.IsDerived (field.Type))
 						{
 							loadType = TypeLoader.GetType (propNode["type"].ToString ());
-						}
+						}					
 						record[recordFieldName] = TypeLoader.InvokeGenericMethod(typeof(RecordSerializer),"DeserializeRecord", new Type[] { loadType }, null, new object[]{propNode,context});
-					}					
 				}
 				else if( field.Type == typeof( Dictionary<string,string> ) )
 				{
@@ -587,8 +596,8 @@ namespace EmergeTk.WebServices
 				}
 				else if (field.DataType == DataType.Json)
 				{
-					log.Debug ("JSON deserialize", val.GetType (),  val);
-					if (val is string)
+					//log.Debug ("JSON serialize", val.GetType (),  val);
+					if (val != null)
 					{
 						var deser = JSON.DeserializeObject(field.Type, (string)val);
 						record[recordFieldName] = deser;
@@ -603,6 +612,11 @@ namespace EmergeTk.WebServices
 							target.Add (item);
 						}
 					}
+					else
+					{
+						record[recordFieldName] = null;
+					}
+
 				}
 				else //scalar. 
 				{
@@ -611,13 +625,13 @@ namespace EmergeTk.WebServices
 
 					record[recordFieldName] = val;
 				}
+				// check for field authorization (after value copied into record)
+				if (WebServiceManager.DoAuth())
+					serviceManager.AuthorizeField(op, record, k);
 			}
 			if( context.Records == null )
 				context.Records = new List<AbstractRecord>();
 			context.Records.Add(record);
-			//mark old record as stale.
-			if (oldRecord != null)
-				oldRecord.MarkAsStale ();
 			return record;
 		}
 		
@@ -634,7 +648,7 @@ namespace EmergeTk.WebServices
 		public static IRecordList<T> DeserializeList<T>(MessageList list, DeserializationContext context) where T : AbstractRecord, new()
 		{
 			//TODO: we need to provide feedback on errors. i.e. "expecting integer for child id, but found 'name' instead."
-			log.Debug("calling deserialize list", list );
+			//log.Debug("calling deserialize list", list );
 			RecordList<T> records = new RecordList<T>();
 			foreach( object item in list )
 			{
@@ -669,22 +683,19 @@ namespace EmergeTk.WebServices
 	
 	public class DeserializationContext
 	{
-		private static readonly EmergeTkLog log = EmergeTkLogManager.GetLogger(typeof(DeserializationContext));
-		
 		public List<AbstractRecord> Records;
 		public List<RecordPropertyList> Lists;
 		
 		public void SaveChanges()
 		{
-			foreach( RecordPropertyList rpl in Lists )
-			{
-				log.DebugFormat ("saving list property {0} of record {1} with list {2}", rpl.Record, rpl.Property, rpl.Record[rpl.Property]);
-				rpl.Record.SaveRelations(rpl.Property);	
-			}
-			
 			foreach( AbstractRecord r in Records )
 			{
 				r.Save();	
+			}
+			
+			foreach( RecordPropertyList rpl in Lists )
+			{
+				rpl.Record.SaveRelations(rpl.Property);	
 			}
 		}
 	}

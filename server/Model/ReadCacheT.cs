@@ -59,10 +59,10 @@ namespace EmergeTk.Model
 //				
 //				if( ages.ContainsKey( key ) )
 //				{
-//					log.DebugFormat("Key: {0} OldAge: {1} HowOld? {2} ", key, ages[key], ages[key] - DateTime.Now.AddSeconds( ttl * -1 ) );
+//					log.DebugFormat("Key: {0} OldAge: {1} HowOld? {2} ", key, ages[key], ages[key] - DateTime.UtcNow.AddSeconds( ttl * -1 ) );
 //				}
 				
-				if( ages.ContainsKey( key ) && ages[key] < DateTime.Now.AddSeconds( ttl * -1 ) )
+				if( ages.ContainsKey( key ) && ages[key] < DateTime.UtcNow.AddSeconds( ttl * -1 ) )
 				{
 					GetNewCopy(key);
 				}
@@ -101,7 +101,7 @@ namespace EmergeTk.Model
 			{
 				lock (thisLock)
 				{
-					ages[id] = DateTime.Now;
+					ages[id] = DateTime.UtcNow;
 				}
 				return;
 			}
@@ -115,7 +115,7 @@ namespace EmergeTk.Model
 			lock (thisLock)
 			{
 				map[id] = value;
-				ages[id] = DateTime.Now;
+				ages[id] = DateTime.UtcNow;
 			}
 		}
 	}

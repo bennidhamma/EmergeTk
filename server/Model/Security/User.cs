@@ -9,7 +9,11 @@ namespace EmergeTk.Model.Security
 {
     public class User : AbstractRecord
     {
-    	public static List<User> activeUsers = new List<User>();
+		private static readonly EmergeTkLog log = EmergeTkLogManager.GetLogger(typeof(User));
+		private static readonly EmergeTkLog securityViolationLog = EmergeTkLogManager.GetLogger("PotentialOnlyCSRF");
+		public static List<User> activeUsers = new List<User>();
+		private static readonly long loginTokenLifetime = Setting.GetValueT<long>("LoginTokenLifetime", 1440);
+		private static readonly string preventionReferrerHost = Setting.GetValueT<string>("CSRFPreventionReferrerHost");
     	
         static Type defaultType;
         static User()
@@ -179,6 +183,35 @@ namespace EmergeTk.Model.Security
         	}
         }
 
+		private DateTime? lastLoginDate;
+		public DateTime? LastLoginDate 
+		{
+			get
+			{
+				return lastLoginDate;
+			}
+			set
+			{
+				lastLoginDate = value;
+			}
+		}
+
+		private DateTime? currentLoginDate;
+		public DateTime? CurrentLoginDate 
+		{
+			get
+			{
+				return currentLoginDate;
+			}
+			set
+			{
+				if (!loading)
+					LastLoginDate = currentLoginDate;
+
+				currentLoginDate = value;
+			}
+		}
+
         public void GenerateAndSetNewSessionToken()
         {
             this.SessionToken = Util.GetBase32Guid();
@@ -272,14 +305,11 @@ namespace EmergeTk.Model.Security
 					return 	(User)HttpContext.Current.Items["user"];
 				}
 				User u = null;
-				if(Context.Current != null)
-					u = Context.Current.CurrentUser;
-				else if( HttpContext.Current != null )
+				if (HttpContext.Current != null)
+				{
 					u = FindBySessionToken();
-				else
-					u = null;
-				if( HttpContext.Current != null )
 					HttpContext.Current.Items["user"] = u;
+				}
 				return u;
 			}
 			set
@@ -292,12 +322,8 @@ namespace EmergeTk.Model.Security
 		public void SetLoginCookie()
 		{
 			//log.Debug("setting login cookie");
-			HttpCookie sessionCookie = new HttpCookie("LoginToken", SessionToken);
-            sessionCookie.Expires = DateTime.Now.AddDays(1);
-            HttpContext.Current.Response.Cookies.Add(sessionCookie);
-			
 			HttpCookie userIdCookie = new HttpCookie("UserId", Id.ToString());
-            userIdCookie.Expires = DateTime.Now.AddYears(1);
+            userIdCookie.Expires = DateTime.UtcNow.AddYears(1);
             HttpContext.Current.Response.Cookies.Add(userIdCookie);
 			SetRoleCookie(Roles.Count > 0 ? Roles.JoinToString(",") : "");
 			//throw new Exception("setting login cookie");
@@ -306,30 +332,27 @@ namespace EmergeTk.Model.Security
 		public void SetRoleCookie(string role)
 		{
 			HttpCookie sessionCookie = new HttpCookie("Role", role);
-            sessionCookie.Expires = DateTime.Now.AddDays(1);
+            sessionCookie.Expires = DateTime.UtcNow.AddDays(1);
             HttpContext.Current.Response.Cookies.Add(sessionCookie);
 		}
 
-		public static User GetUserFromCookie()
+		public static string GetRequestToken()
 		{
-			HttpCookie cookie = HttpContext.Current.Request.Cookies["LoginToken"];
-            if (cookie != null && !String.IsNullOrEmpty(cookie.Value))
-            {
-            	User user = User.FindBySessionToken( cookie.Value );
-                return user;
-            }
-			return null;
+			if (HttpContext.Current == null)
+				return null;
+			else
+				return HttpContext.Current.Request.Headers["x-5to1-LoginToken"];
 		}
-		
-		public static User GetUserFromQueryStringToken()
+
+		public static User GetUserFromTokenHeader()
 		{
-			string token = HttpContext.Current.Request.QueryString["token"];
+			User user = null;
+			string token = GetRequestToken();
 			if (!String.IsNullOrEmpty(token))
-            {
-            	User user = User.FindBySessionToken( token );
-                return user;
-            }
-			return null;
+			{
+				user = User.FindBySessionToken(token);
+			}
+			return user;
 		}
 		
 		public static void RegisterActiveUser( User u )
@@ -346,7 +369,7 @@ namespace EmergeTk.Model.Security
     		}
     	}
     	
-        public static User AuthenticateUser(string username, string password)
+        public static User LoginUser(string username, string password)
         {
             // TODO: do we need to capture TableNotFoundException? right now the Login widget does that
             
@@ -354,26 +377,78 @@ namespace EmergeTk.Model.Security
             if (user != null)
             {
                 if (user.ComputeSaltedPassword(password) == user.Password)
-                {
-                    if (String.IsNullOrEmpty(user.SessionToken))
-                    {
-                        user.GenerateAndSetNewSessionToken();
-						user.Save();
-                    }
+                {	// upon match, always give out new token
+					user.GenerateAndSetNewSessionToken();
+					user.CurrentLoginDate = DateTime.UtcNow;
+					user.Save();
+
                     return user;
                 }
             }
             return null;
         }
-        
-        public static User FindBySessionToken( string token )
-        {
-        	return AbstractRecord.Load(defaultType, new FilterInfo("SessionToken", token )) as User;
-        }
-		
+
 		public static User FindBySessionToken()
 		{
-			return GetUserFromCookie() ?? GetUserFromQueryStringToken();
+			return GetUserFromTokenHeader();
+		}
+		
+		public static User FindBySessionToken(string token)
+        {
+        	User user = AbstractRecord.Load(defaultType, new FilterInfo("SessionToken", token )) as User;
+			return user;
+        }
+
+		public static void CheckReferrerHost()
+		{
+			if (!String.IsNullOrEmpty(preventionReferrerHost) && HttpContext.Current != null)
+			{
+				string referrer = HttpContext.Current.Request.UrlReferrer.Host;
+				if (!String.IsNullOrEmpty(referrer) && preventionReferrerHost != referrer)
+				{
+					securityViolationLog.ErrorFormat("HttpContext Referring Domain Host '{0}' does not match configuration '{1}'. Request Host:{2}", referrer, preventionReferrerHost, HttpContext.Current.Request.UserHostAddress);
+					throw new UnauthorizedAccessException("Invalid Referring Domain Host.");
+				}
+			}
+		}
+
+		public static void AuthenticateUser()
+		{
+			CheckReferrerHost();
+
+			string token = GetRequestToken();
+			string host = HttpContext.Current != null ? HttpContext.Current.Request.UserHostAddress : null;
+			User user = User.Current;
+			if (null != user)
+			{
+				HttpCookie cookie = HttpContext.Current.Request.Cookies["UserId"];
+				if (null != cookie && !String.IsNullOrEmpty(cookie.Value))
+				{
+					if (user.Id != Convert.ToInt32(cookie.Value))
+					{
+						securityViolationLog.ErrorFormat("User {0} with given token {1} does not match supplied cookie {2}. Request Host:{3}", user.Id, token, cookie.Value, host);
+						throw new UnauthorizedAccessException("Invalid Credentials.");
+					}
+				}
+				else
+				{//could this EVER be ok or should we prevent access?
+					securityViolationLog.ErrorFormat("Unusual! Missing UserId cookie. Why? User {0} with given token {1}. Request Host:{2}", user.Id, token, host);
+					throw new UnauthorizedAccessException("Invalid Credentials.");
+				}
+
+				if (user.CurrentLoginDate.Value.AddMinutes(loginTokenLifetime) < DateTime.UtcNow)
+				{//blank out the session thus forcing user to login and get NEW session
+					user.SessionToken = String.Empty;
+					user.Save();
+					log.Info(string.Format("User session has timed out for {0}. Id:{1}", user.Name, user.Id));
+					throw new TimeoutException("Expired Credentials.");
+				}
+			}
+			else
+			{
+				securityViolationLog.ErrorFormat("No user found with given token: {0}. OK during Login request only. Request Host:{1}", token, host);
+				throw new UnauthorizedAccessException("Invalid Credentials.");
+			}
 		}
     }
 }

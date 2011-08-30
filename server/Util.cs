@@ -46,7 +46,7 @@ namespace EmergeTk
 		{
 			return Join( list, sep, false );
 		}
-		
+
         /*public static string Join(IList list, string sep)
 		{
 			return Join( list, sep, false );
@@ -156,14 +156,33 @@ namespace EmergeTk
 		{
 			if( input == null )
 				return string.Empty;
-            string thistext = input.Replace("\\", "\\\\");
-            thistext = thistext.Replace("\r\n", "\\r\\n");
-			thistext = thistext.Replace("\n", "\\n");
-            thistext = thistext.Replace("\r", "\\r");
-			thistext = thistext.Replace("\"","\\\"");
-			thistext = thistext.Replace("\t","\\t");
-			thistext = thistext.Replace(System.Environment.NewLine, " ");
-			return thistext;
+			StringBuilder sb = new StringBuilder (input.Length * 2);
+			for (int i = 0; i < input.Length; i++)
+			{
+				char c = input[i];
+				switch(c)
+				{
+				case '\t':
+					sb.Append ("\\t");
+					break;
+				case '\r':
+					sb.Append ("\\r");
+					break;
+				case '\n':
+					sb.Append ("\\n");
+					break;
+				case '\"':
+					sb.Append ("\\\"");
+					break;
+				case '\\':
+					sb.Append ("\\\\");
+					break;
+				default:
+					sb.Append(c);
+					break;
+				}
+			}			
+            return sb.ToString();
 		}
 
         public static string ToJavaScriptString(string input)

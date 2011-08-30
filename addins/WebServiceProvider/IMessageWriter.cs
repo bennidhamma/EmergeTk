@@ -27,6 +27,7 @@ namespace EmergeTk.WebServices
         void WriteScalar(Object scalar);
         void WriteProperty(string name, string scalarValue); //shortcut for scalar props
         void WriteProperty(string name, int scalarValue); //shortcut for scalar props
+		void WriteRaw(string data);
         void Flush();
     }
 }

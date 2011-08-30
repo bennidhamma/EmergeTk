@@ -9,7 +9,7 @@ using EmergeTk.Model.Search;
 
 namespace EmergeTk.WebServices
 {
-    [RestService(ModelName = "modelPredicate", ServiceManager = typeof(ModelPredicateServiceManager))]
+    [RestService(ModelName = "modelPredicate", ServiceManager = typeof(AuthenticatedPostOnlyServiceManager))]
     public class ModelPredicate : AbstractRecord
     {
         public string ColumnName { get; set; }

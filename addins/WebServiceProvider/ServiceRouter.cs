@@ -15,8 +15,9 @@ namespace EmergeTk.WebServices
     public enum WebServiceFormat
     {
         Json = 0,
-        Xml = 1
-    };
+        Xml = 1,
+		Csv = 2
+	};
 
 	public class ServiceRouter : IHttpHandler
 	{
@@ -27,7 +28,8 @@ namespace EmergeTk.WebServices
             new Dictionary<string, WebServiceFormat>(StringComparer.CurrentCultureIgnoreCase)
             {
                 {"json", WebServiceFormat.Json},
-                {"xml", WebServiceFormat.Xml}
+                {"xml", WebServiceFormat.Xml},
+			 	{"csv", WebServiceFormat.Csv},
             };
 		
 		static ServiceRouter()
@@ -93,6 +95,7 @@ namespace EmergeTk.WebServices
 					switch (format)
 					{
 					case WebServiceFormat.Xml:
+					case WebServiceFormat.Csv:
 						requestMessage = XmlSerializer.DeserializeXml (request.InputStream);
 						break;
 					case WebServiceFormat.Json:
@@ -137,7 +140,7 @@ namespace EmergeTk.WebServices
 
                         HttpContext.Current.Response.StatusCode = response.StatusCode;
 						HttpContext.Current.Response.StatusDescription = response.StatusDescription;
-						log.Debug ("response.Cacheability:", response.Cacheability);
+						//log.Debug( "response.Cacheability:", request.Url, response.Cacheability, response.Expires);
 						if ((int)response.Cacheability > 0)
 						{
 							HttpContext.Current.Response.Cache.SetCacheability (response.Cacheability);
@@ -188,6 +191,12 @@ namespace EmergeTk.WebServices
                         case WebServiceFormat.Xml:
                             HttpContext.Current.Response.ContentType = "text/xml";
                             break;
+						  case WebServiceFormat.Csv:
+							string filename = HttpContext.Current.Request.Url.PathAndQuery.Replace('/','-') + ".csv";
+                            HttpContext.Current.Response.ContentType = "text/csv";
+							HttpContext.Current.Response.AddHeader 
+								("Content-disposition", string.Format("attachment;filename=" + filename));
+                            break;
                     }
 				}
 				catch(UnauthorizedAccessException ex)				
@@ -216,7 +225,7 @@ namespace EmergeTk.WebServices
 			watch.Lap("Finished processing request.  Flushing to client.");
 			watch.Stop();
 
-            log.InfoFormat("Finished request verb = {0}, url = {1}, totaltime = {2} ms.", verb.ToUpper(), request.Url, (DateTime.Now - watch.StartTime).TotalMilliseconds);
+            log.InfoFormat("Finished request verb = {0}, url = {1}, totaltime = {2} ms.", verb.ToUpper(), request.Url, (DateTime.UtcNow - watch.StartTime).TotalMilliseconds);
             StopWatch.Summary(log);
 		}
 

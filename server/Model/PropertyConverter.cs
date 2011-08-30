@@ -70,7 +70,7 @@ namespace EmergeTk.Model
 				}
 	            else if (destinationType.IsSubclassOf(typeof(AbstractRecord)) && !(output is AbstractRecord))
 	            {
-	                if (input == DBNull.Value || ( input is string && (string)input == "NULL") || input == string.Empty )
+	                if (input == DBNull.Value || ( input is string && ((string)input == "NULL" || (string)input == string.Empty )))
 	                    output = null;
 	                else
 	                {
@@ -110,7 +110,7 @@ namespace EmergeTk.Model
 	            else if (destinationType == typeof(int) && input.GetType().IsEnum)
 	            {
 	                output = System.Convert.ToInt16(input);
-	            } 
+	            }  
 				else if (destinationType.IsEnum && input is string)
 				{
 					output = Enum.Parse (destinationType, (string)input);
@@ -121,7 +121,7 @@ namespace EmergeTk.Model
 	            }
 	            else if (destinationType == typeof(DateTime) && input is int)
 	            {
-	                output = System.Convert.ToDateTime(input);				                                   
+					output = DateTime.SpecifyKind(System.Convert.ToDateTime(input), DateTimeKind.Utc);
 	            }  				
 	            else
 	            {
