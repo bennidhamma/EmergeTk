@@ -24,9 +24,9 @@ namespace EmergeTk.WebServices
                 return;
         }
 
-        public void AuthorizeField(RestOperation op, AbstractRecord record, string property)
+        public bool AuthorizeField(RestOperation op, AbstractRecord record, string property)
         {
-            return;
+            return true;
         }
 
         public AbstractRecord GenerateExampleRecord()

@@ -10,7 +10,7 @@ namespace EmergeTk.WebServices
 	{
 		string GetHelpText();
 		void Authorize(RestOperation operation, MessageNode recordNode, AbstractRecord record);
-		void AuthorizeField( RestOperation op, AbstractRecord record, string property );
+		bool AuthorizeField( RestOperation op, AbstractRecord record, string property );
 		AbstractRecord GenerateExampleRecord();
 		string GenerateExampleFields(string method);
 		List<RestTypeDescription> GetTypeDescriptions();

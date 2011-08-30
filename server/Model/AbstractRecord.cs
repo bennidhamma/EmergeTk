@@ -729,7 +729,7 @@ namespace EmergeTk.Model
 	        	
         	if( childrenIds == null )
         	{
-				childrenIds = GetProvider().ExecuteVectorInt(string.Format("SELECT Child_Id FROM {0} a JOIN {2} b on a.child_id = b.rowid WHERE Parent_Id = '{1}'", 
+				childrenIds = GetProvider().ExecuteVectorInt(string.Format("SELECT Child_Id FROM `{0}` a JOIN `{2}` b on a.child_id = b.rowid WHERE Parent_Id = '{1}'", 
                                        joinTable, ObjectId, childTable));
         		PutObjectInCache( cacheKey, childrenIds);
         	}
@@ -818,7 +818,7 @@ namespace EmergeTk.Model
 			if (record == null)
 			{
 				RecordDefinition rd = new RecordDefinition (typeof(T), id);
-				record = (T) CacheProvider.Instance.GetLocalRecord (rd);
+				record = (T) CacheProvider.Instance.GetLocalRecord (AbstractRecord.GetCacheKey (rd));
 				if (record != null)
 				{
 					return record;	

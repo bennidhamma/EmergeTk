@@ -348,7 +348,7 @@ QueryString args:
 			IRecordList<T> records = DataProvider.LoadList<T>();
 			IMessageWriter writer = arguments.Response.Writer;
 			writer.OpenRoot("response");            
-			RecordSerializer.Serialize(records, arguments.QueryString["fields"], writer);
+			RecordSerializer.Serialize((IEnumerable<T>)records, arguments.QueryString["fields"], writer);
             writer.CloseRoot();
 		}
 

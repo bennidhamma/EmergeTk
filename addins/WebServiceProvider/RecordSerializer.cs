@@ -6,6 +6,7 @@ using System.Text.RegularExpressions;
 using EmergeTk.Model;
 using EmergeTk.Model.Security;
 using System.Text;
+using System.Collections;
 
 
 namespace EmergeTk.WebServices
@@ -578,6 +579,7 @@ namespace EmergeTk.WebServices
 							loadType = TypeLoader.GetType (propNode["type"].ToString ());
 						}					
 						record[recordFieldName] = TypeLoader.InvokeGenericMethod(typeof(RecordSerializer),"DeserializeRecord", new Type[] { loadType }, null, new object[]{propNode,context});
+					}
 				}
 				else if( field.Type == typeof( Dictionary<string,string> ) )
 				{
