@@ -729,8 +729,16 @@ namespace EmergeTk.Model
 	        	
         	if( childrenIds == null )
         	{
-				childrenIds = GetProvider().ExecuteVectorInt(string.Format("SELECT Child_Id FROM `{0}` a JOIN `{2}` b on a.child_id = b.rowid WHERE Parent_Id = '{1}'", 
-                                       joinTable, ObjectId, childTable));
+				if (fi.ListRecordType.GetInterface("IDerived") == null)
+				{
+					childrenIds = GetProvider().ExecuteVectorInt(string.Format("SELECT Child_Id FROM `{0}` a JOIN `{2}` b on a.child_id = b.rowid WHERE Parent_Id = '{1}'", 
+	                                       joinTable, ObjectId, childTable));
+				}
+				else
+				{
+					childrenIds = GetProvider().ExecuteVectorInt(string.Format("SELECT Child_Id FROM `{0}` WHERE Parent_Id = '{1}'", 
+	                                       joinTable, ObjectId));
+				}
         		PutObjectInCache( cacheKey, childrenIds);
         	}
 			return childrenIds;
