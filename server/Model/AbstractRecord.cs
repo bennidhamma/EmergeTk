@@ -826,10 +826,13 @@ namespace EmergeTk.Model
 			if (record == null)
 			{
 				RecordDefinition rd = new RecordDefinition (typeof(T), id);
-				record = (T) CacheProvider.Instance.GetLocalRecord (AbstractRecord.GetCacheKey (rd));
-				if (record != null)
+				if (CacheProvider.Instance != null)
 				{
-					return record;	
+					record = (T) CacheProvider.Instance.GetLocalRecord (AbstractRecord.GetCacheKey (rd));
+					if (record != null)
+					{
+						return record;	
+					}
 				}
 			}
 			return Load<T>(record, id,  "ROWID" );
@@ -1470,12 +1473,14 @@ namespace EmergeTk.Model
 							else
 							{
 								Object o = originals[fi.Name];
-								string s = (string)o;
+								string s = o as string;
 								
 								if (! string.IsNullOrEmpty (s))
 								{
 									this[fi.Name] = JSON.DeserializeObject (fi.Type, s);
 								}
+								else if (o != null)
+									this[fi.Name] = o;
 							}
 	                    }
 	                }

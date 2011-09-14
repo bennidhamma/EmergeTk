@@ -221,7 +221,7 @@ namespace EmergeTk.WebServices
 						}
 					}
 					processor.AddMessageEndPoint (messageAttribute);
-					log.InfoFormat("creating endPoint '{0}' on service '{1}'", method.Name, service);
+					//log.InfoFormat("creating endPoint '{0}' on service '{1}'", method.Name, service);
 				}
 			}
 			log.InfoFormat("Registering web service '{0}' at '{1}'", service, att.BasePath);

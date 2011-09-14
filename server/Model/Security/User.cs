@@ -341,9 +341,9 @@ namespace EmergeTk.Model.Security
 			if (HttpContext.Current == null)
 				return null;
 			else
-				return HttpContext.Current.Request.Headers["x-5to1-LoginToken"];
+				return HttpContext.Current.Request.Headers["x-LoginToken"];
 		}
-
+		
 		public static User GetUserFromTokenHeader()
 		{
 			User user = null;

@@ -189,6 +189,13 @@ namespace EmergeTk.WebServices
                         writer.CloseProperty();
                     }
                 }
+				else if (fi.DataType == DataType.Json)
+				{
+					object obj = record[uField];
+					writer.OpenProperty (lField);
+					writer.WriteRaw (JSON.Serializer.Serialize (obj));
+					writer.CloseProperty ();					
+				}
                 else
                 {
                     StreamLineWriteProperty(fi.Type, writer, record, lField, uField);
