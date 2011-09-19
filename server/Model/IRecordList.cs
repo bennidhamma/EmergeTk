@@ -65,6 +65,7 @@ namespace EmergeTk.Model
         void Remove(AbstractRecord value);
         void RemoveAt(int index);
 		void RemoveRange( int index, int count );
+		void RemoveAll (Predicate<AbstractRecord> match);
         void Save();
         void Sort();
 		void Randomize();

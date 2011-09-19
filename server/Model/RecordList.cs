@@ -218,6 +218,13 @@ namespace EmergeTk.Model
 				RemoveAt(i);
 			}
 		}
+		
+		//note: this method does not fire removal events.
+		public void RemoveAll (Predicate<AbstractRecord> match)
+		{
+			clean = false;
+			items.RemoveAll (match);
+		}
 
         public void Delete(AbstractRecord value)
         {

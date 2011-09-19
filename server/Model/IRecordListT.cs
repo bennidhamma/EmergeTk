@@ -44,6 +44,7 @@ namespace EmergeTk.Model
         void Insert(int index, T value);
         T NewRowT();
         void Remove(T value);
+		void RemoveAll(Predicate<T> match);
         new IRecordList<T> Copy();
         new IRecordList<T> Filter();
         new IRecordList<T> Filter(params FilterInfo[] filters);

@@ -122,6 +122,12 @@ namespace EmergeTk.Model
         {
             base.Remove(value);
         }
+		
+		public void RemoveAll(Predicate<T> match)
+		{
+			Predicate<AbstractRecord> m = r => match((T)r);
+			items.RemoveAll (m);
+		}
 
 		public bool Contains(T value)
 		{
