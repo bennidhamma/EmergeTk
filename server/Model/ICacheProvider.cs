@@ -14,6 +14,7 @@ namespace EmergeTk.Model
 		bool Set(string key, object value);
 		object GetObject( string key );
 		AbstractRecord GetLocalRecord( string key );
+		AbstractRecord GetLocalRecord (RecordDefinition rd);
 		void PutLocal ( string key, AbstractRecord value);
 		T GetRecord<T>(string key) where T : AbstractRecord, new();
 		AbstractRecord GetRecord(Type t, string key);

@@ -4,10 +4,8 @@
 // Copyright Skull Squadron, All Rights Reserved.
 
 using EmergeTk.Model.Security;
-using EmergeTk.Widgets.Html;
 using EmergeTk.Model;
 using EmergeTk;
-
 using System;
 using System.Data;
 using System.Net.Mail;
@@ -39,7 +37,6 @@ namespace EmergeTk
 			send( message, title, to, "emergeTk@" + System.Configuration.ConfigurationManager.AppSettings["NotificationsFromDomain"] ); 
 		}
 		
-		
 		public static void SendMail(string from, string to,
                      string subject, string body)
 		{
@@ -60,8 +57,6 @@ namespace EmergeTk
 		         //Send delivers the message to the mail server
 				mailClient.Send(message);
 		      }
-				
-			  
 		   }
 		   catch (SmtpException ex)
 		   {

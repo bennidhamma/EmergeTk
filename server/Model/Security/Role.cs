@@ -1,7 +1,6 @@
 using System;
 using System.Collections.Generic;
 using System.Text;
-using EmergeTk.Widgets.Html;
 
 namespace EmergeTk.Model.Security
 {
@@ -24,24 +23,7 @@ namespace EmergeTk.Model.Security
                 return this.permissions;
             }
             set { this.permissions = value; }
-        }
-
-        public override Widget GetPropertyEditWidget(Widget parent, ColumnInfo column, IRecordList records)
-        {
-            switch (column.Name)
-            {
-                case "Permissions":
-                    SelectList<Permission> slr = Context.Current.CreateWidget<SelectList<Permission>>();
-                    slr.Mode = SelectionMode.Multiple;
-                    slr.LabelFormat = "{Name}";
-                    slr.SelectedItems = this.Permissions;
-                    slr.DataSource = DataProvider.LoadList<Permission>();
-                    slr.DataBind();
-                    return slr;
-                default:
-                    return base.GetPropertyEditWidget(parent, column, records);
-            }
-        }
+		}
 
         public override void Save(bool SaveChildren, bool IncrementVersion, System.Data.Common.DbConnection conn)
         {

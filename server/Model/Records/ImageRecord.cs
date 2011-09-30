@@ -44,7 +44,6 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
 using System;
-using EmergeTk.Widgets.Html;
 
 namespace EmergeTk.Model
 {
@@ -89,27 +88,6 @@ namespace EmergeTk.Model
             get { return thumbnailUrl; }
             set { thumbnailUrl = value; }
         }
-
-        public override Widget GetEditWidget(Widget parent, ColumnInfo column, IRecordList records)
-        {
-			EnsureId();
-			ImageUpload iu = Context.Current.CreateWidget<ImageUpload>();
-			iu.SavePath = url;
-			iu.ImageUid = Version.ToString();
-			iu.SaveToLocalStorage = SaveToLocalStorage;
-			System.IO.Directory.CreateDirectory( System.Web.HttpContext.Current.Server.MapPath( "/Storage" ) );
-			iu.SaveFormat = string.Format("/Storage/{0}.$Extension", this.Id );
-			if (SaveToLocalStorage)
-			{
-				iu.OnImageUploaded += new EventHandler(delegate(object o, EventArgs ea)
-				{
-					Url = iu.SavePath;
-					iu.ImageUid = (++Version).ToString();
-					Save();
-				});
-			}
-			return iu;
-		}
 
 		public ImageRecord()
 		{

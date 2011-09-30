@@ -3,7 +3,6 @@
 //
 
 using System;
-using EmergeTk.Widgets.Html;
 
 namespace EmergeTk.Model
 {

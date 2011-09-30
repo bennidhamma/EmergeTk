@@ -80,6 +80,12 @@ namespace EmergeTk.Model
 			return Cache.Get(key) as AbstractRecord;
 		}
 		
+		public AbstractRecord GetLocalRecord(RecordDefinition rd)
+		{
+			var key = AbstractRecord.GetCacheKey (rd);
+			return Cache.Get(key) as AbstractRecord;
+		}
+		
 		public object GetObject (string key)
 		{
 			return Cache.Get(key);

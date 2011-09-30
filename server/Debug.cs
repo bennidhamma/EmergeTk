@@ -26,7 +26,6 @@ using System;
 using System.Collections.Generic;
 using System.Text;
 using System.Web;
-using EmergeTk.Widgets.Html;
 using System.Diagnostics;
 
 namespace EmergeTk
@@ -61,27 +60,8 @@ namespace EmergeTk
 	       {
 	       }
 	       System.Diagnostics.Trace.Write( message );
-	       log.Debug(message);
-           if( Context.Current != null )
-        		Context.Current.Log(message);
-	       	
+	       log.Debug(message);	       	
         	#endif
-           /* if (Context.Current == null)
-            {
-                HttpContext.Current.Response.Write(string.Format("TRACE: " + message + "<BR>\r\n", args));               
-                return;
-            }
-            Label debug_trace = Context.Current.Find<Label>("debug_trace");
-            if (debug_trace == null)
-            {
-                debug_trace = new Label();
-                debug_trace.id = "debug_trace";
-                Context.Current.Add(debug_trace);
-                debug_trace.Init();
-                debug_trace.ClassName = "error";
-                debug_trace.Text = "Trace Log:<BR>";
-            }
-            debug_trace.Text += string.Format(message + "<BR>\r\n", args);*/
         }
     }
 }

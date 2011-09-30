@@ -89,8 +89,9 @@ namespace EmergeTk.WebServices
             // but we're going to try to simulate the same thing with an 
             // OpenProperty()/OpenObject()/CloseObject()/CloseProperty() bracketing.
 
+			var restTypeDescription = WebServiceManager.Manager.GetRestTypeDescription(rType);
             if (String.IsNullOrEmpty(explicitName))
-                writer.OpenProperty(WebServiceManager.Manager.GetRestTypeDescription(rType).ModelName);
+                writer.OpenProperty(restTypeDescription.ModelName);
             else
                 writer.OpenProperty(explicitName);
 
@@ -102,7 +103,12 @@ namespace EmergeTk.WebServices
 			
 			if (record is IDerived || fields.Contains ("type"))
 			{
-				writer.WriteProperty ("type", record.DbSafeModelName);
+				writer.WriteProperty ("type", restTypeDescription.ModelName);
+			}
+			
+			if (fields.Length == 1 && fields[0] is string && (string)fields[0] == "*")
+			{
+				fields = SetupFields (fields[0] as string, rType);	
 			}
 			
 			foreach( object o in fields )
@@ -131,6 +137,7 @@ namespace EmergeTk.WebServices
 				string f = (string)o;
 				if( WebServiceManager.DoAuth() && ! serviceManager.AuthorizeField(RestOperation.Get,record,f) )
 				   continue;
+				
 				string uField = Util.CamelToPascal(f);
 				string lField = Util.PascalToCamel(f);
 				

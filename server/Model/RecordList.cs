@@ -110,66 +110,6 @@ namespace EmergeTk.Model
 			}
 		}
 
-        private bool live = false;
-        private bool listening = false;
-        EventHandler<RecordEventArgs> onGlobalChanged, onGlobalDeleted, onGlobalCreated;
-        public bool Live
-        {
-            get { return live; }
-            set
-            {
-                live = value;
-                if (value && !listening)
-                {
-                    if (onGlobalChanged == null)
-                    {
-                        onGlobalChanged = new EventHandler<RecordEventArgs>(OnGlobalRecordChanged);
-                        onGlobalDeleted = new EventHandler<RecordEventArgs>(OnGlobalRecordDeleted);
-                        onGlobalCreated = new EventHandler<RecordEventArgs>(OnGlobalRecordCreated);
-                    }
-                    AbstractRecord.RegisterChangedListener(typeof(AbstractRecord),onGlobalChanged );
-                    AbstractRecord.RegisterDeletedListener(typeof(AbstractRecord), onGlobalDeleted);
-                    AbstractRecord.RegisterNewListener(typeof(AbstractRecord), onGlobalCreated);
-                }
-                else if (! value && listening )
-                {
-                    AbstractRecord.UnregisterChangedListener(typeof(AbstractRecord), onGlobalChanged);
-                    AbstractRecord.UnregisterDeletedListener(typeof(AbstractRecord), onGlobalDeleted);
-                    AbstractRecord.UnregisterNewListener(typeof(AbstractRecord), onGlobalCreated);
-                }
-            }
-        }
-
-        private void OnGlobalRecordChanged(object sender, RecordEventArgs ea)
-        {
-            if (filters != null && filters.Count > 0)
-            {
-                bool isMember = true;
-                foreach (FilterInfo fi in filters)
-                {
-                    if (!FilterInfo.Filter(fi.Operation, fi.Value, ea.Record[fi.ColumnName]))
-                    {
-                        isMember = false;
-                        break;
-                    }
-                }
-                if (isMember && !Contains(ea.Record))
-                    Add(ea.Record);
-                else if (!isMember && Contains(ea.Record))
-                    Remove(ea.Record);
-            }
-        }
-
-        private void OnGlobalRecordCreated(object sender, RecordEventArgs ea)
-        {
-            Add(ea.Record);
-        }
-
-        private void OnGlobalRecordDeleted(object sender, RecordEventArgs ea)
-        {
-            Remove(ea.Record);
-        }
-
 		public void RemoveAt(int index)
 		{
 			clean = false;
@@ -181,11 +121,6 @@ namespace EmergeTk.Model
 			items.Insert( index, value );
 			if( parent != null )
 				value.Parent = parent;
-            value.OnDelete += new EventHandler<RecordEventArgs>(value_OnDelete);
-            if( onRecordChanged != null)
-                value.OnChange += onRecordChanged;
-            if (OnRecordAdded != null)
-                OnRecordAdded(this, new RecordEventArgs( value ) );
 		}
 
         private List<SortInfo> sorts;
@@ -207,8 +142,6 @@ namespace EmergeTk.Model
 		{
 			clean = false;
 			items.Remove( value );
-            if (onRecordRemoved != null)
-                onRecordRemoved(this, new RecordEventArgs( value ) );
 		}
 		
 		public void RemoveRange(int index, int count)
@@ -259,17 +192,7 @@ namespace EmergeTk.Model
 			items.Add( value );
 			if( parent != null )
 				value.Parent = parent;
-            value.OnDelete += new EventHandler<RecordEventArgs>(value_OnDelete);
-            if( onRecordChanged != null)
-                value.OnChange += onRecordChanged;
-            if (OnRecordAdded != null)
-                OnRecordAdded(this, new RecordEventArgs( value ) );
 		}
-
-        void value_OnDelete(object sender, RecordEventArgs ea)
-        {
-            Remove(ea.Record);
-        }
 
         public AbstractRecord NewRow<T>() where T : AbstractRecord, new()
         {
@@ -489,43 +412,7 @@ namespace EmergeTk.Model
         		}
         	}
         }
-
-        //Events
-
-        private event EventHandler<RecordEventArgs> onRecordChanged;
-        public event EventHandler<RecordEventArgs> OnRecordChanged
-        {
-            add { 
-                onRecordChanged += value;
-                foreach (AbstractRecord r in this)
-                    r.OnChange += value;
-            }
-            remove {
-                onRecordChanged -= value;
-                foreach (AbstractRecord r in this)
-                    r.OnChange -= value;
-            }
-        }
-
-        private event EventHandler<RecordEventArgs> onRecordRemoved;
-        public event EventHandler<RecordEventArgs> OnRecordRemoved
-        {
-            add
-            {
-                onRecordRemoved += value;
-                foreach (AbstractRecord r in this)
-                    r.OnDelete += value;
-            }
-            remove
-            {
-                onRecordRemoved -= value;
-                foreach (AbstractRecord r in this)
-                    r.OnDelete -= value;
-            }
-        }
-
-        public event EventHandler<RecordEventArgs> OnRecordAdded;
-
+        
         #region IComparable Members
 
         public int CompareTo(object obj)

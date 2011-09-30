@@ -363,7 +363,7 @@ namespace EmergeTk.Model.Providers
 
             foreach (int id in ids)
             {
-                String cacheKey = name + ".rowid = " + id.ToString();
+				var cacheKey = AbstractRecord.CreateStandardCacheKey(name, id);
                 T r = (T) CacheProvider.Instance.GetLocalRecord(cacheKey);
                 recordMap[id] = r;  // add to the recordMap, whether it's a hit or miss.
                 if (r == null)
@@ -384,6 +384,7 @@ namespace EmergeTk.Model.Providers
 							log.Warn("Did not find type for id " + id);
 							continue;
 						}
+						log.Debug ("loading derived record", t, id);
 						T r = AbstractRecord.Load(t,id) as T;
 						
 						if( r != null )

@@ -2,7 +2,6 @@ using System;
 using System.Collections.Generic;
 using System.Security.Cryptography;
 using System.Text;
-using EmergeTk.Widgets.Html;
 using System.Web;
 
 namespace EmergeTk.Model.Security
@@ -68,7 +67,6 @@ namespace EmergeTk.Model.Security
                 if (!String.IsNullOrEmpty(value))
                 {
                     this.password = this.ComputeSaltedPassword(value);
-                    this.NotifyChanged("Password");
                 }
             }
         }
@@ -114,15 +112,6 @@ namespace EmergeTk.Model.Security
             }
             set { 
             	this.roles = value;
-        		if( this.roles != null )
-        		{
-		            this.roles.OnRecordAdded += new EventHandler<RecordEventArgs>( delegate( object sender, RecordEventArgs ea ) {
-	                	rolesChanged = true;
-	                } );
-	                this.roles.OnRecordRemoved += new EventHandler<RecordEventArgs>( delegate( object sender, RecordEventArgs ea ) {
-	                	rolesChanged = true;
-	                } );
-	            }
 	        }
         }
 
@@ -216,30 +205,7 @@ namespace EmergeTk.Model.Security
         {
             this.SessionToken = Util.GetBase32Guid();
         }
-
-        public override Widget GetPropertyEditWidget(Widget parent, ColumnInfo column, IRecordList records)
-        {
-            switch (column.Name)
-            {
-            	case "PlainTextPassword":
-                    VerifyPassword vpw = Context.Current.CreateWidget<VerifyPassword>();
-                    vpw.User = this;
-                    return vpw;
-                case "Roles":
-                	SelectList<Role> slr = Context.Current.CreateWidget<SelectList<Role>>();
-                    slr.Mode = SelectionMode.Multiple;
-                    slr.LabelFormat = "{Name}";
-                    slr.SelectedItems = this.Roles;
-                    slr.DataSource = DataProvider.LoadList<Role>();
-                    slr.DataBind();
-                    slr.OnChanged += new EventHandler<EmergeTk.ChangedEventArgs>(SelectList_OnChanged);
-                    
-                    return slr;
-                default:
-                    return base.GetPropertyEditWidget(parent, column, records);
-            }
-        }
-        
+    
         public override void Save(bool SaveChildren, bool IncrementVersion, System.Data.Common.DbConnection conn)
         {
             //log.Debug("Executing User Save override - this.roles=", this.Roles);
@@ -264,19 +230,7 @@ namespace EmergeTk.Model.Security
             RNGCryptoServiceProvider rng = new RNGCryptoServiceProvider();
             rng.GetBytes(passwordBytes);
             return Convert.ToBase64String(passwordBytes);
-        }
-
-        void SelectList_OnChanged(object sender, ChangedEventArgs ea )
-        {
-            ModelForm<User> mf = ea.Source.FindAncestor<ModelForm<User>>();
-            if (mf != null)
-            {
-                if (mf.SavedFields == null)
-                    mf.SavedFields = new List<string>();
-                if (!mf.SavedFields.Contains("Roles"))
-                    mf.SavedFields.Add("Roles");
-            }
-        }
+		}
 
         public override string ToString()
         {

@@ -39,7 +39,6 @@ namespace EmergeTk.Model
         List<SortInfo> Sorts { get; set; }
         List<FilterInfo> Filters { get; set; }
         AbstractRecord this[int index] { get; set; }
-        bool Live { get; set; }
         Type RecordType { get; set; }
         bool Preserve { get; set; }
 		AbstractRecord Parent { get; set; }
@@ -82,10 +81,5 @@ namespace EmergeTk.Model
         IRecordList Copy();
 		bool TestAny( IRecordList irl );
 		bool Clean { get; set; }
-		
-        //events
-        event EventHandler<RecordEventArgs> OnRecordAdded;
-        event EventHandler<RecordEventArgs> OnRecordChanged;
-        event EventHandler<RecordEventArgs> OnRecordRemoved;
     }
 }

@@ -50,10 +50,6 @@ namespace EmergeTk.Model
             set
             {
                 fields[Name] = value;
-                if (NotifyPropertyChangedHandlers.ContainsKey(Name))
-                {
-                    NotifyPropertyChangedHandlers[Name]();
-                }
             }
         }
     }

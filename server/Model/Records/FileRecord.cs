@@ -3,7 +3,6 @@ using System.Web;
 using EmergeTk;
 using EmergeTk.Model;
 using EmergeTk.Model.Security;
-using EmergeTk.Widgets.Html;
 using System.IO;
 
 namespace EmergeTk.Model
@@ -20,34 +19,34 @@ namespace EmergeTk.Model
 
 		public virtual string RelativeUrl {
 			get { return relativeUrl; }
-			set { relativeUrl = value; this.NotifyChanged("RelativeUrl");}
+			set { relativeUrl = value; }
 		}
 		
 		[PropertyType(DataType.Ignore)]
 		public string SaveDirectory
 		{
 			get { return saveDirectory; }
-			set { saveDirectory = value; NotifyChanged("SaveDirectory"); }
+			set { saveDirectory = value;}
 		}
 
 		public virtual User UploadedBy {
 			get { return uploadedBy; }
-			set { uploadedBy = value; this.NotifyChanged("UploadedBy");}
+			set { uploadedBy = value;}
 		}
 
 		public virtual System.DateTime UploadedOn {
 			get { return uploadedOn; }
-			set { uploadedOn = value; this.NotifyChanged("UploadedOn");}
+			set { uploadedOn = value;}
 		}
 
 		public virtual int Size {
 			get { return size; }
-			set { size = value; this.NotifyChanged("Size");this.NotifyChanged("FriendlySize");}
+			set { size = value;}
 		}
 
 		public virtual string FileType {
 			get { return fileType; }
-			set { fileType = value; this.NotifyChanged("FileType");}
+			set { fileType = value;}
 		}
 
 		public virtual string FriendlySize {
@@ -64,7 +63,7 @@ namespace EmergeTk.Model
 		
 		public string Description {
 			get { return description; }
-			set { description = value; this.NotifyChanged("Description");}
+			set { description = value;}
 		}
 
 		public new int Version {
@@ -73,7 +72,6 @@ namespace EmergeTk.Model
 			}
 			set {
 				version = value;			
-				this.NotifyChanged("Version");
 			}
 		}
 
@@ -105,30 +103,7 @@ namespace EmergeTk.Model
 			set
 			{
 				physicalPath = value;
-				NotifyChanged("PhysicalPath");
 			}
-		}
-        
-		public override Widget GetEditWidget(Widget parent, ColumnInfo column, IRecordList records)
-		{
-			EnsureId();
-			FileController fc = Context.Current.CreateWidget<FileController>();
-			fc.SaveDirectory = SaveDirectory;
-			fc.File = this;
-			fc.Record = this;
-			fc.OnFileUploaded += new EventHandler( delegate( object sender, EventArgs ea ) {
-				if( File.Exists(PhysicalPath) )
-				{
-					size = (int)new FileInfo(PhysicalPath).Length;	
-				}
-				else
-					size = 0;
-				uploadedBy = Context.Current.CurrentUser;
-				uploadedOn = DateTime.UtcNow;
-				version++;
-			});
-			
-			return fc;
 		}
 	}
 }

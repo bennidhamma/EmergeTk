@@ -130,6 +130,11 @@ namespace EmergeTk.Model
 			{
 				key = PrepareKey(key);
 				localRecordKeyMap[key] = value.Definition;
+				if (localRecords.ContainsKey (value.Definition) && !object.ReferenceEquals (value, localRecords[value.Definition]))
+				{
+					//expire the old guy.
+					localRecords[value.Definition].MarkAsStale ();
+				}
 				localRecords[value.Definition] = value;
 			}
 		}
@@ -273,6 +278,11 @@ namespace EmergeTk.Model
 		public AbstractRecord GetLocalRecord(string key)
 		{
 			return localCache.GetLocalRecord(key);
+		}
+		
+		public AbstractRecord GetLocalRecord (RecordDefinition rd)
+		{
+			return localCache.GetLocalRecord (rd);
 		}
 
 		public void PutLocal(string key, AbstractRecord value)

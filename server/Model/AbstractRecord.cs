@@ -19,14 +19,13 @@ namespace EmergeTk.Model
 	}
 	
     [IgnoreType]
-    public class AbstractRecord : IDataBindable, IRecord, ICloneable, IJSONSerializable, IComparable
+    public class AbstractRecord : IRecord, ICloneable, IJSONSerializable, IComparable
     {
        	protected static readonly EmergeTkLog log = EmergeTkLogManager.GetLogger(typeof(AbstractRecord));
 		
 		public void SetId(int id){
 			this.id = id;
 			definition = new RecordDefinition( this.GetType(), this.id );
-			NotifyChanged("Id");
 		}
     	
     	public virtual void EnsureId()
@@ -104,13 +103,6 @@ namespace EmergeTk.Model
             else
                 GetProvider().Save(this, SaveChildren, IncrementVersion, conn);
 
-			if( ! inserted )
-				FireCreateEvents();
-			else
-			{
-			   	FireChangeEvents();
-				FireSaveEvents();
-			}
 			this.persisted = true;
 			this.recordState = RecordState.Persisted;
        	}
@@ -121,14 +113,14 @@ namespace EmergeTk.Model
 		/// <returns>
 		/// A <see cref="System.String[]"/>
 		/// </returns>
-		private static string[] GetCacheKeyList(AbstractRecord record)
+		public static string[] GetCacheKeyList(AbstractRecord record)
 		{
 			if( CacheProvider.Instance == null )
 				return null;
 			return CacheProvider.Instance.GetStringList(record.GetCacheKey());
 		}
 		
-		private static string[] GetCacheKeyList(RecordDefinition rd)
+		public static string[] GetCacheKeyList(RecordDefinition rd)
 		{
 			if( CacheProvider.Instance == null )
 				return null;
@@ -147,7 +139,7 @@ namespace EmergeTk.Model
 			return GetCacheKey(rd);
 		}
 		
-		private static string GetCacheKey(RecordDefinition rd)
+		public static string GetCacheKey(RecordDefinition rd)
 		{
 			return "cachekeys:" + rd.ToString(); 
 		}
@@ -429,10 +421,6 @@ namespace EmergeTk.Model
 			GetProvider().Delete(this);
             if( CacheProvider.Instance != null )
 				CacheProvider.Instance.Remove(this);
-            if (deletedRecordListeners.ContainsKey(this.GetType() ) )
-                deletedRecordListeners[this.GetType()](this, new RecordEventArgs( this ) );
-            if (OnDelete != null)
-                OnDelete(this, new RecordEventArgs( this ) );
         }
 
 		public void EnsureTablesCreated()
@@ -531,11 +519,7 @@ namespace EmergeTk.Model
 		static float loads, hits, misses, singularHits, pluralHits;
 		public static T Load<T>(T record, int id, bool allowCustomLoad, string WhereClause) where T : AbstractRecord, new()
         {
-        	//Cache c = CacheManager.Manager.Cache;
-            //if (recordCache.ContainsKey(key))
-            //    return recordCache[key] as T;
-
-			IDataProvider provider = DataProvider.Factory.GetProvider(typeof(T),id);
+        	IDataProvider provider = DataProvider.Factory.GetProvider(typeof(T),id);
 			
 			if( provider == null )
 				throw new NullReferenceException("Provider is null.");
@@ -597,7 +581,13 @@ namespace EmergeTk.Model
 			string k = typeof(T).Name + "." + id;
 			T o = null;
 			if( CacheProvider.Instance != null )
-				o = CacheProvider.Instance.GetRecord<T>(k);
+			{
+				//try and get local
+				var rd = new RecordDefinition (typeof(T), id);
+				o = CacheProvider.Instance.GetLocalRecord (rd) as T;
+				if (o == null)
+					o = CacheProvider.Instance.GetRecord<T>(k);
+			}
         	if( o != null )
         	{
         		return o;
@@ -717,7 +707,7 @@ namespace EmergeTk.Model
             string joinTable = DbSafeModelName + "_" + fi.Name;
 			string childTable = GetDbSafeModelName(fi.ListRecordType);
 			if ( DataProvider.LowerCaseTableNames ) joinTable = joinTable.ToLower();
-            if (!GetProvider().TableExists(joinTable) || !GetProvider ().TableExists (childTable))
+            if (!GetProvider().TableExists(joinTable) || (!fi.IsDerived && !GetProvider ().TableExists (childTable)))
                 return null;
 			
             string cacheKey = GetFieldReference( fi.Name ).ToString();
@@ -828,7 +818,7 @@ namespace EmergeTk.Model
 				RecordDefinition rd = new RecordDefinition (typeof(T), id);
 				if (CacheProvider.Instance != null)
 				{
-					record = (T) CacheProvider.Instance.GetLocalRecord (AbstractRecord.GetCacheKey (rd));
+					record = (T) CacheProvider.Instance.GetLocalRecord (rd);
 					if (record != null)
 					{
 						return record;	
@@ -911,7 +901,6 @@ namespace EmergeTk.Model
         	internal set
         	{
         		version = value;
-				NotifyChanged("Version");
         	}
         }
 
@@ -920,90 +909,6 @@ namespace EmergeTk.Model
 			this.version = version;
 		}
 
-        private Dictionary<string, Model.NotifyPropertyChanged> notifyPropertyChangedHandlers;
-
-        virtual public Dictionary<string, Model.NotifyPropertyChanged> NotifyPropertyChangedHandlers
-        {
-            get
-            {
-                if (notifyPropertyChangedHandlers == null) notifyPropertyChangedHandlers = new Dictionary<string, NotifyPropertyChanged>();
-                return notifyPropertyChangedHandlers;
-            }
-        }
-
-        virtual public void BindProperty(string name, NotifyPropertyChanged del)
-        {
-            if (NotifyPropertyChangedHandlers.ContainsKey(name))
-                NotifyPropertyChangedHandlers[name] += del;
-            else
-                NotifyPropertyChangedHandlers[name] = del;
-        }
-
-        private List<Binding> bindings;
-        public virtual List<Binding> Bindings { get { return bindings; } }
-        virtual public void Bind(Binding b)
-        {
-            if (b.Fields != null)
-            {
-            	foreach (string field in b.Fields)
-                {
-                	bindField(b, field);
-                }
-            }
-            else
-            {
-                bindField( b, b.SourceProperty);
-            }
-            if (bindings == null)
-            {
-            	bindings = new List<Binding>();
-            }
-            
-            bindings.Add(b);
-        }
-
-        protected void bindField(Binding b, string field)
-        {
-        	if (field == "Id") return;
-            ColumnInfo ci = GetFieldInfoFromName(field);
-            if (ci != null && ci.DataType == DataType.RecordSelect)
-            {
-                AbstractRecord r = this[field] as AbstractRecord;
-                if (r != null)
-                    r.OnChange += new EventHandler<RecordEventArgs>(delegate(object sender, RecordEventArgs c) { b.OnSourceChanged(); });
-            }
-            if (NotifyPropertyChangedHandlers.ContainsKey(field))
-                NotifyPropertyChangedHandlers[field] += b.OnSourceChanged;
-            else
-                NotifyPropertyChangedHandlers[field] = b.OnSourceChanged;
-        }
-
-        virtual public void Unbind(Binding b)
-        {
-            if (b.Fields != null)
-            {
-            	foreach (string field in b.Fields)
-                {
-               		unbindField(b, field);
-               	}
-            }
-            else
-            {
-                unbindField(b, b.SourceProperty);
-            }
-            if( bindings != null )
-            {
-            	bindings.Remove(b);
-            }
-        }
-
-        protected void unbindField(Binding b, string field)
-        {
-            if (NotifyPropertyChangedHandlers != null &&
-            	NotifyPropertyChangedHandlers.ContainsKey(field) ) 
-            	NotifyPropertyChangedHandlers[field] -= b.OnSourceChanged;
-        }
-        
 		string modelName;				
         virtual public string ModelName 
         {
@@ -1110,11 +1015,6 @@ namespace EmergeTk.Model
 				{
 					gpi.Setter(this, PropertyConverter.Convert(value, gpi.PropertyInfo.PropertyType) );
 				}
-                if (NotifyPropertyChangedHandlers.ContainsKey(Name) && NotifyPropertyChangedHandlers[Name] != null )
-                {
-                    NotifyPropertyChangedHandlers[Name]();
-                }
-                FireChangeEvents();
             }
         }
         
@@ -1122,15 +1022,15 @@ namespace EmergeTk.Model
         {
        		if( name.Contains(".") )
             {
-            	IDataBindable tmpSource = this;
+            	AbstractRecord tmpSource = this;
     			string[] parts = name.Split('.');
     			for( int i = 0; i < parts.Length - 1; i++ )
     			{
-    				if( tmpSource[parts[i]] is IDataBindable )
-    					tmpSource = tmpSource[parts[i]] as IDataBindable;
+    				if( tmpSource[parts[i]] is AbstractRecord )
+    					tmpSource = tmpSource[parts[i]] as AbstractRecord;
     				else
     				{
-    					Debug.Trace(string.Format("AbstractRecord:GetDerivedProperty: {0} -- {1} -- {2} does not chain down IDataBindable sources.", 
+    					Debug.Trace(string.Format("AbstractRecord:GetDerivedProperty: {0} -- {1} -- {2} does not chain down AbstractRecord sources.", 
     						tmpSource, tmpSource.GetType(), name) );
     					return null;
     				}
@@ -1141,46 +1041,6 @@ namespace EmergeTk.Model
 	        return null;
         }
         
-        protected void NotifyChanged( string Name )
-        {
-     		if (!loading && NotifyPropertyChangedHandlers.ContainsKey(Name) && NotifyPropertyChangedHandlers[Name] != null )
-            {
-                NotifyPropertyChangedHandlers[Name]();
-            }
-        }
-
-        protected void FireCreateEvents()
-        {
-            if (OnCreate != null)
-                OnCreate(this, new RecordEventArgs( this ) );
-            if (newRecordListeners.ContainsKey(this.GetType()))
-                newRecordListeners[this.GetType()](this, new RecordEventArgs( this ) );
-        } 
-		
-		protected void FireChangeEvents()
-        {
-            if (OnChange != null)
-                OnChange(this, new RecordEventArgs( this ) );
-            if (changedRecordListeners.ContainsKey(this.GetType()))
-                changedRecordListeners[this.GetType()](this, new RecordEventArgs( this ) );
-        }
-
-        protected void FireSaveEvents()
-        {
-            if (OnSave != null)
-                OnSave(this, new RecordEventArgs( this ) );
-            if (savedRecordListeners.ContainsKey(this.GetType()))
-                savedRecordListeners[this.GetType()](this, new RecordEventArgs( this ) );
-        }
-        
-        protected void FireLoadEvents()
-        {
-            if (OnLoad != null)
-                OnLoad(this, new RecordEventArgs( this ) );
-            if (loadRecordListeners.ContainsKey(this.GetType()))
-                loadRecordListeners[this.GetType()](this, new RecordEventArgs( this ) );
-        }
-
         public virtual int ComputeRecordWeight()
         {
             return 1;
@@ -1316,7 +1176,6 @@ namespace EmergeTk.Model
            	r.ClearLoadingContext();
             r.loading = false;
             r.Authorize();
-            r.FireLoadEvents();
             return r;
         }	
 		
@@ -1339,7 +1198,6 @@ namespace EmergeTk.Model
            	r.ClearLoadingContext();
             r.loading = false;
             r.Authorize();
-            r.FireLoadEvents();
 			//CacheProvider.Instance.PutLocal (string.Format("{0} . ROWID = {1}", GetDbSafeModelName(typeof(T)), r.id), r);
             PutRecordInCache (r);
             return r;
@@ -1434,13 +1292,6 @@ namespace EmergeTk.Model
 
 			if( originalValues == null )
 				originalValues = new Dictionary<string, object>();
-//			if( originalValues.ContainsKey( key  ) )
-//			{
-//				throw new Exception
-//					(string.Format("Original key {0} is already set to {1}.  Unable to assign new value {2} for record {3}",
-//					               key, originalValues[key], value, this ));
-//            }
-				                    
 			originalValues[key] = value;
 		}
         
@@ -1549,13 +1400,11 @@ namespace EmergeTk.Model
 		public void MarkAsStale ()
 		{
 			this.isStale = true;	
-			NotifyChanged("IsStale");
 		}
 		
 		public void UnmarkAsStale()
 		{
 			this.isStale = false;
-			NotifyChanged("IsStale");
 		}
 
         public void UnsetProperty(String prop)
@@ -1754,33 +1603,6 @@ namespace EmergeTk.Model
         	}
         }
         
-       
-//        public int SizeOf()
-//        {
-//        	return this.SizeOf(10);
-//        }
-        
-//   		public int SizeOf(int maxdepth)
-//		{
-//			if( maxdepth <= 0 )
-//				return 0;
-//			
-//			int size = System.Runtime.InteropServices.Marshal.SizeOf( this.GetType() );
-//			foreach( ColumnInfo f in this.Fields )
-//			{
-//				if( f.Type.IsSubclassOf(typeof(AbstractRecord)) )
-//				{
-//					AbstractRecord r = this[f.Name] as AbstractRecord;
-//					if( r != null )
-//					size += r.SizeOf(maxdepth--);
-//				}
-//				else
-//					size += System.Runtime.InteropServices.Marshal.SizeOf( f.Type );
-//			}
-//			return size;
-//		}
-
-
         public static float SingularHits {
         	get {
         		return singularHits;
@@ -1828,105 +1650,7 @@ namespace EmergeTk.Model
 
         public static object[] emptyObjectArray = new object[] { };
         
-        //Events
-		public event EventHandler<RecordEventArgs> OnCreate;
-        public event EventHandler<RecordEventArgs> OnChange;
-        public event EventHandler<RecordEventArgs> OnDelete;
-        public event EventHandler<RecordEventArgs> OnSave;
-        public event EventHandler<RecordEventArgs> OnLoad;
-
-        //Helpers
-        protected static Dictionary<Type, EventHandler<RecordEventArgs>> loadRecordListeners = new Dictionary<Type, EventHandler<RecordEventArgs>>();
-        public static void RegisterLoadListener(Type type, EventHandler<RecordEventArgs> handler)
-        {
-			if ( loadRecordListeners.ContainsKey( type ))
-			{
-				loadRecordListeners[type] += handler;
-			}
-			else
-			{
-            	loadRecordListeners[type] = handler;
-			}
-        }
-        
-        protected static Dictionary<Type, EventHandler<RecordEventArgs>> newRecordListeners = new Dictionary<Type, EventHandler<RecordEventArgs>>();
-        public static void RegisterNewListener(Type type, EventHandler<RecordEventArgs> handler)
-        {
-			if ( newRecordListeners.ContainsKey( type ))
-			{
-            	newRecordListeners[type] += handler;
-			}
-			else
-			{
-            	newRecordListeners[type] = handler;
-			}
-        }
-
-        protected static Dictionary<Type, EventHandler<RecordEventArgs>> changedRecordListeners = new Dictionary<Type, EventHandler<RecordEventArgs>>();
-        public static void RegisterChangedListener(Type type, EventHandler<RecordEventArgs> handler)
-        {
-			if ( changedRecordListeners.ContainsKey( type ))
-			{
-				changedRecordListeners[type] += handler;
-			}
-			else
-			{
-				changedRecordListeners[type] = handler;
-			}
-        }
-
-        protected static Dictionary<Type, EventHandler<RecordEventArgs>> deletedRecordListeners = new Dictionary<Type, EventHandler<RecordEventArgs>>();
-        public static void RegisterDeletedListener(Type type, EventHandler<RecordEventArgs> handler)
-        {
-			if ( deletedRecordListeners.ContainsKey( type ))
-			{
-				deletedRecordListeners[type] += handler;
-			}
-			else
-			{
-            	deletedRecordListeners[type] = handler;
-			}
-        }
-
-        protected static Dictionary<Type, EventHandler<RecordEventArgs>> savedRecordListeners = new Dictionary<Type, EventHandler<RecordEventArgs>>();
-        public static void RegisterSavedListener(Type type, EventHandler<RecordEventArgs> handler)
-        {
-			if ( savedRecordListeners.ContainsKey( type ))
-		    {
-	            savedRecordListeners[type] += handler;
-			}
-			else
-			{
-				savedRecordListeners[type] = handler;
-			}
-        }
-        
-        public static void UnregisterLoadListener(Type type, EventHandler<RecordEventArgs> handler)
-        {
-            loadRecordListeners[type] -= handler;
-        }
-		
-		public static void UnregisterSavedListener(Type type, EventHandler<RecordEventArgs> handler)
-        {
-            savedRecordListeners[type] -= handler;
-        }
-
-        public static void UnregisterDeletedListener(Type type, EventHandler<RecordEventArgs> handler)
-        {
-            deletedRecordListeners[type] -= handler;
-        }
-
-        public static void UnregisterNewListener(Type type, EventHandler<RecordEventArgs> handler)
-        {
-            newRecordListeners[type] -= handler;
-        }
-
-        public static void UnregisterChangedListener(Type type, EventHandler<RecordEventArgs> handler)
-        {
-            changedRecordListeners[type] -= handler;
-        }
-
-        public static bool TypeIsRecordList(Type t)
+		public static bool TypeIsRecordList(Type t)
         {
             if (t.Name == "IRecordList`1") return true;
             Type[] interfaces = t.GetInterfaces();
@@ -1983,11 +1707,6 @@ namespace EmergeTk.Model
         	log.Debug("calling Deserialize on AbstractRecord");
         }
         
-        public virtual IRecordList GetAvailableOptions(Widget parent, ColumnInfo column)
-        {
-        	return null;
-        }
-        
         private bool disableValidation = false;
         public bool DisableValidation { get { return disableValidation; } set { disableValidation = value ; } }
 
@@ -2034,9 +1753,7 @@ namespace EmergeTk.Model
 		}
     	
         public virtual List<ValidationError> Validate(string path, List<ValidationError> errors){return errors;}
-        public virtual Widget GetEditWidget(Widget parent, ColumnInfo column, IRecordList records) { return null; }
-		public virtual Widget GetPropertyEditWidget(Widget parent, ColumnInfo column, IRecordList records) { return null; }
-		
+        
 		public void ValidateAndThrow()
 		{
 			List<ValidationError> errors = Validate(string.Empty, new List<ValidationError> ());
@@ -2060,25 +1777,7 @@ namespace EmergeTk.Model
         			new FilterInfo("ObjectType", this.GetType().FullName),
         			new FilterInfo("ObjectId", this.id ) );
         		if( l == null )
-        			throw new UnauthorizedRecordAccessException("No licenses have been defined for this ILicensed record");
-        		else if( Context.Current == null || Context.Current.CurrentUser == null )
-        			throw new UnauthorizedRecordAccessException("Could not find a valid security context.");
-        		        		
-        		if( l.LoadChild<User>( Context.Current.CurrentUser.id, ColumnInfoManager.RequestColumn<License>("Users") ) != null )
-        		{
-        			//user is in license users list
-        			return;
-        		}
-        		
-        		foreach( Group g in Context.Current.CurrentUser.GetGroups() )
-        		{
-        			if( l.Groups.Contains( g ) )
-        			{
-        				//user's group exists in license groups list
-        				return;
-        			}
-        		}
-        		
+        			throw new UnauthorizedRecordAccessException("No licenses have been defined for this ILicensed record");        		
         		//valid license, invalid user.
         		throw new UnauthorizedRecordAccessException("User does not have access to this ILicensed record.");
         	}
