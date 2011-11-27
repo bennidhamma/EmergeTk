@@ -848,7 +848,7 @@ namespace EmergeTk.Model
 		
 		public void Reload<T>() where T : AbstractRecord, new()
 		{
-			log.Debug("Reloading ", this.Definition, System.Environment.StackTrace);
+			//log.Debug("Reloading ", this.Definition, System.Environment.StackTrace);
 			if (this.loadedProperties != null )
 			{
 				string[] props = this.loadedProperties.ToArray();

@@ -613,7 +613,7 @@ namespace EmergeTk.WebServices
 				else if (field.DataType == DataType.Json)
 				{
 					//log.Debug ("JSON serialize", val.GetType (),  val);
-					if (val != null)
+					if (val is string)
 					{
 						var deser = JSON.DeserializeObject(field.Type, (string)val);
 						record[recordFieldName] = deser;
