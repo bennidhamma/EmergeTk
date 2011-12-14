@@ -144,7 +144,7 @@ namespace EmergeTk.Model
 					s.dataKey = key;
 					s.DataValue = v;
 				}
-				else if ( ! configOnly)
+				else if ( ! configOnly && ! DataProvider.DisableDataProvider)
 				{
 					s = Setting.Load<Setting>("DataKey", key);
 				}

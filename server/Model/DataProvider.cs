@@ -29,6 +29,8 @@ namespace EmergeTk.Model
     public abstract class DataProvider
     {
     	protected static readonly EmergeTkLog log = EmergeTkLogManager.GetLogger(typeof(DataProvider));
+		
+		public static bool DisableDataProvider {get; set;}
         
 		private static IDataProviderFactory providerFactory;
 		public static IDataProviderFactory Factory 

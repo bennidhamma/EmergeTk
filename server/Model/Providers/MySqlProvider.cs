@@ -63,6 +63,8 @@ namespace EmergeTk.Model.Providers
         static public MySqlProvider Provider { 
 			get 
         	{
+				if (DataProvider.DisableDataProvider)
+					return null;
 				if( DataProvider.DefaultProvider is MySqlProvider )
 					return DataProvider.DefaultProvider as MySqlProvider;
         		return provider; 
@@ -90,6 +92,8 @@ namespace EmergeTk.Model.Providers
 			get {
 				if( dbName == null )
 				{
+					if (DisableDataProvider)
+						return null;
 					MySqlConnection c = CreateConnection();
 					dbName = c.Database;
 					log.DebugFormat("Connection: {0}, dbname: {1}", c, dbName);
@@ -100,6 +104,8 @@ namespace EmergeTk.Model.Providers
 
         public MySqlConnection CreateConnection()
         {
+			if (DisableDataProvider)
+				return null;
             return new MySqlConnection(connectionString);
         }
 
@@ -120,6 +126,8 @@ namespace EmergeTk.Model.Providers
 
         public T Execute<T>(string sql, SqlExecutionType mode, MySqlConnection conn, params IDataParameter[] parms) where T : class
         {
+			if (DataProvider.DisableDataProvider)
+				return null;
 #if DEBUG
         	log.Debug(string.Format("executing {0} in mode {1}", sql, mode ) );
            // queryLog.Debug(string.Format("executing {0} in mode {1}", sql, mode));
@@ -545,14 +553,19 @@ namespace EmergeTk.Model.Providers
 
         public void Save(AbstractRecord record, bool SaveChildren)
         {
-            using (MySqlConnection conn = CreateConnection())
-            {
-                conn.Open();
-                this.Save(record, SaveChildren, true, conn);
-            }
+			if (!DataProvider.DisableDataProvider)
+			{
+	            using (MySqlConnection conn = CreateConnection())
+	            {
+	                conn.Open();
+	                this.Save(record, SaveChildren, true, conn);
+	            }
+			}
         }
         public void Save(AbstractRecord record, bool SaveChildren, bool IncrementVersion, DbConnection conn)
 		{
+			if (DataProvider.DisableDataProvider)
+				return;
 			if( record.Id == 0 && record.TableIdentityColumn != "ROWID" )
 			{
 				 AbstractRecord r = AbstractRecord.Load(record.GetType(),new FilterInfo(
