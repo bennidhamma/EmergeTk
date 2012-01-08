@@ -108,109 +108,123 @@ namespace EmergeTk.WebServices
 			
 			if (fields.Length == 1 && fields[0] is string && (string)fields[0] == "*")
 			{
-				fields = SetupFields (fields[0] as string, rType);	
+				fields = SetupFields (fields[0] as string, rType);
 			}
 			
 			foreach( object o in fields )
 			{
-				if( o is Dictionary<string,object> )
-				{
-					Dictionary<string,object> values = 	(Dictionary<string,object>)o;
-					foreach( string key in values.Keys )
-					{
-						object val = record[Util.CamelToPascal(key)];
-						if (val is AbstractRecord)
-                        {
-                            Serialize(val as AbstractRecord, key, values[key] as object[], writer);
-                        }
-                        else if (val is IRecordList)
-                        {
-                            Serialize(val as IRecordList, key, values[key] as object[], writer);
-                        }
-                        else if (val == null)
-                        {
-                            writer.WriteProperty(key, (String)null);
-                        }
-					}
-					continue;
-				}
-				string f = (string)o;
-				if( WebServiceManager.DoAuth() && ! serviceManager.AuthorizeField(RestOperation.Get,record,f) )
-				   continue;
-				
-				string uField = Util.CamelToPascal(f);
-				string lField = Util.PascalToCamel(f);
-				
-				if( lField.EndsWith("__count") )
-				{
-					string propName = uField.Substring(0,f.Length-"__count".Length);
-					List<int> ids = record.LoadChildrenIds(record.GetFieldInfoFromName(propName));
-                    if (ids != null && ids.Count > 0)
-                        writer.WriteProperty(lField, ids.Count);
-                    else
-                        writer.WriteProperty(lField, (record[propName] as IRecordList).Count);
-					continue;
-				}
-				ColumnInfo fi = record.GetFieldInfoFromName(uField);
-				if( fi == null )
-					continue;
-				if( fi.IsList )
-				{
-
-					List<int> ids = record.LoadChildrenIds(fi);
-                    if (ids != null && ids.Count > 0)
-                    {
-                        SerializeIntsList(ids, lField, null, null, fi.ListRecordType, writer);
-                    }
-                    else
-                    {
-                        object recordList = record[uField];
-                        if (recordList == null)
-                        {
-                            writer.OpenProperty(lField);
-                            writer.WriteScalar((string) null);
-                            writer.CloseProperty();
-                            continue;
-                        }
-                        Serialize((recordList as IRecordList).GetEnumerable(), lField, (object[])null, fi.ListRecordType, writer);
-                    }
-				}
-                else if (fi.IsRecord)
-                {
-                    // we're just trying to get the ID.  If we *can* get this field
-                    // without having to load from another table, then do so.
-                    // Add IsPropertyLoaded to AbstractRecord. If it's not loaded, execute this code.
-                    if (!record.PropertyLoaded(uField) && record.OriginalValues != null && record.OriginalValues.ContainsKey(uField) && record.OriginalValues[uField] != null )
-                    {
-                        StreamLineWriteProperty(fi.Type, writer, record.OriginalValues, lField, uField);
-                    }
-                    else
-                    {
-                        // OK, so we have to do an AbstractRecord.Load()
-                        object rec = record[uField];
-                        writer.OpenProperty(lField);
-                        if (rec != null)
-                            writer.WriteScalar(((AbstractRecord)rec).Id);
-                        else
-                            writer.WriteScalar(null);
-                        writer.CloseProperty();
-                    }
-                }
-				else if (fi.DataType == DataType.Json)
-				{
-					object obj = record[uField];
-					writer.OpenProperty (lField);
-					writer.WriteRaw (JSON.Serializer.Serialize (obj));
-					writer.CloseProperty ();					
-				}
-                else
-                {
-                    StreamLineWriteProperty(fi.Type, writer, record, lField, uField);
-                }
+				SerializeField (o, record, rType, serviceManager, writer);
 			}
             writer.CloseObject();
             writer.CloseProperty();
  		}
+		
+		public static void SerializeField (object o, AbstractRecord record, Type rType, IRestServiceManager serviceManager, IMessageWriter writer)
+		{
+			if( o is Dictionary<string,object> )
+			{
+				Dictionary<string,object> values = 	(Dictionary<string,object>)o;
+				foreach( string key in values.Keys )
+				{
+					object val = record[Util.CamelToPascal(key)];
+					if (val is AbstractRecord)
+                    {
+                        Serialize(val as AbstractRecord, key, values[key] as object[], writer);
+                    }
+                    else if (val is IRecordList)
+                    {
+                        Serialize(val as IRecordList, key, values[key] as object[], writer);
+                    }
+                    else if (val == null)
+                    {
+                        writer.WriteProperty(key, (String)null);
+                    }
+				}
+				return;
+			}
+			
+			string f = (string)o;
+			
+			if (f == "*")
+			{
+				foreach (var field in GetWildcardFields (rType))
+					SerializeField (field, record, rType, serviceManager, writer);
+				return;
+			}
+			
+			if( WebServiceManager.DoAuth() && ! serviceManager.AuthorizeField(RestOperation.Get,record,f) )
+			   return;
+			
+			string uField = Util.CamelToPascal(f);
+			string lField = Util.PascalToCamel(f);
+			
+			if( lField.EndsWith("__count") )
+			{
+				string propName = uField.Substring(0,f.Length-"__count".Length);
+				List<int> ids = record.LoadChildrenIds(record.GetFieldInfoFromName(propName));
+                if (ids != null && ids.Count > 0)
+                    writer.WriteProperty(lField, ids.Count);
+                else
+                    writer.WriteProperty(lField, (record[propName] as IRecordList).Count);
+				return;
+			}
+			ColumnInfo fi = record.GetFieldInfoFromName(uField);
+			if( fi == null )
+				return;
+			if( fi.IsList )
+			{
+
+				List<int> ids = record.LoadChildrenIds(fi);
+                if (ids != null && ids.Count > 0)
+                {
+                    SerializeIntsList(ids, lField, null, null, fi.ListRecordType, writer);
+                }
+                else
+                {
+                    object recordList = record[uField];
+                    if (recordList == null)
+                    {
+                        writer.OpenProperty(lField);
+                        writer.WriteScalar((string) null);
+                        writer.CloseProperty();
+                        return;
+                    }
+                    Serialize((recordList as IRecordList).GetEnumerable(), lField, (object[])null, fi.ListRecordType, writer);
+                }
+			}
+            else if (fi.IsRecord)
+            {
+                // we're just trying to get the ID.  If we *can* get this field
+                // without having to load from another table, then do so.
+                // Add IsPropertyLoaded to AbstractRecord. If it's not loaded, execute this code.
+                if (!record.PropertyLoaded(uField) && record.OriginalValues != null && record.OriginalValues.ContainsKey(uField) && record.OriginalValues[uField] != null )
+                {
+                    StreamLineWriteProperty(fi.Type, writer, record.OriginalValues, lField, uField);
+                }
+                else
+                {
+                    // OK, so we have to do an AbstractRecord.Load()
+                    object rec = record[uField];
+                    writer.OpenProperty(lField);
+                    if (rec != null)
+                        writer.WriteScalar(((AbstractRecord)rec).Id);
+                    else
+                        writer.WriteScalar(null);
+                    writer.CloseProperty();
+                }
+            }
+			else if (fi.DataType == DataType.Json)
+			{
+				object obj = record[uField];
+				writer.OpenProperty (lField);
+				writer.WriteRaw (JSON.Serializer.Serialize (obj));
+				writer.CloseProperty ();					
+			}
+            else
+            {
+                StreamLineWriteProperty(fi.Type, writer, record, lField, uField);
+            }	
+		}
 
         public static void StreamLineWriteProperty(Type t, IMessageWriter writer, AbstractRecord record, String lField, String uField)
         {
