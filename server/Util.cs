@@ -487,5 +487,11 @@ namespace EmergeTk
 			s += "...";
 			return s;
 		}
+		
+		public static IEnumerable<int> Range(this int max)  
+        {  
+            for (int i = 0; i < max; i++)  
+                yield return i;  
+        }
     }
 }

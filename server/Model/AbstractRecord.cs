@@ -1360,15 +1360,22 @@ namespace EmergeTk.Model
         bool isStale = false;
         public void CheckProperty(string prop, AbstractRecord record)
         {
+			bool reload = false;
+			
 			if( record != null )
 			{				
 				if( !record.isStale ) //valid record.
 					return;
 
-                UnsetProperty(prop);
-
-				if( record.recordState == RecordState.Deleted )
+                if( record.recordState == RecordState.Deleted )
+				{
+					UnsetProperty(prop, true);
 					return;
+				}
+				else
+				{
+					UnsetProperty(prop, false);
+				}
 			}
 
 			bool unsetLoading = false;
@@ -1407,7 +1414,7 @@ namespace EmergeTk.Model
 			this.isStale = false;
 		}
 
-        public void UnsetProperty(String prop)
+        public void UnsetProperty(String prop, bool nullify)
         {
             bool oldLoading = loading;
             loading = true;
@@ -1415,7 +1422,8 @@ namespace EmergeTk.Model
             // does not have unwanted side effects.
 
             RemoveFromLoadedProperties(prop);
-            this[prop] = null;
+			if (nullify)
+           	 this[prop] = null;
             loading = oldLoading;
         }
 

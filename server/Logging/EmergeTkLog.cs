@@ -34,6 +34,20 @@ namespace EmergeTk
 			Debug( string.Format( format, args ) );
 		}
 		
+		public void Fatal (params object[] args)
+		{
+			if( logValidator != null && ! logValidator() )
+				return;
+			base.Fatal( args );
+		}
+		
+		public void FatalFormat (string format, params object[] args)
+		{
+			if( logValidator != null && ! logValidator() )
+				return;
+			base.FatalFormat(format, args );
+		}
+		
 		public void Error (params object[] args)
 		{
 			if( logValidator != null && ! logValidator() )

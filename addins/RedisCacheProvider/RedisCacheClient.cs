@@ -212,7 +212,7 @@ namespace EmergeTk.Model
 				{
 					using (new WriteLock(this.DictionaryLock))
 					{
-						record.UnsetProperty(propertyName);
+						record.UnsetProperty(propertyName, false);
 					}
 				}
 			}

@@ -51,6 +51,7 @@
   <ItemGroup>
     <Reference Include="System" />
     <Reference Include="Mono.Addins, Version=0.4.0.0, Culture=neutral, PublicKeyToken=0738eb9f132ed756">
+      <Package>mono-addins</Package>
     </Reference>
     <Reference Include="System.Xml" />
     <Reference Include="System.Core">
