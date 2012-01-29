@@ -45,7 +45,7 @@ namespace emergetool
 		{
 			get 
 			{
-				Type[] derivedTypes = TypeLoader.GetTypesOfBaseType( typeof(AbstractRecord) );
+				var derivedTypes = TypeLoader.GetTypesOfBaseType( typeof(AbstractRecord) );
 				List<Type> typeList = new List<Type>();
 				
 				foreach ( Type t in derivedTypes ) {
@@ -95,7 +95,8 @@ namespace emergetool
 		}
 		
 		public void SetConnectionString(string cString) {
-			provider.SetConnectionString(cString);	
+			//provider.SetConnectionString(cString);	
+			throw new NotImplementedException ();
 		}
 		
 		/// <summary>

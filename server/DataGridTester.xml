@@ -1,0 +1,40 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<Context>
+  <Label Text="Sales Report" ClassName="pageHeader"/>
+  <Pane Id="left" Top="5%" Left="1%" Width="45%" Height="90%" ClassName="cleanPane">
+    <Chart Id="c" 
+      Height="90%" 
+      Width="90%" 
+      XSeries="SaleDate" 
+      YSeries="SalePrice" 
+      ColorSeries="InternalCost"
+      SizeSeries="Volume"
+      OnNodeDelayedMouseOverHandler="c_OnDelayedMouseOver"
+      OnNodeDelayedMouseOutHandler="onDelayedMouseOut"
+      OnXReceiveDropHandler="c_OnXReceiveDropHandler"
+      OnYReceiveDropHandler="c_OnYReceiveDropHandler"
+      OnColorReceiveDropHandler="c_OnColorReceiveDropHandler"
+      OnSizeReceiveDropHandler="c_OnSizeReceiveDropHandler" />
+  </Pane>
+  <Pane Id="right" Top="5%" Left="47%" Width="45%" Height="90%" ClassName="cleanPane">
+    <DataGrid Id="grid" PageSize="10"/>
+    <Label Text="
+      *What does this do?*
+      Both the datagrid and the chart are inferred from the data Model type, Sale.
+      
+      *1. DataGrid:*
+        a. click on headers to sort
+        b. click on cells to edit
+        c. pagination, add and delete functions on data rows.
+        d. the datagrid can do other things, like automatically configure columns, or add filtering (untested), add custom columns with arbitrary controls (either on the server or on the client)
+        e. Ctrl+Arrow keys to move around via the keyboard.
+        
+      *2. Chart*
+        a. all SVG.
+        b. Drag column headers over from DataGrid onto key areas of the grid -- X and Y axes, and the color and size keys.
+        c. mouseover nodes on the grid and see details.
+        d. edit a cell in the datagrid and watch the chart update automatically.
+        e. drag select around nodes in the chart to highlight them.
+      "/>
+  </Pane>
+</Context>

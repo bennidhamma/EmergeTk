@@ -38,7 +38,13 @@ namespace emergetool
 		/// <summary>
 		/// currently available tools
 		/// </summary>
-		static string[] availableTools = {"help", "synch"};
+		//static string[] availableTools = {"help", "synch", "addcol"};
+		
+		static Dictionary<string, IEmergeTool> availableTools = new Dictionary<string, IEmergeTool> ()
+		{
+			{"synch", new SynchronizerEmergeTool ()},
+			{"addcol", new AddColTool ()}
+		};
 		
 		/// <summary>
 		/// figures out which tool to use and calls its method, passing the command line
@@ -55,11 +61,11 @@ namespace emergetool
 				printUsage(1);
 			}
 			
-			if (args[0].Equals("help"))
+			if (args[0].Equals("help") || !availableTools.ContainsKey(args[0]))
 				help(args);
 			else
 			{
-				tool = getToolFromName(args[0]);
+				tool = availableTools[args[0]];
 				try 
 				{
 					tool.Preopts();
@@ -77,35 +83,6 @@ namespace emergetool
 				}
 			}
 			
-		}
-		
-		/// <summary>
-		/// get a new IEmergeTool implementation based on the name passed.
-		/// if toolName doesn't have a tool associated with it, the program exists
-		/// </summary>
-		/// <param name="toolName">
-		/// A <see cref="System.String"/>
-		/// the name of the tool you want to get back
-		/// </param>
-		/// <returns>
-		/// A <see cref="IEmergeTool"/>
-		/// </returns>
-		private static IEmergeTool getToolFromName(string toolName)
-		{
-			IEmergeTool result = null;
-			
-			switch(toolName)
-			{	
-			case "synch":
-				result = new SynchronizerEmergeTool();
-				break;
-			default:
-				Console.Error.WriteLine("Error: no tool " + toolName + "\n");
-				printUsage(1);
-				break;
-			}
-			
-			return result;
 		}
 		
 		/// <summary>

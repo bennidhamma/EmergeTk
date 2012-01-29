@@ -95,8 +95,6 @@ namespace EmergeTk.WebServices
                     BuildResponse(response, arguments);
 					break;
 				}
-				else
-					log.Debug("no match");
 			}
 			
 			return response;
