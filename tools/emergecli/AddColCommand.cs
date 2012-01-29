@@ -27,15 +27,11 @@ DROP PROCEDURE IF EXISTS addcol;
 ";
 		
 		public string Table {get; set;}
-		
 		public string ColumnName {get; set;}
-		
 		public string Type {get; set;}
-		
 		public string Suffix {get; set;}		
 		
 		private string fileName = null;
-		
 		public string FileName
 		{
 			get {
@@ -44,10 +40,6 @@ DROP PROCEDURE IF EXISTS addcol;
 			set {
 				fileName = value;
 			}
-		}
-		
-		public AddColCommand ()
-		{
 		}
 		
 		public OptionSet GetOptions (string[] args)
