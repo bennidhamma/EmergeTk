@@ -741,9 +741,11 @@ namespace EmergeTk.Model
 			if( childrenIds == null || childrenIds.Count == 0 )
 				return new RecordList<C>();
             IRecordList<C> childRecords = DataProvider.DefaultProvider.Load<C>(childrenIds);
+			childRecords.RemoveAll (r=>r==null);
             childRecords.Parent = this;
             foreach (C c in childRecords)
-                c.parent = this;
+				if (c != null)
+                	c.parent = this;
 			childRecords.Parent = this;
             childRecords.Clean = true;
 			// save snapshot:

@@ -149,7 +149,13 @@ namespace EmergeTk.Model
 		{
 			using (new ReadLock(this.DictionaryLock))
 			{
-				return localRecords.ContainsKey(rd) ? localRecords[rd] : null;
+				if (localRecords.ContainsKey (rd))
+				{
+					var rec = localRecords[rd];
+					if (rec != null && !rec.IsStale)
+						return rec;
+				}
+				return null;
 			}
 		}
 
@@ -161,8 +167,12 @@ namespace EmergeTk.Model
 				if (localRecordKeyMap.ContainsKey(key))
 				{
 					RecordDefinition rd = localRecordKeyMap[key];
-					if (localRecords.ContainsKey(rd))
-						return localRecords[rd];
+					if (localRecords.ContainsKey (rd))
+					{
+						var rec = localRecords[rd];
+						if (rec != null && !rec.IsStale)
+							return rec;
+					}
 				}
 			}
 			return null;
@@ -175,8 +185,12 @@ namespace EmergeTk.Model
 				if (localRecordKeyMap.ContainsKey(keyPrepared))
 				{
 					RecordDefinition rd = localRecordKeyMap[keyPrepared];
-					if (localRecords.ContainsKey(rd))
-						return localRecords[rd];
+					if (localRecords.ContainsKey (rd))
+					{
+						var rec = localRecords[rd];
+						if (rec != null && !rec.IsStale)
+							return rec;
+					}
 				}
 			}
 			return null;

@@ -473,26 +473,23 @@ namespace EmergeTk.Model
 		
 		public IEnumerator GetEnumerator ()
 		{
-			for( int i = 0; i < items.Count; i++ )
+			foreach (var rec in items)
 			{
-				if( items[i] != null && items[i].IsStale )
+				var r = rec;
+				if( rec != null && rec.IsStale )
 				{
-					items[i] = AbstractRecord.Load(items[i].GetType(), items[i].Id);
+					var index = this.IndexOf (rec);
+					r = items[index] = AbstractRecord.Load(rec.GetType(), rec.Id);
 				}
-				yield return items[i] ;
+				if (r != null)
+					yield return r;
 			}
 		}
 		
 		public virtual IEnumerable<AbstractRecord> GetEnumerable()
 		{
-			for( int i = 0; i < items.Count; i++ )
-			{
-				if( items[i] != null && items[i].IsStale )
-				{
-					items[i] = AbstractRecord.Load(items[i].GetType(), items[i].Id);
-				}
-				yield return items[i] ;
-			}
+			foreach (var rec in this)
+				yield return rec as AbstractRecord;
 		}
     }
 }

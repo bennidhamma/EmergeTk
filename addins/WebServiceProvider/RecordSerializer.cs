@@ -718,14 +718,20 @@ namespace EmergeTk.WebServices
 		
 		public void SaveChanges()
 		{
-			foreach( AbstractRecord r in Records )
+			if (Records != null)
 			{
-				r.Save();	
+				foreach( AbstractRecord r in Records )
+				{
+					r.Save();	
+				}
 			}
 			
-			foreach( RecordPropertyList rpl in Lists )
+			if (Lists != null) 
 			{
-				rpl.Record.SaveRelations(rpl.Property);	
+				foreach( RecordPropertyList rpl in Lists )
+				{
+					rpl.Record.SaveRelations(rpl.Property);	
+				}
 			}
 		}
 	}
