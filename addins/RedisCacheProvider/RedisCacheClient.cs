@@ -770,7 +770,7 @@ namespace EmergeTk.Model
 				}
 			};
 
-			subscription.SubscribeToChannels ("EXPIRE_KEY");			
+			subscription.SubscribeToChannels ("EXPIRE_KEY");
 		}
 	}
 }

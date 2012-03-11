@@ -101,9 +101,9 @@ namespace EmergeTk.WebServices
 			if (record is IVersioned)
 				writer.WriteProperty ("version", record.Version);
 			
-			if (record is IDerived || fields.Contains ("type"))
+			if (record is IDerived || fields.Contains ("_type"))
 			{
-				writer.WriteProperty ("type", restTypeDescription.ModelName);
+				writer.WriteProperty ("_type", restTypeDescription.ModelName);
 			}
 			
 			if (fields.Length == 1 && fields[0] is string && (string)fields[0] == "*")

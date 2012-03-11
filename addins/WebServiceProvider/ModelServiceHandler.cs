@@ -368,12 +368,14 @@ QueryString args:
 			T record = RecordSerializer.DeserializeRecord<T>(arguments.InMessage, context);
 			record.ValidateAndThrow();
 			context.SaveChanges();
+			string fields = "version";
 			if( arguments.QueryString != null && !string.IsNullOrEmpty(arguments.QueryString["fields"]) )
 			{
-                IMessageWriter writer = arguments.Response.Writer;
-				RecordSerializer.Serialize(record,arguments.QueryString["fields"], writer);
-                writer.Flush();
+				fields = arguments.QueryString["fields"];
 			}
+            IMessageWriter writer = arguments.Response.Writer;
+			RecordSerializer.Serialize(record, fields, writer);
+            writer.Flush();
 		}
 
 		[MessageServiceEndPoint("(\\d+)/(\\w+)",Verb=RestOperation.Post)]

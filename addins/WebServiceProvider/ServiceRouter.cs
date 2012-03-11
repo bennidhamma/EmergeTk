@@ -54,7 +54,7 @@ namespace EmergeTk.WebServices
 			string verb = request.HttpMethod;
 			RestOperation op = RestOperation.Get;
 
-            WebServiceFormat format = WebServiceFormat.Xml;
+            WebServiceFormat format = WebServiceFormat.Json;
 
             if (request.QueryString["format"] != null)
 				format = formats[request.QueryString["format"]];
