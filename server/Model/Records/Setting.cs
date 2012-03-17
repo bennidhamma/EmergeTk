@@ -154,6 +154,17 @@ namespace EmergeTk.Model
 				log.Error("Error getting setting",e);
 			}
 			
+			if (s == null)
+			{
+				string v = System.Environment.GetEnvironmentVariable(key);
+				if ( v != null )
+				{
+					s = new Setting();
+					s.dataKey = key;
+					s.DataValue = v;
+				}
+			}
+						
 			if (s == null && defaultValue != null)
 			{
 				s = new Setting();
