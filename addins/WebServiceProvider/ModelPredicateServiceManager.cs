@@ -31,7 +31,7 @@ namespace EmergeTk.WebServices
 
         public AbstractRecord GenerateExampleRecord()
         {
-            return new ModelPredicate { ColumnName = "Brand", Value = 19, Operation = FilterOperation.Equals };
+			return new ModelPredicate { Key = "Brand", Term = 19, Operation = FilterOperation.Equals };
         }
 
         public string GenerateExampleFields(String method)

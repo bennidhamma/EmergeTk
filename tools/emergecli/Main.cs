@@ -32,7 +32,7 @@ namespace emergecli
 	{
 		public ICommand Parse (string[] args)
 		{
-			if(args.Length == 0)
+			if(args.Length == 0 || args[0].StartsWith("-"))
 			{
 				ShowHelp (null, null);
 				return null;
@@ -75,9 +75,23 @@ namespace emergecli
 			return null;
 		}
 		
+		public void ShowCommands () {
+			foreach (Type t in Assembly.GetCallingAssembly ().GetTypes ())
+			{
+				var atts = t.GetCustomAttributes (typeof(CommandAttribute), false);
+				if (atts != null && atts.Length > 0)
+				{
+					var ca = (CommandAttribute)atts[0];
+					Console.WriteLine ("  " + ca.Name);
+				}
+			}
+		}
+		
 		public void ShowHelp (ICommand cmd, OptionSet options)
 		{
-			Console.WriteLine ("Showing help...");
+			Console.WriteLine ("emergecli.exe\n" +
+				"  Usage:");
+			ShowCommands ();
 			
 			if (options != null)
 				options.WriteOptionDescriptions (Console.Out);

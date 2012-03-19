@@ -331,9 +331,14 @@ namespace EmergeTk.Model.Security
             if (user != null)
             {
                 if (user.ComputeSaltedPassword(password) == user.Password)
-                {	// upon match, always give out new token
-					user.GenerateAndSetNewSessionToken();
-					user.CurrentLoginDate = DateTime.UtcNow;
+                {
+					//only provide a new session token if there is none currently.
+					//to allow multiple logins.
+					if (user.SessionToken == string.Empty)
+					{
+						user.GenerateAndSetNewSessionToken();
+						user.CurrentLoginDate = DateTime.UtcNow;
+					}
 					user.Save();
 
                     return user;

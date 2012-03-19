@@ -14,7 +14,7 @@ CREATE PROCEDURE addcol() BEGIN
 IF NOT EXISTS (
 	   SELECT * FROM information_schema.COLUMNS
        WHERE COLUMN_NAME='{0}' AND TABLE_NAME='{1}' AND TABLE_SCHEMA=DATABASE()
-       )
+       ) AND EXISTS (SELECT * from information_schema.TABLES where table_name = '{1}' and table_schema = DATABASE();
        THEN
 	       ALTER TABLE {1} ADD COLUMN {0} {2} {3};
 END IF;

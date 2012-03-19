@@ -12,8 +12,8 @@ namespace EmergeTk.WebServices
     [RestService(ModelName = "modelPredicate", ServiceManager = typeof(AuthenticatedPostOnlyServiceManager))]
     public class ModelPredicate : AbstractRecord
     {
-        public string ColumnName { get; set; }
-        public object PredicateValue { get; set; }
+        public string Key { get; set; }
+        public new object Term { get; set; }
         public FilterOperation Operation { get; set; }
         public ModelPredicate()
         {
@@ -22,7 +22,7 @@ namespace EmergeTk.WebServices
 
         static public explicit operator FilterInfo(ModelPredicate pred)
         {
-            return new FilterInfo(pred.ColumnName, pred.PredicateValue, pred.Operation);
+            return new FilterInfo(pred.Key, pred.Term, pred.Operation);
         }
     }
 }
