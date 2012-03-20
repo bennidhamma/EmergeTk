@@ -334,7 +334,7 @@ namespace EmergeTk.Model.Security
                 {
 					//only provide a new session token if there is none currently.
 					//to allow multiple logins.
-					if (user.SessionToken == string.Empty)
+					if (string.IsNullOrEmpty (user.SessionToken))
 					{
 						user.GenerateAndSetNewSessionToken();
 						user.CurrentLoginDate = DateTime.UtcNow;
