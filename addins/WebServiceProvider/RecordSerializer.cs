@@ -217,7 +217,7 @@ namespace EmergeTk.WebServices
 			{
 				object obj = record[uField];
 				writer.OpenProperty (lField);
-				writer.WriteRaw (JSON.Serializer.Serialize (obj));
+				writer.WriteRaw (JSON.Serialize (obj));
 				writer.CloseProperty ();					
 			}
             else

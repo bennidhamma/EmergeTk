@@ -237,11 +237,6 @@ namespace EmergeTk.Model.Security
         	return name;
         }
         
-        public override object Value {
-        	get { return name; }
-        	set { name = (string)value; }
-        }
-
 		public static bool IsRoot
 		{
 			get

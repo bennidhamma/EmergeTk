@@ -17,6 +17,5 @@ namespace EmergeTk.Model
         void Save(bool SaveChildren);
         object this[string Name] { get; set; }
         string ToString();
-        object Value { get; set; }
     }
 }

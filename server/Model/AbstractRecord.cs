@@ -7,7 +7,6 @@ using System.Web.Caching;
 using System.Linq;
 using EmergeTk.Model.Security;
 using System.Runtime.Serialization;
-using System.Web.Script.Serialization;
 
 namespace EmergeTk.Model
 {
@@ -1060,10 +1059,7 @@ namespace EmergeTk.Model
                     {
                         bool readOnly = !pi.CanWrite;
 						
-						if( pi.Name == "Value" )
-							continue;
-
-                        bool exists = false;
+						bool exists = false;
                         foreach (ColumnInfo ci in fs)
                         {
                             if (ci.Name == pi.Name)
@@ -1535,8 +1531,6 @@ namespace EmergeTk.Model
         	}
         }    
         
-        public virtual object Value { get { return Id; } set { throw new System.NotSupportedException("SetValue must be overridden."); } }
-
         public AbstractRecord Parent {
         	get {        		
         		return parent;
@@ -1563,13 +1557,11 @@ namespace EmergeTk.Model
         		return false;
         	else if( o is AbstractRecord )
         	{
-        		//return this.ObjectId.Equals((o as AbstractRecord).ObjectId) && this.ObjectId != (object)0;
-				AbstractRecord r = (AbstractRecord)o;
-        		if( this.Value == null || r.Value == null )
-					return false;
-				else if( this.id == 0 && r.id == 0 )
-					return base.Equals( o );
-        		return this.Value.Equals( r.Value );
+				var r = (AbstractRecord)o;
+        		if( this.id > 0 && r.id > 0 )
+					return this.id == r.id;
+				else
+					return Object.ReferenceEquals (this, r);
         	}
         	return false;
         }

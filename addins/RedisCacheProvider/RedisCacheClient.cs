@@ -747,30 +747,37 @@ namespace EmergeTk.Model
 		/// </summary>
 		void CheckForExpirationEvents()
 		{
-			var rc = hashCachePool.GetWriteClient("EXPIRE_KEY");
-			var subscription = rc.CreateSubscription ();
-			
-			subscription.OnMessage += (channel, message) =>
+			try
 			{
-				switch (channel)
+				var rc = hashCachePool.GetWriteClient("EXPIRE_KEY");
+				var subscription = rc.CreateSubscription ();
+				
+				subscription.OnMessage += (channel, message) =>
 				{
-				case "EXPIRE_KEY":
-					bool keyIsNotLocal = true;
-					lock (localKeyLock)
+					switch (channel)
 					{
-						if (localKeys.Contains (message))
+					case "EXPIRE_KEY":
+						bool keyIsNotLocal = true;
+						lock (localKeyLock)
 						{
-							localKeys.Remove (message);
-							keyIsNotLocal = false;
+							if (localKeys.Contains (message))
+							{
+								localKeys.Remove (message);
+								keyIsNotLocal = false;
+							}
 						}
+						if (keyIsNotLocal)					
+							localCache.ClearFromLocalCache(message);
+						break; 
 					}
-					if (keyIsNotLocal)					
-						localCache.ClearFromLocalCache(message);
-					break; 
-				}
-			};
-
-			subscription.SubscribeToChannels ("EXPIRE_KEY");
+				};
+	
+				subscription.SubscribeToChannels ("EXPIRE_KEY");
+			}
+			catch (Exception e)
+			{
+				log.Error ("Error checking for expiration events.", e);
+			}
 		}
 	}
 }

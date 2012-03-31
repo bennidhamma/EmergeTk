@@ -75,7 +75,7 @@ namespace ProtobufSerializer
                 else if (type.Type == typeof(DateTime))
                     mw.WriteDateTime((DateTime)val);
 				else if(ci.DataType == DataType.Json)
-					mw.WriteString (JSON.Serializer.Serialize (val));	
+					mw.WriteString (JSON.Serialize (val));	
 			}
 		}
 		

@@ -10,7 +10,6 @@ using System.Text;
 using System.Web;
 using MySql.Data.MySqlClient;
 using EmergeTk.Model;
-using System.Web.Script.Serialization;
 
 namespace EmergeTk.Model.Providers
 {
@@ -566,17 +565,6 @@ namespace EmergeTk.Model.Providers
 		{
 			if (DataProvider.DisableDataProvider)
 				return;
-			if( record.Id == 0 && record.TableIdentityColumn != "ROWID" )
-			{
-				 AbstractRecord r = AbstractRecord.Load(record.GetType(),new FilterInfo(
-					record.TableIdentityColumn, record.Value, FilterOperation.Equals ) );
-				if( r != null )
-				{
-					throw new Exception(string.Format("Cannot save {0}({{1}:{2}) because it will collide with existing record {4}({{5}:{6}) }",
-						record.DbSafeModelName, record.TableIdentityColumn, record.DefaultProperty,
-						r.DbSafeModelName, r.TableIdentityColumn, r.DefaultProperty ));
-				}
-			}
 			
 			string sql = "";
 			List<string> parameterKeys = new List<string>();
@@ -643,7 +631,7 @@ namespace EmergeTk.Model.Providers
 					}
 					else
 					{
-						comm.Parameters.Add( new MySqlParameter("?"+ col.Name, JSON.Serializer.Serialize (record[col.Name]) ) );
+						comm.Parameters.Add( new MySqlParameter("?"+ col.Name, JSON.Serialize (record[col.Name]) ) );
 					}
 					parameterKeys.Add("?" + col.Name);
                     record.SetOriginalValue(col.Name, record[col.Name]);
