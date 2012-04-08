@@ -123,7 +123,7 @@ namespace EmergeTk.WebServices
 				{
 					try
                     {
-						String headerFields = request.Headers["x-5to1-fields"];
+						String headerFields = request.Headers["x-fields"];
 						String queryStringFields = request.QueryString["fields"];
 						NameValueCollection queryStringPlusHeaders = new NameValueCollection (request.Headers);
 						queryStringPlusHeaders.Add (request.QueryString);
