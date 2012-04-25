@@ -640,6 +640,9 @@ namespace EmergeTk.Model
 		public P LoadParent<P>(string column) where P : AbstractRecord, new()
 		{
 			ColumnInfo ci = ColumnInfoManager.RequestColumn<P>(column);
+			if (ci == null)
+				throw new InvalidOperationException (
+					string.Format ("The specified column: {0} does not exist on {1}", column, typeof(P)));
 			IRecordList<P> cs = LoadParents<P>(ci);
 			if( cs != null && cs.Count > 0 )
 			{
@@ -1002,7 +1005,7 @@ namespace EmergeTk.Model
                 GenericPropertyInfo gpi = TypeLoader.GetGenericPropertyInfo(this,Name);
                 if (gpi.PropertyInfo == null || gpi.Setter == null)
                 {
-                	log.Warn("Invalid property requested", this, Name );
+                	log.Warn("Invalid propercty requested", this, Name );
                 	return;
                 }
                 //if( value == this[Name] )
@@ -1732,7 +1735,7 @@ namespace EmergeTk.Model
 			{
 				HashSet<string> names = new HashSet<string> ();
 				//get all derived types.
-				System.Console.WriteLine ("loading base types");
+				//System.Console.WriteLine ("loading base types");
 				foreach (Type t in TypeLoader.GetTypesOfBaseType (typeof(AbstractRecord)))
 				{
 					string n = GetDbSafeModelName (t);
@@ -1745,7 +1748,7 @@ namespace EmergeTk.Model
 					}
 					names.Add (n);
 				}
-				System.Console.WriteLine ("done");
+				//System.Console.WriteLine ("done");
 			}
 			catch (Exception e)
 			{

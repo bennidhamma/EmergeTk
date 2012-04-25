@@ -30,12 +30,12 @@ namespace EmergeTk.Model
 		protected static readonly EmergeTkLog log = EmergeTkLogManager.GetLogger(typeof(HashCachePoolConfiguration));
 		public void ConstructFromFile(String xmlFile)
 		{
-			log.DebugFormat("Constructing HashCachePoolConfiguration object from file {0}", xmlFile);
+			//log.DebugFormat("Constructing HashCachePoolConfiguration object from file {0}", xmlFile);
 			XmlDocument doc = new XmlDocument();
 			if (!File.Exists(xmlFile))
 				throw new Exception(String.Format("Configuration file {0} for HashCachePool does not exist!", xmlFile));
 
-			log.DebugFormat("Configuring HashCachePool from config file found at {0}", xmlFile);
+			//log.DebugFormat("Configuring HashCachePool from config file found at {0}", xmlFile);
 			doc.Load(xmlFile);
 			this.ConstructFromXmlDoc(doc);
 		}
@@ -49,7 +49,7 @@ namespace EmergeTk.Model
 				readWritePair.ReadServer = shardNode.SelectSingleNode("reads").InnerText;
 				readWritePair.WriteServer = shardNode.SelectSingleNode("writes").InnerText;
 				this.Add(readWritePair);
-				log.DebugFormat("Found shard with readServer = {0}, writeServer = {1}", readWritePair.ReadServer, readWritePair.WriteServer);
+				//log.DebugFormat("Found shard with readServer = {0}, writeServer = {1}", readWritePair.ReadServer, readWritePair.WriteServer);
 			}
 		}
 
@@ -678,7 +678,7 @@ namespace EmergeTk.Model
 		{
 			var oldrec = localCache.GetLocalRecord (record.Definition);
 			var equals = object.ReferenceEquals (record, oldrec);
-			log.Debug ("Updating ", record, oldrec, equals);
+			//log.Debug ("Updating ", record, oldrec, equals);
 			//when updating, if the copy in the local cache is ref equal to the current record being udpated, do not remove it, or mark it as stale.
 			if (! equals)
 			{
@@ -725,7 +725,7 @@ namespace EmergeTk.Model
 
 		public void Initialize(bool startExpirationThread)
 		{
-			log.DebugFormat("RedisCacheClient ctor called with startExpirationThread = {0}", startExpirationThread ? "true" : "false");
+			//log.DebugFormat("RedisCacheClient ctor called with startExpirationThread = {0}", startExpirationThread ? "true" : "false");
 			try
 			{
 				if (startExpirationThread)

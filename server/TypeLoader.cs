@@ -141,20 +141,27 @@ namespace EmergeTk
 		
 		public static IEnumerable<Type> GetTypesOfBaseType( Type baseType )
 		{
-			//List<Type> types = new List<Type>();
-			
 			foreach( Assembly a in AppDomain.CurrentDomain.GetAssemblies() )
 			{
-				foreach( Type t in a.GetTypes() )
+				Type[] types = null;
+				try
+				{
+					types = a.GetTypes ();
+				}
+				catch (Exception e)
+				{
+					log.Error ("Error getting types", e);
+					continue;
+				}
+					
+				foreach( Type t in types )
 				{
 					if( t.IsSubclassOf( baseType ) )
 					{
 						yield return t;
-						//types.Add( t );
 					}
-				}				
+				}
 			}
-			//return types.ToArray();
 		}
 		
 		public static Type[] GetTypesOfInterface( Type iface )
