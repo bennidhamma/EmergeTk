@@ -5,6 +5,7 @@ using System.Reflection;
 using System.Text.RegularExpressions;
 using EmergeTk.Model;
 using EmergeTk.Model.Security;
+using SimpleJson;
 
 namespace EmergeTk.WebServices
 {
@@ -265,7 +266,7 @@ namespace EmergeTk.WebServices
 		}
 		
 		
-		public void Authorize (RestOperation operation, MessageNode recordNode, AbstractRecord record)
+		public void Authorize (RestOperation operation, JsonObject recordNode, AbstractRecord record)
 		{
 			if ( operation != RestOperation.Get )
 			{

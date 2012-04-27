@@ -1,5 +1,6 @@
 using System;
 using EmergeTk.Model.Security;
+using SimpleJson;
 
 namespace EmergeTk.WebServices
 {
@@ -14,7 +15,7 @@ namespace EmergeTk.WebServices
 		/// <param name="user">
 		/// A <see cref="User"/>
 		/// </param>
-		void Authorize(RestOperation operation, string method, MessageNode message);
+		void Authorize(RestOperation operation, string method, JsonObject message);
 		string GenerateHelpText();
 		void GenerateExampleRequestNode(string method, IMessageWriter writer);
 		void GenerateExampleResponseNode(string method, IMessageWriter writer);

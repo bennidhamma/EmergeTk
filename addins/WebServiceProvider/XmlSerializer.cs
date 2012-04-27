@@ -7,6 +7,7 @@ using System.Xml.XPath;
 using System.Xml.Xsl;
 using System.Text;
 using EmergeTk.Model;
+using SimpleJson;
 
 namespace EmergeTk.WebServices
 {
@@ -14,7 +15,7 @@ namespace EmergeTk.WebServices
 	{
 		//private static readonly EmergeTkLog log = EmergeTkLogManager.GetLogger(typeof(XmlSerializer));
 		
-		public static string SerializeToXml(MessageList list)
+		public static string SerializeToXml(JsonArray list)
 		{
 			StringBuilder sb = new StringBuilder();
 			StringWriter stringWriter = new StringWriter(sb);
@@ -23,18 +24,18 @@ namespace EmergeTk.WebServices
 			return sb.ToString();
 		}
 		
-		public static void SerializeToXml(MessageList list, TextWriter writeStream)
+		public static void SerializeToXml(JsonArray list, TextWriter writeStream)
 		{
 			XmlTextWriter writer = new XmlTextWriter(writeStream);
 			SerializeXml( list, writer );
 		}
 		
-		public static string SerializeToXml(MessageNode node)
+		public static string SerializeToXml(JsonObject node)
 		{
 			return SerializeToXml(node,false);
 		}
 		
-		public static string SerializeToXml(MessageNode node, bool format)
+		public static string SerializeToXml(JsonObject node, bool format)
 		{
 			StringBuilder sb = new StringBuilder();
 			StringWriter stringWriter = new StringWriter(sb);
@@ -45,14 +46,14 @@ namespace EmergeTk.WebServices
 			return sb.ToString();
 		}
 		
-		public static void SerializeToXml(MessageNode node, TextWriter writeStream)
+		public static void SerializeToXml(JsonObject node, TextWriter writeStream)
 		{
 			XmlTextWriter writer = new XmlTextWriter(writeStream);
 			SerializeXml( node, writer );
 			return;
 		}
 		
-		private static void SerializeXml( MessageNode message, XmlWriter writer )
+		private static void SerializeXml( JsonObject message, XmlWriter writer )
 		{
 			int numKeys = message.KeyCount;
 			if( numKeys > 1 && ! string.IsNullOrEmpty( message.Name ) )
@@ -71,7 +72,7 @@ namespace EmergeTk.WebServices
 			}
 		}
 		
-		private static void SerializeXml(MessageList list, XmlWriter writer)
+		private static void SerializeXml(JsonArray list, XmlWriter writer)
 		{
 			writer.WriteStartElement(list.ListName);
 			writer.WriteAttributeString("type","array");
@@ -101,7 +102,7 @@ namespace EmergeTk.WebServices
 			}
 		}
 		
-		public static MessageNode DeserializeXml(string input)
+		public static JsonObject DeserializeXml(string input)
 		{
 			//Root of XML is a MessageNode.
 			//examine children - if there are two or more with same name, it is an array.
@@ -116,7 +117,7 @@ namespace EmergeTk.WebServices
 			return root;
 		}
 		
-		public static MessageNode DeserializeXml(Stream input)
+		public static JsonObject DeserializeXml(Stream input)
 		{
 			//Root of XML is a MessageNode.
 			//examine children - if there are two or more with same name, it is an array.
@@ -175,7 +176,7 @@ namespace EmergeTk.WebServices
 			return ret;
 		}
 		
-		private static MessageNode DeserializeNode(XmlNode inNode)
+		private static JsonObject DeserializeNode(XmlNode inNode)
 		{
 			MessageNode outNode = new MessageNode(inNode.Name);	
 			

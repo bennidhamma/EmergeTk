@@ -61,11 +61,8 @@
     <Reference Include="log4net">
       <HintPath>..\..\lib\log4net.dll</HintPath>
     </Reference>
-    <Reference Include="Jayrock.Json">
-      <HintPath>..\..\lib\Jayrock.Json.dll</HintPath>
-    </Reference>
-    <Reference Include="Jayrock">
-      <HintPath>..\..\lib\Jayrock.dll</HintPath>
+    <Reference Include="SimpleJson">
+      <HintPath>..\..\lib\SimpleJson.dll</HintPath>
     </Reference>
   </ItemGroup>
   <ItemGroup>
@@ -73,7 +70,6 @@
     <Compile Include="ModelPredicateServiceManager.cs" />
     <Compile Include="ServiceRouter.cs" />
     <Compile Include="AssemblyInfo.cs" />
-    <Compile Include="MessageNode.cs" />
     <Compile Include="ModelServiceHandler.cs" />
     <Compile Include="IMessageServiceManager.cs" />
     <Compile Include="SystemMessages.cs" />
@@ -81,8 +77,6 @@
     <Compile Include="RestServiceAttribute.cs" />
     <Compile Include="RecordSerializer.cs" />
     <Compile Include="WebServiceAttribute.cs" />
-    <Compile Include="MessageList.cs" />
-    <Compile Include="XmlSerializer.cs" />
     <Compile Include="WebServiceManager.cs" />
     <Compile Include="IRestServiceManager.cs" />
     <Compile Include="RequestProcessor.cs" />

@@ -3,6 +3,7 @@ using System.Collections.Specialized;
 using System.Collections.Generic;
 using System.Text.RegularExpressions;
 using System.Web;
+using SimpleJson;
 
 namespace EmergeTk.WebServices
 {
@@ -37,7 +38,7 @@ namespace EmergeTk.WebServices
             RestOperation verb, 
             string subPath, 
             NameValueCollection args, 
-            MessageNode message, 
+            JsonObject message, 
             IMessageWriter writer, 
             HttpFileCollection files )
 		{

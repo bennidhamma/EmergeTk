@@ -3,13 +3,14 @@ using System;
 using System.Collections.Generic;
 using EmergeTk.Model;
 using EmergeTk.Model.Security;
+using SimpleJson;
 
 namespace EmergeTk.WebServices
 {
 	public interface IRestServiceManager
 	{
 		string GetHelpText();
-		void Authorize(RestOperation operation, MessageNode recordNode, AbstractRecord record);
+		void Authorize(RestOperation operation, JsonObject recordNode, AbstractRecord record);
 		bool AuthorizeField( RestOperation op, AbstractRecord record, string property );
 		AbstractRecord GenerateExampleRecord();
 		string GenerateExampleFields(string method);
@@ -25,7 +26,7 @@ namespace EmergeTk.WebServices
 		}
 		
 		
-		public void Authorize (RestOperation operation, MessageNode recordNode, AbstractRecord record)
+		public void Authorize (RestOperation operation, JsonObject recordNode, AbstractRecord record)
 		{
 			return;
 		}
@@ -67,7 +68,7 @@ namespace EmergeTk.WebServices
 		}
 
 
-		public void Authorize(RestOperation operation, MessageNode recordNode, AbstractRecord record)
+		public void Authorize(RestOperation operation, JsonObject recordNode, AbstractRecord record)
 		{
 			// root bypasses the Authorize call because of DoAuth so always throw exception
 			throw new UnauthorizedAccessException("Not Authorized.");
@@ -110,7 +111,7 @@ namespace EmergeTk.WebServices
 		}
 
 
-		public void Authorize(RestOperation operation, MessageNode recordNode, AbstractRecord record)
+		public void Authorize(RestOperation operation, JsonObject recordNode, AbstractRecord record)
 		{
 			User.AuthenticateUser();
 			if (operation != RestOperation.Get)
@@ -156,7 +157,7 @@ namespace EmergeTk.WebServices
 		}
 
 
-		public void Authorize(RestOperation operation, MessageNode recordNode, AbstractRecord record)
+		public void Authorize(RestOperation operation, JsonObject recordNode, AbstractRecord record)
 		{
 			User.AuthenticateUser();
 			if (operation != RestOperation.Post)

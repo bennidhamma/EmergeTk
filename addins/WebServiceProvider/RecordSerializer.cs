@@ -7,7 +7,7 @@ using EmergeTk.Model;
 using EmergeTk.Model.Security;
 using System.Text;
 using System.Collections;
-
+using SimpleJson;
 
 namespace EmergeTk.WebServices
 {
@@ -496,13 +496,13 @@ namespace EmergeTk.WebServices
             return false;
         }
 		
-		public static AbstractRecord DeserializeRecordType (Type t, MessageNode node, DeserializationContext context)
+		public static AbstractRecord DeserializeRecordType (Type t, JsonObject node, DeserializationContext context)
 		{
 			return (AbstractRecord) TypeLoader.InvokeGenericMethod (typeof(RecordSerializer), "DeserializeRecord", new Type[] {t},
 				null, new object[] {node, context});
         }
 				
-		public static T DeserializeRecord<T>(MessageNode node, DeserializationContext context) where T : AbstractRecord, new()
+		public static T DeserializeRecord<T>(JsonObject node, DeserializationContext context) where T : AbstractRecord, new()
 		{
 			IRestServiceManager serviceManager = WebServiceManager.Manager.GetRestServiceManager(typeof(T));
 			if( serviceManager == null )
@@ -541,7 +541,7 @@ namespace EmergeTk.WebServices
 					serviceManager.Authorize(RestOperation.Post,node,null);
 				record = new T();
 			}
-			foreach( string k in node.GetKeys() )
+			foreach( string k in node.Keys )
 			{
 				if( k == "id" || k == "version")
 				{
@@ -566,7 +566,7 @@ namespace EmergeTk.WebServices
                     {
                         //need to deserialize a list.
                         //TODO: we may be able to avoid generic methods here, if we just use Activator.CreateInstance					
-                        MessageList list = (MessageList)val;
+                        JsonArray list = (JsonArray)val;
                         IRecordList newList = (IRecordList)TypeLoader.InvokeGenericMethod
                             (typeof(RecordSerializer), "DeserializeList", new Type[] { field.Type.GetGenericArguments()[0] }, null, new object[] { list, context });
                         IRecordList oldList = (IRecordList)record[recordFieldName];
@@ -598,9 +598,19 @@ namespace EmergeTk.WebServices
 						}
 						record[recordFieldName] = AbstractRecord.Load(loadType, id);
 					}
-					else if( val is MessageNode )
+					else if (val is long)
 					{
-						MessageNode propNode = (MessageNode)val;
+						Type loadType = field.Type;
+						int id = Convert.ToInt32(val);
+						if (AbstractRecord.IsDerived (field.Type))
+						{
+							loadType = DataProvider.DefaultProvider.GetTypeForId (id);
+						}
+						record[recordFieldName] = AbstractRecord.Load(loadType, id);
+					}
+					else if( val is JsonObject )
+					{
+						JsonObject propNode = (JsonObject)val;
 						Type loadType = field.Type;
 						if (AbstractRecord.IsDerived (field.Type))
 						{
@@ -613,9 +623,9 @@ namespace EmergeTk.WebServices
 				{
                     if (val != null)
                     {
-                        MessageNode inNode = (MessageNode)node[k];
+                        JsonObject inNode = (JsonObject)node[k];
                         Dictionary<string, string> stringDict = new Dictionary<string, string>();
-                        foreach (string key in inNode.GetKeys())
+                        foreach (string key in inNode.Keys)
                             stringDict.Add(key, Convert.ToString(inNode[key]));
                         record[recordFieldName] = stringDict;
                     }
@@ -632,9 +642,9 @@ namespace EmergeTk.WebServices
 						var deser = JSON.DeserializeObject(field.Type, (string)val);
 						record[recordFieldName] = deser;
 					}
-					else if (val is MessageList)
+					else if (val is JsonArray)
 					{
-						MessageList ml = (MessageList)val;
+						JsonArray ml = (JsonArray)val;
 						IList target = (IList)Activator.CreateInstance (field.Type);
 						record[recordFieldName] = target;
 						foreach (var item in ml)
@@ -670,12 +680,12 @@ namespace EmergeTk.WebServices
 			return System.Web.HttpContext.Current != null && ! User.IsRoot;
 		}
 		
-		public static IRecordList DeserializeNonGenericList(Type recordType, MessageList list, DeserializationContext context)
+		public static IRecordList DeserializeNonGenericList(Type recordType, JsonArray list, DeserializationContext context)
 		{
 			return (IRecordList)TypeLoader.InvokeGenericMethod(typeof(RecordSerializer),"DeserializeList",new Type[]{recordType},null,new object[]{list,context});
 		}
 		
-		public static IRecordList<T> DeserializeList<T>(MessageList list, DeserializationContext context) where T : AbstractRecord, new()
+		public static IRecordList<T> DeserializeList<T>(JsonArray list, DeserializationContext context) where T : AbstractRecord, new()
 		{
 			//TODO: we need to provide feedback on errors. i.e. "expecting integer for child id, but found 'name' instead."
 			//log.Debug("calling deserialize list", list );
@@ -683,16 +693,23 @@ namespace EmergeTk.WebServices
 			foreach( object item in list )
 			{
 				int id = 0;
-				if( item is string ) //scalars must be ints.
+				if( item is long ) //scalars must be ints.
+				{
+					id = Convert.ToInt32 (item);
+					T c = AbstractRecord.Load<T>(id);
+					if( c != null )
+						records.Add(c);
+				}
+				else if( item is string ) //scalars must be ints.
 				{
 					id = int.Parse((string)item);
 					T c = AbstractRecord.Load<T>(id);
 					if( c != null )
 						records.Add(c);
 				}
-				else if( item is MessageNode )
+				else if( item is JsonObject )
 				{					
-					records.Add( DeserializeRecord<T>((MessageNode)item, context) );	
+					records.Add( DeserializeRecord<T>(item as JsonObject, context) );	
 				}
 			}
 			return records;

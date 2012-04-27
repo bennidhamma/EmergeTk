@@ -9,6 +9,7 @@ using System.Reflection;
 using System.Web;
 using EmergeTk.Model;
 using System.Text;
+using SimpleJson;
 
 namespace EmergeTk.WebServices
 {
@@ -65,7 +66,7 @@ namespace EmergeTk.WebServices
 					format = WebServiceFormat.Json;
 			}
 			
-			MessageNode requestMessage = null;
+			JsonObject requestMessage = null;
 			
 			switch (verb.ToUpper ())
 			{
@@ -96,14 +97,14 @@ namespace EmergeTk.WebServices
 					{
 					case WebServiceFormat.Xml:
 					case WebServiceFormat.Csv:
-						requestMessage = XmlSerializer.DeserializeXml (request.InputStream);
+						//requestMessage = XmlSerializer.DeserializeXml (request.InputStream);
+						throw new NotSupportedException ("XML is not supported.");
 						break;
 					case WebServiceFormat.Json:
 						StreamReader reader = new StreamReader (request.InputStream);
 						String s = reader.ReadToEnd ();
 						//requestMessage = MessageNode.ConvertFromRaw( (Dictionary<string,object>)JSON.Default.Decode( reader.ReadToEnd() ) );
-						var json = JSON.Deserialize<Dictionary<string,object>>(s);
-						requestMessage = MessageNode.ConvertFromRaw (json);
+						requestMessage = (JsonObject)JSON.DeserializeObject (s);
 						break;
 					}
 				}

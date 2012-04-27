@@ -7,8 +7,8 @@ using System.Xml;
 using EmergeTk.Model;
 using EmergeTk.Model.Search;
 using EmergeTk.Model.Security;
-using Jayrock.Json;
 using System.Text;
+using SimpleJson;
 
 namespace EmergeTk.WebServices
 {
@@ -234,18 +234,6 @@ namespace EmergeTk.WebServices
         }
 
 #endif
-
-        private string FormatJson(string input)
-		{
-			StringWriter output = new StringWriter();
-			using (JsonTextReader reader = new JsonTextReader(new StringReader(input)))
-            using (JsonTextWriter writer = new JsonTextWriter(output))
-            {
-                writer.PrettyPrint = true;
-                writer.WriteFromReader(reader);
-            }
-			return output.ToString();
-		}
 				
 		private void write(string msg)
 	    {
@@ -255,7 +243,7 @@ namespace EmergeTk.WebServices
 
 
 		#region IMessageServiceManager implementation
-		public void Authorize (RestOperation operation, string method, MessageNode message)
+		public void Authorize (RestOperation operation, string method, JsonObject message)
 		{
 			//throw new System.NotImplementedException();
 		}

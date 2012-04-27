@@ -7,6 +7,7 @@ using System.Web;
 using System.Text.RegularExpressions;
 using EmergeTk.Model;
 using EmergeTk.Model.Search;
+using SimpleJson;
 
 namespace EmergeTk.WebServices
 {
@@ -156,9 +157,9 @@ QueryString args:
 ")]
         public void GetDataProviderSearch(MessageEndPointArguments arguments)
         {
-			MessageList predicates = null;
+			JsonArray predicates = null;
 			if (arguments.QueryString["predicates"] != null)
-				predicates = MessageList.ConvertFromRaw(JSON.Default.JSONToArray(arguments.QueryString["predicates"]));
+				predicates = (JsonArray)JSON.DeserializeObject(arguments.QueryString["predicates"]);
 			IRecordList<ModelPredicate> preds = RecordSerializer.DeserializeList<ModelPredicate>(predicates, new DeserializationContext());
             IRecordList<T> records = DataProvider.LoadList<T>(preds.Select(pred => (FilterInfo) pred).ToArray());
             SortInfo sortInfo = GetSortInfo(arguments.QueryString["sortBy"]);
@@ -182,11 +183,11 @@ QueryString args:
 ")]
 		public void GetSolrSearch(MessageEndPointArguments arguments)
 		{
-			MessageList predicates = null;
+			JsonArray predicates = null;
 			IRecordList<ModelPredicate> preds = null;
 			if (arguments.QueryString["predicates"] != null)
 			{
-				predicates = MessageList.ConvertFromRaw(JSON.Default.JSONToArray(arguments.QueryString["predicates"]));
+				predicates = (JsonArray)JSON.DeserializeObject(arguments.QueryString["predicates"]);
 				preds = RecordSerializer.DeserializeList<ModelPredicate>(predicates, new DeserializationContext());
 			}
 			SearchSolr(arguments.QueryString, arguments.Response.Writer, preds);
@@ -390,7 +391,7 @@ QueryString args:
 				ServiceManager.AuthorizeField(RestOperation.Put, record, lProperty);
 			IRecordList recordPropertyList = (IRecordList)record[uProperty];
 			DeserializationContext context = new DeserializationContext(){Records = new List<AbstractRecord>(), Lists = new List<RecordPropertyList>()};
-			IRecordList newItems = RecordSerializer.DeserializeNonGenericList( recordPropertyList.RecordType, (MessageList)arguments.InMessage[lProperty], context );			
+			IRecordList newItems = RecordSerializer.DeserializeNonGenericList( recordPropertyList.RecordType, (JsonArray)arguments.InMessage[lProperty], context );			
 #if false
 			List<ValidationError> errors = null;
 			foreach( AbstractRecord r in newItems )
@@ -470,7 +471,7 @@ QueryString args:
 				ServiceManager.AuthorizeField(RestOperation.Put, record, lProperty);
 			IRecordList recordPropertyList = (IRecordList)record[uProperty];
 			DeserializationContext context = new DeserializationContext();  //create an empty instance to pass along.
-			IRecordList itemsToDelete = RecordSerializer.DeserializeNonGenericList( recordPropertyList.RecordType, (MessageList)arguments.InMessage[lProperty], context );
+			IRecordList itemsToDelete = RecordSerializer.DeserializeNonGenericList( recordPropertyList.RecordType, (JsonArray)arguments.InMessage[lProperty], context );
 			foreach( AbstractRecord r in itemsToDelete )
 			{
 				log.DebugFormat("removing {0} from {1}", r, record);
@@ -615,7 +616,7 @@ QueryString args:
 		}
 		
 		#region IMessageServiceManager implementation
-		public void Authorize (RestOperation operation, string method, MessageNode message)
+		public void Authorize (RestOperation operation, string method, JsonObject message)
 		{
 			//RestOperation operation, MessageNode recordNode, AbstractRecord record
     	    ServiceManager.Authorize(operation, message, null);

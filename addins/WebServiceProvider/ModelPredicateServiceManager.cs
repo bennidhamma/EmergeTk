@@ -4,6 +4,7 @@ using System.Linq;
 using System.Text;
 using EmergeTk.Model;
 using EmergeTk.Model.Security;
+using SimpleJson;
 
 namespace EmergeTk.WebServices
 {
@@ -15,7 +16,7 @@ namespace EmergeTk.WebServices
             return String.Empty;
         }
 
-        public void Authorize(RestOperation operation, MessageNode recordNode, AbstractRecord record)
+        public void Authorize(RestOperation operation, JsonObject recordNode, AbstractRecord record)
         {
             User u = User.Current;
             if (u == null)
