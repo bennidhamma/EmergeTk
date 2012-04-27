@@ -5,7 +5,8 @@ using System.Reflection;
 using System.Text;
 using EmergeTk.Model;
 using System.Globalization;
-using ServiceStack.Text;
+using SimpleJson;
+using System.Linq;
 
 namespace EmergeTk
 {
@@ -15,10 +16,35 @@ namespace EmergeTk
         Object
     }
 
+	public class EmergeTkJsonSerializerStrategy : PocoJsonSerializerStrategy
+	{
+	    public override object DeserializeObject(object value, Type type)
+	    {
+			if (type.Name.StartsWith ("HashSet"))
+			{
+				return TypeLoader.InvokeGenericMethod (typeof(EmergeTkJsonSerializerStrategy), "DeserializeHashSet", type.GetGenericArguments (), 
+				                                      this, new object[] {value});
+			}
+	       	
+	        return base.DeserializeObject(value, type);
+	    }
+		
+		public HashSet<T> DeserializeHashSet<T> (JsonArray value)
+		{
+			HashSet<T> s = new HashSet<T> ();
+			foreach (T v in value)
+			{
+				s.Add (v);
+			}
+			return s;
+		}
+	}
+	
     public class JSON
     {
 		private static readonly EmergeTkLog log = EmergeTkLogManager.GetLogger(typeof(JSON));
 		static JSON def = new JSON();
+		static EmergeTkJsonSerializerStrategy strategy = new EmergeTkJsonSerializerStrategy ();
 		
 		static public JSON Default {
 			get {
@@ -28,17 +54,27 @@ namespace EmergeTk
 				
 		static public string Serialize (object o)
 		{
-			return o != null ? JsonSerializer.SerializeToString (o) : "null";
+			return SimpleJson.SimpleJson.SerializeObject (o);
+			//return o != null ? JsonSerializer.SerializeToString (o) : "null";
 		}
 		
 		static public T Deserialize<T> (string source)
 		{
-			return JsonSerializer.DeserializeFromString<T> (source);
+			return SimpleJson.SimpleJson.DeserializeObject<T> (source, strategy);
+			//return JsonSerializer.DeserializeFromString<T> (source);
 		}
 		
 		static public object DeserializeObject (Type t, string source)
 		{
-			return JsonSerializer.DeserializeFromString (source, t);
+			return SimpleJson.SimpleJson.DeserializeObject (source, t, strategy);
+			//return JsonSerializer.DeserializeFromString (source, t);
+		}
+		
+		
+		static public object DeserializeObject (string source)
+		{
+			return SimpleJson.SimpleJson.DeserializeObject (source);
+			//return JsonSerializer.DeserializeFromString (source, t);
 		}
         
         public string ArrayToJSON<T>(List<T> list)

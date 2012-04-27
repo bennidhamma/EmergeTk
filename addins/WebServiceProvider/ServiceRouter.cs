@@ -102,7 +102,8 @@ namespace EmergeTk.WebServices
 						StreamReader reader = new StreamReader (request.InputStream);
 						String s = reader.ReadToEnd ();
 						//requestMessage = MessageNode.ConvertFromRaw( (Dictionary<string,object>)JSON.Default.Decode( reader.ReadToEnd() ) );
-						requestMessage = MessageNode.ConvertFromRaw ((Dictionary<string, object>)JSON.Default.Decode (s));
+						var json = JSON.Deserialize<Dictionary<string,object>>(s);
+						requestMessage = MessageNode.ConvertFromRaw (json);
 						break;
 					}
 				}
