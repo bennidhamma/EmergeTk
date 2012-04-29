@@ -24,8 +24,7 @@ namespace EmergeTk
 			{
 				return TypeLoader.InvokeGenericMethod (typeof(EmergeTkJsonSerializerStrategy), "DeserializeHashSet", type.GetGenericArguments (), 
 				                                      this, new object[] {value});
-			}
-	       	
+			}	
 	        return base.DeserializeObject(value, type);
 	    }
 		
