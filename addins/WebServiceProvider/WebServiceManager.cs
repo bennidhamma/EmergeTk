@@ -178,7 +178,7 @@ namespace EmergeTk.WebServices
 		}
 
 		#pragma warning disable 169
-		private void RegisterRestService<T> (IRestServiceManager restServiceManager, RestTypeDescription description) where T : AbstractRecord, new()
+		public void RegisterRestService<T> (IRestServiceManager restServiceManager, RestTypeDescription description) where T : AbstractRecord, new()
 		{
 			log.Info("Registering rest service ", description.ToString() );
 			WebServiceAttribute modelServiceHandlerAttribute = (WebServiceAttribute)typeof(ModelServiceHandler<T>).GetCustomAttributes (typeof(WebServiceAttribute), false)[0];

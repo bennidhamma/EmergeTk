@@ -17,25 +17,25 @@ namespace EmergeTk.WebServices
 		
 		public readonly static string[] IdFieldSet = new string[] { "id" };
 		public readonly static string[] WildcardFieldSet = new string[] { "*" };
-		private static Regex simpleJsonRegex = new Regex("\\w+",RegexOptions.Compiled);
-		private static Dictionary<string,object[]> jsonParameters = new Dictionary<string, object[]>();
+		private static Regex simpleJsonRegex = new Regex(@"[\w\*]+",RegexOptions.Compiled);
+		private static Dictionary<string,JsonArray> jsonParameters = new Dictionary<string, JsonArray>();
 		
-		private static object[] GetWildcardFields(Type type)
+		private static JsonArray GetWildcardFields(Type type)
 		{
-			List<object> fields = new List<object>();
+			JsonArray fields = new JsonArray ();
 			foreach( ColumnInfo ci in ColumnInfoManager.RequestColumns(type))
 			{
 				fields.Add( Util.PascalToCamel(ci.Name) );
 			}
-			return fields.ToArray();
+			return fields;
 		}
 		
-		private static object[] SetupFields(string fields, Type rType)
+		private static JsonArray SetupFields(string fields, Type rType)
 		{
 			//strip out spaces
 			if (fields == null) fields = "id";
 			fields = fields.Replace(" ", "");
-			object[] fieldArray;
+			JsonArray fieldArray;
 			if( fields.StartsWith("[") )
 			{
 				if( jsonParameters.ContainsKey(fields) )
@@ -46,14 +46,18 @@ namespace EmergeTk.WebServices
 					if( !fields.Contains('"') )
 						simpleJsonString = simpleJsonRegex.Replace(fields,"\"$0\"");
 					//log.Debug(simpleJsonString);
-					fieldArray = JSON.Default.JSONToArray(simpleJsonString);
+					fieldArray = JSON.Deserialize<JsonArray> (simpleJsonString);
 					jsonParameters[fields] = fieldArray;
 				}
 			}
 			else if( fields == "*" )
 				fieldArray = GetWildcardFields(rType);
 			else
-				fieldArray = fields.Split(',');
+			{
+				fieldArray = new JsonArray ();
+				foreach (var item in fields.Split(','))
+					fieldArray.Add (item);
+			}
 			return fieldArray;
 		}
 		
@@ -69,12 +73,12 @@ namespace EmergeTk.WebServices
 				Serialize(record, explicitName, SetupFields(fields, record.GetType()), writer);
 		}
 
-        public static void Serialize(AbstractRecord record, object[] fields, IMessageWriter writer)
+        public static void Serialize(AbstractRecord record, JsonArray fields, IMessageWriter writer)
         {
             Serialize(record, String.Empty, fields, writer);
         }
 		
-		public static void Serialize(AbstractRecord record, String explicitName, object[] fields, IMessageWriter writer )
+		public static void Serialize(AbstractRecord record, String explicitName, JsonArray fields, IMessageWriter writer )
 		{
             if (record == null)
                 return;
@@ -106,7 +110,7 @@ namespace EmergeTk.WebServices
 				writer.WriteProperty ("_type", restTypeDescription.ModelName);
 			}
 			
-			if (fields.Length == 1 && fields[0] is string && (string)fields[0] == "*")
+			if (fields.Count == 1 && fields[0] is string && (string)fields[0] == "*")
 			{
 				fields = SetupFields (fields[0] as string, rType);
 			}
@@ -121,19 +125,19 @@ namespace EmergeTk.WebServices
 		
 		public static void SerializeField (object o, AbstractRecord record, Type rType, IRestServiceManager serviceManager, IMessageWriter writer)
 		{
-			if( o is Dictionary<string,object> )
+			if( o is JsonObject)
 			{
-				Dictionary<string,object> values = 	(Dictionary<string,object>)o;
+				var values = 	o as JsonObject;
 				foreach( string key in values.Keys )
 				{
 					object val = record[Util.CamelToPascal(key)];
 					if (val is AbstractRecord)
                     {
-                        Serialize(val as AbstractRecord, key, values[key] as object[], writer);
+                        Serialize(val as AbstractRecord, key, values[key] as JsonArray, writer);
                     }
                     else if (val is IRecordList)
                     {
-                        Serialize(val as IRecordList, key, values[key] as object[], writer);
+                        Serialize(val as IRecordList, key, values[key] as JsonArray, writer);
                     }
                     else if (val == null)
                     {
@@ -189,7 +193,7 @@ namespace EmergeTk.WebServices
                         writer.CloseProperty();
                         return;
                     }
-                    Serialize((recordList as IRecordList).GetEnumerable(), lField, (object[])null, fi.ListRecordType, writer);
+                    Serialize((recordList as IRecordList).GetEnumerable(), lField, (JsonArray)null, fi.ListRecordType, writer);
                 }
 			}
             else if (fi.IsRecord)
@@ -286,13 +290,13 @@ namespace EmergeTk.WebServices
                 Serialize<AbstractRecord>(list.GetEnumerable(), listName, SetupFields(fields, list.RecordType), list.RecordType, writer);
         }
 
-        public static void Serialize(IRecordList list, String listName, object[] fields, IMessageWriter writer)
+        public static void Serialize(IRecordList list, String listName, JsonArray fields, IMessageWriter writer)
         {
             if (list != null)
                 Serialize(list.GetEnumerable(), listName, fields, list.RecordType, writer);
         }
 		
-		public static void Serialize (IRecordList list,object[] fields, IMessageWriter writer)
+		public static void Serialize (IRecordList list, JsonArray fields, IMessageWriter writer)
 		{
 			if( list != null )
 				Serialize<AbstractRecord>(list.GetEnumerable(),fields,list.RecordType, writer);
@@ -317,7 +321,7 @@ namespace EmergeTk.WebServices
         Serialize<T>(
             IEnumerable<T> items,
             String listName,
-            object[] fields,
+            JsonArray fields,
             Type recordType,
             IMessageWriter writer) where T : AbstractRecord
         {
@@ -358,7 +362,7 @@ namespace EmergeTk.WebServices
 
         }
 		
-		public static void Serialize<T> (IEnumerable<T> items, object[] fields, Type recordType, IMessageWriter writer) where T : AbstractRecord
+		public static void Serialize<T> (IEnumerable<T> items, JsonArray fields, Type recordType, IMessageWriter writer) where T : AbstractRecord
 		{
             Serialize<T>(items, String.Empty, fields, recordType, writer);
 		}
@@ -642,10 +646,30 @@ namespace EmergeTk.WebServices
 						var deser = JSON.DeserializeObject(field.Type, (string)val);
 						record[recordFieldName] = deser;
 					}
+					else if (val is JsonObject)
+					{
+						JsonObject obj = val as JsonObject;
+						IDictionary dict = Activator.CreateInstance(field.Type) as IDictionary;
+						Type valueType = null;
+						if (field.Type.IsGenericType)
+							valueType = field.Type.GetGenericArguments()[1];
+						foreach (var kvp in obj)
+						{
+							if (valueType != null)
+							{
+								dict[kvp.Key] = PropertyConverter.Convert (kvp.Value, valueType);
+							}
+							else
+							{
+								dict[kvp.Key] = kvp.Value;
+							}								                               
+						}
+						record[recordFieldName] = dict;
+					}
 					else if (val is JsonArray)
 					{
-						JsonArray ml = (JsonArray)val;
-						IList target = (IList)Activator.CreateInstance (field.Type);
+						JsonArray ml = val as JsonArray;
+						IList target = Activator.CreateInstance (field.Type) as IList;
 						record[recordFieldName] = target;
 						foreach (var item in ml)
 						{
