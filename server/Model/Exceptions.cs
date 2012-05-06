@@ -19,6 +19,13 @@ namespace EmergeTk.Model
 		public string Path;		
 		public string Problem;
 		public string Suggestion;
+        
+        public ValidationError (string path, string problem)
+        {
+            this.Path = path;
+            this.Problem = problem;
+            this.Suggestion = null;
+        }
 		
 		public ValidationError (string path, string problem, string suggestion)
 		{
