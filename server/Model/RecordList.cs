@@ -185,8 +185,7 @@ namespace EmergeTk.Model
 		{
 			if (value == null)
 			{
-				log.Warn("Trying to add NULL value into a record list. Returning without processing...");
-				return;
+                throw new InvalidOperationException ("Trying to add NULL value into a record list. Invalid.");
 			}
 			clean = false;
 			items.Add( value );

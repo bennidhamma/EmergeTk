@@ -834,7 +834,7 @@ namespace EmergeTk.Model
 		
 		public void Reload()
 		{
-			log.Debug("reloading...");
+			log.Debug("reloading - " + this.id);
             bool oldLoadState = this.loading;
             this.SetLoadState(true);
             try
@@ -847,7 +847,7 @@ namespace EmergeTk.Model
             {
                 this.SetLoadState(oldLoadState);
             }
-			log.Debug("done reloading");
+			log.Debug("done reloading - " + this.id);
 		}
 		
 		public void Reload<T>() where T : AbstractRecord, new()
@@ -864,7 +864,6 @@ namespace EmergeTk.Model
 				this.loadedProperties.Clear();
 			}
 			AbstractRecord.LoadUsingRecord<T>(this as T,this.id);
-			log.Debug("Done.");			
 		}
 
 		public static T Load<T>(string columnName, object id) where T : AbstractRecord, new()
