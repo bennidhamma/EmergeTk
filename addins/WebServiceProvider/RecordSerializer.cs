@@ -127,7 +127,7 @@ namespace EmergeTk.WebServices
 		{
 			if( o is JsonObject)
 			{
-				var values = 	o as JsonObject;
+				var values = o as JsonObject;
 				foreach( string key in values.Keys )
 				{
 					object val = record[Util.CamelToPascal(key)];
@@ -139,6 +139,12 @@ namespace EmergeTk.WebServices
                     {
                         Serialize(val as IRecordList, key, values[key] as JsonArray, writer);
                     }
+					else if (val is IEnumerable && 
+					         val.GetType ().IsGenericType &&
+					         val.GetType ().GetGenericArguments()[0].IsSubclassOf(typeof(AbstractRecord)))
+					{
+						Serialize (val as IEnumerable, key, values[key] as JsonArray, writer);
+					}
                     else if (val == null)
                     {
                         writer.WriteProperty(key, (String)null);
@@ -365,6 +371,25 @@ namespace EmergeTk.WebServices
 		public static void Serialize<T> (IEnumerable<T> items, JsonArray fields, Type recordType, IMessageWriter writer) where T : AbstractRecord
 		{
             Serialize<T>(items, String.Empty, fields, recordType, writer);
+		}
+
+		public static void SerializeT<T> (IEnumerable<T> items, string listName, JsonArray fields, Type recordType, IMessageWriter writer) where T : AbstractRecord
+		{
+            Serialize<T>(items, listName, fields, recordType, writer);
+		}
+
+		public static void Serialize (IEnumerable items, string listName, JsonArray fields, IMessageWriter writer)
+		{
+			if (items == null)
+				writer.WriteScalar (null);
+			var t1 = items.GetType ();
+			if (!t1.IsGenericType || !t1.GetGenericArguments()[0].IsSubclassOf(typeof(AbstractRecord)))
+			{
+				throw new ArgumentException ("IEnumerable must be generic and of type AbstractRecord");
+			}
+			var t2 = t1.GetGenericArguments()[0];
+			TypeLoader.InvokeGenericMethod (typeof(RecordSerializer), "SerializeT", new Type[] {t2}, null, new object[] {
+				items, listName, fields, t2, writer});
 		}
 		
 		public static void SerializeIntsList (IEnumerable<int> items, string name, string fields, string sortBy, Type recordType, IMessageWriter writer)
