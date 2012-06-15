@@ -130,20 +130,25 @@ namespace EmergeTk.WebServices
 				var values = o as JsonObject;
 				foreach( string key in values.Keys )
 				{
+					string Key = Util.CamelToPascal (key);
+					var fieldInfo = record.GetFieldInfoFromName (Key);
+					if (fieldInfo == null)
+						continue;
+					Type valueType = fieldInfo.Type;
 					object val = record[Util.CamelToPascal(key)];
-					if (val is AbstractRecord)
+					if (valueType.IsSubclassOf (typeof(AbstractRecord)))
                     {
                         Serialize(val as AbstractRecord, key, values[key] as JsonArray, writer);
                     }
-                    else if (val is IRecordList)
+                    else if (valueType.GetInterface ("IRecordList") != null)
                     {
                         Serialize(val as IRecordList, key, values[key] as JsonArray, writer);
                     }
-					else if (val is IEnumerable && 
-					         val.GetType ().IsGenericType &&
-					         val.GetType ().GetGenericArguments()[0].IsSubclassOf(typeof(AbstractRecord)))
+					else if (valueType.GetInterface ("IEnumerable") != null && 
+					         valueType.IsGenericType &&
+					         valueType.GetGenericArguments()[0].IsSubclassOf(typeof(AbstractRecord)))
 					{
-						Serialize (val as IEnumerable, key, values[key] as JsonArray, writer);
+						Serialize (val as IEnumerable, valueType.GetGenericArguments()[0], key, values[key] as JsonArray, writer);
 					}
                     else if (val == null)
                     {
@@ -378,18 +383,16 @@ namespace EmergeTk.WebServices
             Serialize<T>(items, listName, fields, recordType, writer);
 		}
 
-		public static void Serialize (IEnumerable items, string listName, JsonArray fields, IMessageWriter writer)
+		public static void Serialize (IEnumerable items, Type recordType, string listName, JsonArray fields, IMessageWriter writer)
 		{
 			if (items == null)
-				writer.WriteScalar (null);
-			var t1 = items.GetType ();
-			if (!t1.IsGenericType || !t1.GetGenericArguments()[0].IsSubclassOf(typeof(AbstractRecord)))
 			{
-				throw new ArgumentException ("IEnumerable must be generic and of type AbstractRecord");
+				writer.OpenProperty (listName);
+				writer.WriteScalar (null);
+				writer.CloseProperty ();
 			}
-			var t2 = t1.GetGenericArguments()[0];
-			TypeLoader.InvokeGenericMethod (typeof(RecordSerializer), "SerializeT", new Type[] {t2}, null, new object[] {
-				items, listName, fields, t2, writer});
+			TypeLoader.InvokeGenericMethod (typeof(RecordSerializer), "SerializeT", new Type[] {recordType}, null, new object[] {
+				items, listName, fields, recordType, writer});
 		}
 		
 		public static void SerializeIntsList (IEnumerable<int> items, string name, string fields, string sortBy, Type recordType, IMessageWriter writer)
