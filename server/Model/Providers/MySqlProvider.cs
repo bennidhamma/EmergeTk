@@ -268,7 +268,7 @@ namespace EmergeTk.Model.Providers
 			}
 		}
 		
-		public void ExecuteCommandReader(MySqlCommand comm, ReaderDelegate del)
+		public void ExecuteCommandReader(MySqlCommand comm, Action<IDataReader> del)
 		{
 			if (comm.Connection == null)
 				comm.Connection = CreateConnection ();
