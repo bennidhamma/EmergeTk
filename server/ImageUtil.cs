@@ -13,9 +13,9 @@
  * are somehow able to do this, pixbuf seems to be more forgiving, and I am able to pass all three GIFs in marc's test file.
  */
 
-#if (!WINDOWS)
+//#if (!WINDOWS)
 #define GTKSHARP
-#endif
+//#endif
 
 using System;
 using System.Collections.Generic;

@@ -493,5 +493,11 @@ namespace EmergeTk
             for (int i = 0; i < max; i++)  
                 yield return i;  
         }
+
+		public static IEnumerable<int> To(this int start, int end)  
+		{  
+			for (int i = start; i <= end; i++)  
+				yield return i;  
+		}
     }
 }

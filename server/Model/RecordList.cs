@@ -472,16 +472,18 @@ namespace EmergeTk.Model
 		
 		public IEnumerator GetEnumerator ()
 		{
-			foreach (var rec in items)
+			//first, assert for stale items.
+			for (int i = 0; i < items.Count; i++)
 			{
-				var r = rec;
-				if( rec != null && rec.IsStale )
+				var rec = items[i];
+				if (rec != null && rec.IsStale)
 				{
-					var index = this.IndexOf (rec);
-					r = items[index] = AbstractRecord.Load(rec.GetType(), rec.Id);
+					items[i] = rec = AbstractRecord.Load(rec.GetType(), rec.Id);
 				}
-				if (r != null)
-					yield return r;
+				if (rec != null)
+				{
+					yield return rec;
+				}
 			}
 		}
 		

@@ -177,7 +177,6 @@ namespace EmergeTk.WebServices
 			RegisterWebService (typeof(ModelServiceHandler<T>), service, modelServiceHandlerAttribute, service, description.ModelName, description.ModelPluralName);
 		}
 
-		#pragma warning disable 169
 		public void RegisterRestService<T> (IRestServiceManager restServiceManager, RestTypeDescription description) where T : AbstractRecord, new()
 		{
 			log.Info("Registering rest service ", description.ToString() );
@@ -191,8 +190,7 @@ namespace EmergeTk.WebServices
 			restNameMap[description.ModelName] = typeof(T);
 			RegisterWebService (typeof(ModelServiceHandler<T>), service, modelServiceHandlerAttribute, service, description.ModelName, description.ModelPluralName);
 		}
-		#pragma warning restore 169
-		
+
 		public void RegisterWebService (Type type, object service, WebServiceAttribute att, IMessageServiceManager serviceManager)
 		{
 			RegisterWebService(type,service,att,serviceManager,null,null);
