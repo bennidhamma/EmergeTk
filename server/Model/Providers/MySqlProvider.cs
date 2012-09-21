@@ -523,10 +523,30 @@ namespace EmergeTk.Model.Providers
 			
 			return newId;
         }
-		
-		public Type GetTypeForId( int id )
+
+		Dictionary<int, string> typesForIds = new Dictionary<int, string>();
+
+		public Type GetTypeForId (int id)
 		{
-			string type = (string) ExecuteScalar("SELECT type FROM uid WHERE ID = " + id);
+			if (typesForIds.Count == 0 )
+			{
+				ExecuteReader ("SELECT ID, type FROM uid", r => {
+					typesForIds [r.GetInt32 (0)] = r.GetString (1);
+				}
+				);
+			}
+
+			string type = null;
+			if (typesForIds.ContainsKey (id))
+			{
+				type = typesForIds [id];
+			} 
+			else
+			{
+				type = (string)ExecuteScalar ("SELECT type FROM uid WHERE ID = " + id);
+				if (type != null)
+					typesForIds[id] = type;
+			}
 			if( type == null )
 				return null;
 			else
