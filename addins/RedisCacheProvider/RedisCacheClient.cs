@@ -20,6 +20,8 @@ using System.Text.RegularExpressions;
 
 namespace EmergeTk.Model
 {
+	public interface IRedisLocalOnly {}
+
 	public class RedisReadWritePair
 	{
 		public String ReadServer { get; set; }
@@ -313,6 +315,9 @@ namespace EmergeTk.Model
 			localCache.PutLocal(key, value);
 			watch.Stop();
 
+			if (value is IRedisLocalOnly)
+				return true;
+
 			if (value == null)
 				throw new ArgumentException("Unable to index AbstractRecord: " + value);
 			//log.Debug("Setting key for abstractrecord", key, value.OriginalValues );
@@ -440,7 +445,7 @@ namespace EmergeTk.Model
 			key = LocalCache.PrepareKey(key);
 
 			AbstractRecord record = localCache.GetLocalRecordFromPreparedKey(key);
-			if (null != record)
+			if (null != record || typeof(T).GetInterface("IRedisLocalOnly") != null)
 				return record as T;
 
 			object o = null;
@@ -474,7 +479,7 @@ namespace EmergeTk.Model
 		{
 			key = LocalCache.PrepareKey(key);
 			AbstractRecord record = localCache.GetLocalRecordFromPreparedKey(key);
-			if (null != record)
+			if (null != record || t.GetInterface("IRedisLocalOnly") != null)
 				return record;
 
 			object o = null;
@@ -651,7 +656,8 @@ namespace EmergeTk.Model
 		{
 			log.Debug ("Removing ", record);
 			localCache.Remove(record.Definition);
-			RemoveRemote (record);
+			if (! (record is IRedisLocalOnly))
+				RemoveRemote (record);
 		}
 		
 		private void RemoveRemote (AbstractRecord record)
@@ -685,7 +691,8 @@ namespace EmergeTk.Model
 				localCache.Remove(record.Definition);
 				localCache.PutLocal (record.CreateStandardCacheKey (), record);
 			}
-			RemoveRemote (record);			
+			if (! (record is IRedisLocalOnly))
+				RemoveRemote (record);			
 		}	
 
 		public void FlushAll()
