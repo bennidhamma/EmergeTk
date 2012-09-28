@@ -8,6 +8,8 @@ using System;
 
 namespace EmergeTk.Model
 {
+	public interface ICacheLocalOnly {}
+
 	public interface ICacheProvider
 	{
 		bool Set( string key, AbstractRecord value );
