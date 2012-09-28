@@ -20,8 +20,6 @@ using System.Text.RegularExpressions;
 
 namespace EmergeTk.Model
 {
-	public interface IRedisLocalOnly {}
-
 	public class RedisReadWritePair
 	{
 		public String ReadServer { get; set; }
@@ -315,7 +313,7 @@ namespace EmergeTk.Model
 			localCache.PutLocal(key, value);
 			watch.Stop();
 
-			if (value is IRedisLocalOnly)
+			if (value is ICacheLocalOnly)
 				return true;
 
 			if (value == null)
@@ -656,7 +654,7 @@ namespace EmergeTk.Model
 		{
 			log.Debug ("Removing ", record);
 			localCache.Remove(record.Definition);
-			if (! (record is IRedisLocalOnly))
+			if (! (record is ICacheLocalOnly))
 				RemoveRemote (record);
 		}
 		
@@ -691,7 +689,7 @@ namespace EmergeTk.Model
 				localCache.Remove(record.Definition);
 				localCache.PutLocal (record.CreateStandardCacheKey (), record);
 			}
-			if (! (record is IRedisLocalOnly))
+			if (! (record is ICacheLocalOnly))
 				RemoveRemote (record);			
 		}	
 
