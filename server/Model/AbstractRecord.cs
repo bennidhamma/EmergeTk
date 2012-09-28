@@ -1151,6 +1151,13 @@ namespace EmergeTk.Model
         }
 		
         protected bool loading = false;
+
+		public bool Loading {
+			get {
+				return loading;
+			}
+		}
+
         private bool lazyLoad = true;
         private bool lazyLoadProperties = false;
         public bool LazyLoad { get { return lazyLoad; } set { lazyLoad = value; } }
