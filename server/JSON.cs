@@ -68,7 +68,59 @@ namespace EmergeTk
 			return SimpleJson.SimpleJson.DeserializeObject (source, t, strategy);
 			//return JsonSerializer.DeserializeFromString (source, t);
 		}
-		
+
+		static public object ConvertObject (Type t, JsonObject source)
+		{
+			var obj = Activator.CreateInstance (t);
+			foreach (var kvp in source)
+			{
+				var key = Util.Capitalize (kvp.Key);
+				var prop = t.GetProperty (key);
+				var v = kvp.Value;
+				if (prop == null)
+					continue;
+				if (v is JsonObject)
+				{
+					v = ConvertObject (prop.PropertyType, v as JsonObject);
+				}
+				else if (v is JsonArray)
+				{
+					if (prop.PropertyType.IsGenericType)
+					{
+						v = DeserializeArray (prop.PropertyType, prop.PropertyType.GetGenericArguments()[0], v as JsonArray);
+					}
+					else
+					{
+						v = DeserializeArray (prop.PropertyType, typeof(object), v as JsonArray);
+					}
+
+				}
+				else
+				{
+					v = PropertyConverter.Convert (v, prop.PropertyType);
+				}
+				t.GetProperty (key).SetValue (obj, v, null);
+			}
+			return obj;
+		}
+
+		static public IList DeserializeArray (Type listType, Type itemType, JsonArray array)
+		{
+			IList target = Activator.CreateInstance (listType) as IList;
+			foreach (var item in array)
+			{
+				if (item == null)
+					target.Add (item);
+				else if (item.GetType () == itemType)
+					target.Add (item);
+				else if (item is JsonObject)
+				{
+					var obj = ConvertObject (itemType, item as JsonObject);
+					target.Add (obj);
+				}
+			}
+			return target;
+		}
 		
 		static public object DeserializeObject (string source)
 		{

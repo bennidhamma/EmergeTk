@@ -332,9 +332,18 @@ namespace EmergeTk
 		}
 		
 		//makeFoo to MakeFoo, CTR to CTR, htmlInput to HtmlInput
+		static public string Capitalize (string input)
+		{
+			return CamelToPascal (input);
+		}
+
 		static public string CamelToPascal(string input)
-		{			
-			return input[0].ToString().ToUpper() + input.Substring(1);
+		{
+			if (input == null)
+				return null;
+			var c = input.ToCharArray ();
+			c[0] = char.ToUpper (c[0]);
+			return new string (c);
 		}
 
 		static public object Coalesce( params object[] values )

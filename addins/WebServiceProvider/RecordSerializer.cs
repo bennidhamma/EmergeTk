@@ -575,7 +575,7 @@ namespace EmergeTk.WebServices
 			}
 			foreach( string k in node.Keys )
 			{
-				if( k == "id" || k == "version")
+ 				if( k == "id" || k == "version")
 				{
 					continue;
 				}
@@ -696,13 +696,9 @@ namespace EmergeTk.WebServices
 					}
 					else if (val is JsonArray)
 					{
-						JsonArray ml = val as JsonArray;
-						IList target = Activator.CreateInstance (field.Type) as IList;
-						record[recordFieldName] = target;
-						foreach (var item in ml)
-						{
-							target.Add (item);
-						}
+						var listType = field.Type;
+						var itemType = listType.IsGenericType ? listType.GetGenericArguments () [0] : typeof(object);
+						record[recordFieldName] = JSON.DeserializeArray (field.Type, itemType, val as JsonArray);
 					}
 					else
 					{
