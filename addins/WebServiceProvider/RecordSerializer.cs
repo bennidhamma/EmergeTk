@@ -84,7 +84,7 @@ namespace EmergeTk.WebServices
                 return;
 			Type rType = record.GetType();
 			IRestServiceManager serviceManager = WebServiceManager.Manager.GetRestServiceManager(rType);
-            if (serviceManager == null)
+			if (WebServiceManager.DoAuth() && serviceManager == null)
                 return;
 			if( WebServiceManager.DoAuth() )
 				serviceManager.Authorize( RestOperation.Get, null, record );
@@ -122,20 +122,62 @@ namespace EmergeTk.WebServices
             writer.CloseObject();
             writer.CloseProperty();
  		}
-		
-		public static void SerializeField (object o, AbstractRecord record, Type rType, IRestServiceManager serviceManager, IMessageWriter writer)
+
+		public static void Serialize(object source, String explicitName, string fields, IMessageWriter writer )
 		{
+			if (source == null)
+				return;
+			Type rType = source.GetType();
+			var f = SetupFields (fields, rType);
+			Serialize (source, explicitName, f, writer);
+		}
+
+		public static void Serialize(object source, String explicitName, JsonArray fields, IMessageWriter writer )
+		{
+			if (source == null)
+				return;
+			Type rType = source.GetType();
+
+			if (String.IsNullOrEmpty(explicitName))
+				writer.OpenProperty(rType.Name);
+			else
+				writer.OpenProperty(explicitName);
+			
+			writer.OpenObject();			
+			foreach( object o in fields )
+			{
+				SerializeField (o, source, rType, null, writer);
+			}
+			writer.CloseObject();
+			writer.CloseProperty();
+		}
+		
+		public static void SerializeField (object o, object source, Type rType, IRestServiceManager serviceManager, IMessageWriter writer)
+		{
+			var sourceRecord = source as AbstractRecord;
 			if( o is JsonObject)
 			{
 				var values = o as JsonObject;
 				foreach( string key in values.Keys )
 				{
 					string Key = Util.CamelToPascal (key);
-					var fieldInfo = record.GetFieldInfoFromName (Key);
-					if (fieldInfo == null)
-						continue;
-					Type valueType = fieldInfo.Type;
-					object val = record[Util.CamelToPascal(key)];
+					object val = null;
+					Type valueType = null;
+					if (sourceRecord != null)
+					{
+						var fieldInfo = sourceRecord.GetFieldInfoFromName (Key);
+						if (fieldInfo == null)
+							continue;
+						valueType = fieldInfo.Type;
+						val = sourceRecord[Util.CamelToPascal(key)];
+					}
+					else
+					{
+						var prop = rType.GetProperty (Key);
+						valueType = prop.PropertyType;
+						val = prop.GetValue (source, null);
+					}
+
 					if (valueType.IsSubclassOf (typeof(AbstractRecord)))
                     {
                         Serialize(val as AbstractRecord, key, values[key] as JsonArray, writer);
@@ -145,8 +187,7 @@ namespace EmergeTk.WebServices
                         Serialize(val as IRecordList, key, values[key] as JsonArray, writer);
                     }
 					else if (valueType.GetInterface ("IEnumerable") != null && 
-					         valueType.IsGenericType &&
-					         valueType.GetGenericArguments()[0].IsSubclassOf(typeof(AbstractRecord)))
+					         valueType.IsGenericType)
 					{
 						Serialize (val as IEnumerable, valueType.GetGenericArguments()[0], key, values[key] as JsonArray, writer);
 					}
@@ -154,49 +195,63 @@ namespace EmergeTk.WebServices
                     {
                         writer.WriteProperty(key, (String)null);
                     }
+					else
+						Serialize (val, key, values[key] as JsonArray, writer);
 				}
 				return;
 			}
 			
 			string f = (string)o;
+
+			string uField = Util.CamelToPascal(f);
+			string lField = Util.PascalToCamel(f);
+
+			if (source != null && sourceRecord == null)
+			{
+				var prop = rType.GetProperty (uField);
+				if (prop == null)
+					return;
+				object obj = prop.GetValue(source, null); 
+				writer.OpenProperty (lField);
+				writer.WriteRaw (JSON.Serialize (obj));
+				writer.CloseProperty ();
+				return;
+			}
 			
 			if (f == "*")
 			{
 				foreach (var field in GetWildcardFields (rType))
-					SerializeField (field, record, rType, serviceManager, writer);
+					SerializeField (field, sourceRecord, rType, serviceManager, writer);
 				return;
 			}
 			
-			if( WebServiceManager.DoAuth() && ! serviceManager.AuthorizeField(RestOperation.Get,record,f) )
+			if( serviceManager != null && WebServiceManager.DoAuth() && ! serviceManager.AuthorizeField(RestOperation.Get,sourceRecord,f) )
 			   return;
-			
-			string uField = Util.CamelToPascal(f);
-			string lField = Util.PascalToCamel(f);
-			
+					
 			if( lField.EndsWith("__count") )
 			{
 				string propName = uField.Substring(0,f.Length-"__count".Length);
-				List<int> ids = record.LoadChildrenIds(record.GetFieldInfoFromName(propName));
+				List<int> ids = sourceRecord.LoadChildrenIds(sourceRecord.GetFieldInfoFromName(propName));
                 if (ids != null && ids.Count > 0)
                     writer.WriteProperty(lField, ids.Count);
                 else
-                    writer.WriteProperty(lField, (record[propName] as IRecordList).Count);
+					writer.WriteProperty(lField, (sourceRecord[propName] as IRecordList).Count);
 				return;
 			}
-			ColumnInfo fi = record.GetFieldInfoFromName(uField);
+			ColumnInfo fi = sourceRecord.GetFieldInfoFromName(uField);
 			if( fi == null )
 				return;
 			if( fi.IsList )
 			{
 
-				List<int> ids = record.LoadChildrenIds(fi);
+				List<int> ids = sourceRecord.LoadChildrenIds(fi);
                 if (ids != null && ids.Count > 0)
                 {
                     SerializeIntsList(ids, lField, null, null, fi.ListRecordType, writer);
                 }
                 else
                 {
-                    object recordList = record[uField];
+					object recordList = sourceRecord[uField];
                     if (recordList == null)
                     {
                         writer.OpenProperty(lField);
@@ -212,14 +267,14 @@ namespace EmergeTk.WebServices
                 // we're just trying to get the ID.  If we *can* get this field
                 // without having to load from another table, then do so.
                 // Add IsPropertyLoaded to AbstractRecord. If it's not loaded, execute this code.
-                if (!record.PropertyLoaded(uField) && record.OriginalValues != null && record.OriginalValues.ContainsKey(uField) && record.OriginalValues[uField] != null )
+				if (!sourceRecord.PropertyLoaded(uField) && sourceRecord.OriginalValues != null && sourceRecord.OriginalValues.ContainsKey(uField) && sourceRecord.OriginalValues[uField] != null )
                 {
-                    StreamLineWriteProperty(fi.Type, writer, record.OriginalValues, lField, uField);
+					StreamLineWriteProperty(fi.Type, writer, sourceRecord.OriginalValues, lField, uField);
                 }
                 else
                 {
                     // OK, so we have to do an AbstractRecord.Load()
-                    object rec = record[uField];
+					object rec = sourceRecord[uField];
                     writer.OpenProperty(lField);
                     if (rec != null)
                         writer.WriteScalar(((AbstractRecord)rec).Id);
@@ -230,14 +285,14 @@ namespace EmergeTk.WebServices
             }
 			else if (fi.DataType == DataType.Json)
 			{
-				object obj = record[uField];
+				object obj = sourceRecord[uField];
 				writer.OpenProperty (lField);
 				writer.WriteRaw (JSON.Serialize (obj));
 				writer.CloseProperty ();					
 			}
             else
             {
-                StreamLineWriteProperty(fi.Type, writer, record, lField, uField);
+				StreamLineWriteProperty(fi.Type, writer, sourceRecord, lField, uField);
             }	
 		}
 
