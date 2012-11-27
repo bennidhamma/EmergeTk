@@ -25,9 +25,24 @@ namespace EmergeTk
 				return TypeLoader.InvokeGenericMethod (typeof(EmergeTkJsonSerializerStrategy), "DeserializeHashSet", type.GetGenericArguments (), 
 				                                      this, new object[] {value});
 			}	
+			else if (type.IsSubclassOf (typeof(AbstractRecord)))
+			{
+				type = DataProvider.DefaultProvider.GetTypeForId (Convert.ToInt32(value));
+				return AbstractRecord.Load (type, value);
+			}
 	        return base.DeserializeObject(value, type);
 	    }
-		
+
+		public override bool SerializeNonPrimitiveObject (object input, out object output)
+		{
+			if (input is AbstractRecord)
+			{
+				output = (input as AbstractRecord).Id;
+				return true;
+			}
+			return base.SerializeNonPrimitiveObject (input, out output);
+		}
+
 		public HashSet<T> DeserializeHashSet<T> (JsonArray value)
 		{
 			HashSet<T> s = new HashSet<T> ();
@@ -53,7 +68,7 @@ namespace EmergeTk
 				
 		static public string Serialize (object o)
 		{
-			return SimpleJson.SimpleJson.SerializeObject (o);
+			return SimpleJson.SimpleJson.SerializeObject (o, strategy);
 			//return o != null ? JsonSerializer.SerializeToString (o) : "null";
 		}
 		

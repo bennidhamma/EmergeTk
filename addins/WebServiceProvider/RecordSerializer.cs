@@ -174,6 +174,8 @@ namespace EmergeTk.WebServices
 					else
 					{
 						var prop = rType.GetProperty (Key);
+						if (prop == null)
+							continue;
 						valueType = prop.PropertyType;
 						val = prop.GetValue (source, null);
 					}
@@ -187,9 +189,10 @@ namespace EmergeTk.WebServices
                         Serialize(val as IRecordList, key, values[key] as JsonArray, writer);
                     }
 					else if (valueType.GetInterface ("IEnumerable") != null && 
-					         valueType.IsGenericType)
+					         valueType.IsGenericType &&
+					         !valueType.GetGenericArguments()[0].IsSubclassOf (typeof(AbstractRecord)))
 					{
-						Serialize (val as IEnumerable, valueType.GetGenericArguments()[0], key, values[key] as JsonArray, writer);
+						SerializeObjectList (val as IEnumerable, key, values[key] as JsonArray, valueType.GetGenericArguments()[0], writer);
 					}
                     else if (val == null)
                     {
@@ -213,7 +216,10 @@ namespace EmergeTk.WebServices
 					return;
 				object obj = prop.GetValue(source, null); 
 				writer.OpenProperty (lField);
-				writer.WriteRaw (JSON.Serialize (obj));
+				if (obj is AbstractRecord)
+					writer.WriteScalar ((obj as AbstractRecord).Id);
+				else
+					writer.WriteRaw (JSON.Serialize (obj));
 				writer.CloseProperty ();
 				return;
 			}
@@ -427,6 +433,53 @@ namespace EmergeTk.WebServices
             writer.CloseProperty();
 
         }
+
+		public static void
+			SerializeObjectList (
+				IEnumerable items,
+				String listName,
+				string fields,
+				Type type,
+				IMessageWriter writer)
+		{
+			JsonArray fieldArray = SetupFields (fields, type);
+			SerializeObjectList (items, listName, fieldArray, type, writer);
+		}
+
+		public static void
+			SerializeObjectList(
+				IEnumerable items,
+				String listName,
+				JsonArray fields,
+				Type type,
+				IMessageWriter writer)
+		{
+			listName = listName ?? type.Name + "s";
+			writer.OpenProperty(listName);
+			writer.OpenList(listName);
+			
+			if (fields == null)
+			{
+				foreach (object o in items)
+				{
+					writer.WriteScalar (o);
+				}
+			}
+			else
+			{
+				foreach (object o in items)
+				{
+					if (o != null)
+					{
+						//log.Debug("Serializing " + r);
+						Serialize(o, listName, fields, writer);
+					}
+				}
+			}
+			writer.CloseList();
+			writer.CloseProperty();
+			
+		}
 		
 		public static void Serialize<T> (IEnumerable<T> items, JsonArray fields, Type recordType, IMessageWriter writer) where T : AbstractRecord
 		{
