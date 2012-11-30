@@ -599,6 +599,8 @@ QueryString args:
 			if( start != -1 && requestCount != -1 )
 			{
                 writer.WriteProperty("start", start);
+				start = Math.Min (start, ids.Count - 1);
+				requestCount = Math.Min (requestCount, ids.Count - start);
 				RecordSerializer.SerializeIntsList( ids.GetRange(start,requestCount).AsEnumerable(), null, args["fields"], sortBy, recordType, writer);				
 			}
 			else

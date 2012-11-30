@@ -581,6 +581,8 @@ namespace EmergeTk.WebServices
                     foreach (int id in items)
                     {
                         AbstractRecord r = AbstractRecord.Load<T>(id);
+						if (r == null)
+							continue;
                         records.Add(r);
                     }
                     if (!String.IsNullOrEmpty(sortBy))

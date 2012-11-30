@@ -443,7 +443,7 @@ namespace EmergeTk.Model
 			key = LocalCache.PrepareKey(key);
 
 			AbstractRecord record = localCache.GetLocalRecordFromPreparedKey(key);
-			if (null != record || typeof(T).GetInterface("IRedisLocalOnly") != null)
+			if (null != record || typeof(T).GetInterface("ICacheLocalOnly") != null)
 				return record as T;
 
 			object o = null;
