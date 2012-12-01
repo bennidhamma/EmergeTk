@@ -189,11 +189,14 @@ namespace EmergeTk.WebServices
                         Serialize(val as IRecordList, key, values[key] as JsonArray, writer);
                     }
 					else if (valueType.GetInterface ("IEnumerable") != null && 
-					         valueType.IsGenericType &&
-					         !valueType.GetGenericArguments()[0].IsSubclassOf (typeof(AbstractRecord)))
+					         valueType.IsGenericType)
 					{
-						SerializeObjectList (val as IEnumerable, key, values[key] as JsonArray, valueType.GetGenericArguments()[0], writer);
+						if (valueType.GetGenericArguments()[0].IsSubclassOf (typeof(AbstractRecord)))
+						    Serialize (val as IEnumerable, valueType.GetGenericArguments()[0], key, values[key] as JsonArray, writer);
+						else
+							SerializeObjectList (val as IEnumerable, key, values[key] as JsonArray, valueType.GetGenericArguments()[0], writer);
 					}
+
                     else if (val == null)
                     {
                         writer.WriteProperty(key, (String)null);
