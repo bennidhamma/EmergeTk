@@ -20,7 +20,7 @@ namespace EmergeTk.WebServices
 		private static Regex simpleJsonRegex = new Regex(@"[\w\*]+",RegexOptions.Compiled);
 		private static Dictionary<string,JsonArray> jsonParameters = new Dictionary<string, JsonArray>();
 		
-		private static JsonArray GetWildcardFields(Type type)
+		public static JsonArray GetWildcardFields(Type type)
 		{
 			JsonArray fields = new JsonArray ();
 			foreach( ColumnInfo ci in ColumnInfoManager.RequestColumns(type))
@@ -30,7 +30,7 @@ namespace EmergeTk.WebServices
 			return fields;
 		}
 		
-		private static JsonArray SetupFields(string fields, Type rType)
+		public static JsonArray SetupFields(string fields, Type rType)
 		{
 			//strip out spaces
 			if (fields == null) fields = "id";
