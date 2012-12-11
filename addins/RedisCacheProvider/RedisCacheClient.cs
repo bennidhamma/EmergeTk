@@ -114,7 +114,7 @@ namespace EmergeTk.Model
 		protected static Regex rgxProperty = new Regex(@"(?<recordDefSuffix>[\w\.]+:\d+):(?<property>\w+)", RegexOptions.Compiled);
 
 		[NonSerialized]
-		ReaderWriterLockSlim dictionaryLock = Locks.GetLockInstance(LockRecursionPolicy.NoRecursion); //setup the lock;
+		ReaderWriterLockSlim dictionaryLock = new ReaderWriterLockSlim ();
 
 		public ReaderWriterLockSlim DictionaryLock
 		{
@@ -126,7 +126,8 @@ namespace EmergeTk.Model
 
 		public void PutLocal(string key, AbstractRecord value)
 		{
-			using (new WriteLock(this.DictionaryLock))
+			this.DictionaryLock.EnterWriteLock ();
+			try
 			{
 				key = PrepareKey(key);
 				localRecordKeyMap[key] = value.Definition;
@@ -136,6 +137,10 @@ namespace EmergeTk.Model
 					localRecords[value.Definition].MarkAsStale ();
 				}
 				localRecords[value.Definition] = value;
+			}
+			finally
+			{
+				this.DictionaryLock.ExitWriteLock ();
 			}
 		}
 
@@ -147,7 +152,9 @@ namespace EmergeTk.Model
 
 		public AbstractRecord GetLocalRecord(RecordDefinition rd)
 		{
-			using (new ReadLock(this.DictionaryLock))
+			//using (new ReadLock(this.DictionaryLock))
+			this.DictionaryLock.EnterReadLock ();
+			try
 			{
 				if (localRecords.ContainsKey (rd))
 				{
@@ -157,12 +164,17 @@ namespace EmergeTk.Model
 				}
 				return null;
 			}
+			finally
+			{
+				this.DictionaryLock.ExitReadLock ();
+			}
 		}
 
 		public AbstractRecord GetLocalRecord(string key)
 		{
 			key = PrepareKey(key);
-			using (new ReadLock(this.DictionaryLock))
+			this.DictionaryLock.EnterReadLock ();
+			try
 			{
 				if (localRecordKeyMap.ContainsKey(key))
 				{
@@ -175,12 +187,16 @@ namespace EmergeTk.Model
 					}
 				}
 			}
+			finally {
+				this.DictionaryLock.ExitReadLock ();
+			}
 			return null;
 		}
 
 		public AbstractRecord GetLocalRecordFromPreparedKey(string keyPrepared)
 		{
-			using (new ReadLock(this.DictionaryLock))
+			this.DictionaryLock.EnterReadLock ();
+			try
 			{
 				if (localRecordKeyMap.ContainsKey(keyPrepared))
 				{
@@ -193,18 +209,27 @@ namespace EmergeTk.Model
 					}
 				}
 			}
+			finally 
+			{
+				this.DictionaryLock.ExitReadLock ();
+			}
 			return null;
 		}
 
 		public void Remove(RecordDefinition def)
 		{
-			using (new WriteLock(this.DictionaryLock))
+			this.DictionaryLock.EnterWriteLock ();
+			try
 			{
 				if (localRecords.ContainsKey (def))
 				{
 					localRecords[def].MarkAsStale();
 					localRecords.Remove(def);
 				}
+			}
+			finally
+			{
+				this.DictionaryLock.ExitWriteLock ();
 			}
 		}
 
@@ -224,9 +249,14 @@ namespace EmergeTk.Model
 				AbstractRecord record = GetLocalRecord(RecordDefinition.FromString(recordDefString));
 				if (record != null)
 				{
-					using (new WriteLock(this.DictionaryLock))
+					this.DictionaryLock.EnterWriteLock ();
+					try
 					{
 						record.UnsetProperty(propertyName, false);
+					}
+					finally
+					{
+						this.DictionaryLock.ExitWriteLock ();
 					}
 				}
 			}
@@ -235,7 +265,8 @@ namespace EmergeTk.Model
 
 				key = LocalCache.PrepareKey(key);
 				//log.Debug("clearing from cache " + key);
-				using (new WriteLock(this.DictionaryLock))
+				this.DictionaryLock.EnterWriteLock ();
+				try
 				{
 					if (localRecordKeyMap.ContainsKey(key))
 					{
@@ -246,6 +277,10 @@ namespace EmergeTk.Model
 					{
 						RemoveRecordByDefinition(RecordDefinition.FromString(key));
 					}
+				}
+				finally
+				{
+					this.DictionaryLock.ExitWriteLock ();
 				}
 			}
 		}
@@ -264,18 +299,28 @@ namespace EmergeTk.Model
 
 		public bool ContainsLocalRecord(RecordDefinition rd)
 		{
-			using (new ReadLock(this.DictionaryLock))
+			this.DictionaryLock.EnterReadLock ();
+			try
 			{
 				return localRecords.ContainsKey(rd);
+			}
+			finally
+			{
+				this.DictionaryLock.ExitReadLock ();
 			}
 		}
 
 		public void Flush()
 		{
-			using (new WriteLock(this.DictionaryLock))
+			this.DictionaryLock.EnterWriteLock ();
+			try
 			{
 				localRecordKeyMap.Clear();
 				localRecords.Clear();
+			}
+			finally
+			{
+				this.DictionaryLock.ExitWriteLock ();
 			}
 		}
 	}

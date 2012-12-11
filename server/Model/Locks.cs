@@ -9,25 +9,19 @@ namespace EmergeTk.Model
 	#region Locks utility class
 	public static class Locks
 	{
-		public static void GetReadLock(ReaderWriterLockSlim locks)
+		public static void GetUpgradealeReadLock(ReaderWriterLockSlim locks)
 		{
-			bool lockAcquired = false;
-			while (!lockAcquired)
-				lockAcquired = locks.TryEnterUpgradeableReadLock(1);
+			locks.EnterUpgradeableReadLock ();
 		}
 
 		public static void GetReadOnlyLock(ReaderWriterLockSlim locks)
 		{
-			bool lockAcquired = false;
-			while (!lockAcquired)
-				lockAcquired = locks.TryEnterReadLock(1);
+			locks.EnterReadLock ();
 		}
 
 		public static void GetWriteLock(ReaderWriterLockSlim locks)
 		{
-			bool lockAcquired = false;
-			while (!lockAcquired)
-				lockAcquired = locks.TryEnterWriteLock(1);
+			locks.EnterWriteLock ();
 		}
 
 		public static void ReleaseReadOnlyLock(ReaderWriterLockSlim locks)
@@ -36,7 +30,7 @@ namespace EmergeTk.Model
 				locks.ExitReadLock();
 		}
 
-		public static void ReleaseReadLock(ReaderWriterLockSlim locks)
+		public static void ReleaseUpgradeableReadLock(ReaderWriterLockSlim locks)
 		{
 			if (locks.IsUpgradeableReadLockHeld)
 				locks.ExitUpgradeableReadLock();
@@ -51,13 +45,13 @@ namespace EmergeTk.Model
 		public static void ReleaseLock(ReaderWriterLockSlim locks)
 		{
 			ReleaseWriteLock(locks);
-			ReleaseReadLock(locks);
+			ReleaseUpgradeableReadLock(locks);
 			ReleaseReadOnlyLock(locks);
 		}
 
 		public static ReaderWriterLockSlim GetLockInstance()
 		{
-			return GetLockInstance(LockRecursionPolicy.SupportsRecursion);
+			return GetLockInstance(LockRecursionPolicy.NoRecursion);
 		}
 
 		public static ReaderWriterLockSlim GetLockInstance(LockRecursionPolicy recursionPolicy)
@@ -82,12 +76,12 @@ namespace EmergeTk.Model
 		public ReadLock(ReaderWriterLockSlim locks)
 			: base(locks)
 		{
-			Locks.GetReadLock(this._Locks);
+			Locks.GetReadOnlyLock(this._Locks);
 		}
 
 		public override void Dispose()
 		{
-			Locks.ReleaseReadLock(this._Locks);
+			Locks.ReleaseUpgradeableReadLock(this._Locks);
 		}
 	}
 

@@ -104,7 +104,6 @@
     <Compile Include="HttpSurface.cs" />
     <Compile Include="IDataSource.cs" />
     <Compile Include="JSON.cs" />
-    <Compile Include="Model\Locks.cs" />
     <Compile Include="Model\UniqueValuesAttribute.cs" />
     <Compile Include="Router.cs" />
     <Compile Include="StringSurface.cs" />
