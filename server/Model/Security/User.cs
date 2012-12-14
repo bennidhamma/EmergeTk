@@ -194,7 +194,7 @@ namespace EmergeTk.Model.Security
 			}
 			set
 			{
-				if (!loading)
+				if (!Loading)
 					LastLoginDate = currentLoginDate;
 
 				currentLoginDate = value;

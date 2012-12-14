@@ -1150,7 +1150,7 @@ namespace EmergeTk.Model
             return null;
         }
 		
-        protected bool loading = false;
+        private bool loading = false;
 
 		public bool Loading {
 			get {
@@ -1403,7 +1403,7 @@ namespace EmergeTk.Model
         		loading = true;
         	}
         	
-			LoadProperty(this.GetFieldInfoFromName(prop));	        	
+			LoadProperty(this.GetFieldInfoFromName(prop));
 			
 			if( unsetLoading )
 			{
